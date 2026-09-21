@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@layer components {
+  .section-title { @apply mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-muted; }
+}

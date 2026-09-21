@@ -1,0 +1,111 @@
+# Deploiement : appli LoussaHousing + n8n + Traefik (HTTPS). Voir docs/deploiement.md
+services:
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    command:
+      # Decouverte des services par labels, via le filtre socket-proxy (jamais le socket Docker en direct)
+      - --providers.docker=true
+      - --providers.docker.endpoint=tcp://socket-proxy:2375
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=${HTTPS_REDIRECT_TO:-websecure}
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      # HTTPS automatique (Let's Encrypt). Pour tester sans risquer la limite de certificats, ajouter :
+      # - --certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL:?ACME_EMAIL manquant dans .env}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --api.dashboard=${TRAEFIK_DASHBOARD:-false}
+      - --log.level=INFO
+      - --accesslog=false
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - letsencrypt:/letsencrypt
+    networks: [default, socket]
+    depends_on: [socket-proxy]
+
+  # Filtre l'API Docker : Traefik ne peut que lister les conteneurs (lecture seule)
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    restart: unless-stopped
+    environment:
+      CONTAINERS: "1"
+      POST: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Hotes avec SELinux (Oracle Linux, Fedora) : sans cela le conteneur ne peut pas ouvrir le socket (erreur 503).
+    # Sans effet sur Ubuntu/Debian. Limite a ce seul conteneur, qui n'a ni acces reseau externe ni droit d'ecriture Docker.
+    security_opt:
+      - label=disable
+    networks: [socket]
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Paris
+      NUXT_LODGIFY_API_KEY: ${LODGIFY_API_KEY:-}
+      NUXT_NUKI_API_TOKEN: ${NUKI_API_TOKEN:-}
+      NUXT_WEBHOOK_TOKEN: ${WEBHOOK_TOKEN:?WEBHOOK_TOKEN manquant dans .env}
+      NUXT_IMAP_PASSWORD: ${IMAP_PASSWORD:-}
+      NUXT_DEMO: ${DEMO:-}
+    volumes:
+      - appdata:/app/.data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`${APP_HOST:-app.${DOMAIN:?DOMAIN manquant dans .env}}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=le"
+      - "traefik.http.routers.app.middlewares=admin-auth,secure-headers"
+      - "traefik.http.services.app.loadbalancer.server.port=3000"
+      # Page menage ouverte par QR code (lien secret, sans mot de passe) : seuls ces chemins passent sans authentification,
+      # avec limitation de debit. Les fichiers /_nuxt/ (JS/CSS) et les icones sont necessaires a l'affichage de la page.
+      - "traefik.http.routers.app-public.rule=Host(`${APP_HOST:-app.${DOMAIN}}`) && (PathPrefix(`/r/`) || PathPrefix(`/api/r/`) || PathPrefix(`/_nuxt/`) || PathPrefix(`/api/_nuxt_icon/`))"
+      - "traefik.http.routers.app-public.priority=1000"
+      - "traefik.http.routers.app-public.entrypoints=websecure"
+      - "traefik.http.routers.app-public.tls.certresolver=le"
+      - "traefik.http.routers.app-public.service=app"
+      - "traefik.http.routers.app-public.middlewares=public-ratelimit,secure-headers"
+      - "traefik.http.middlewares.public-ratelimit.ratelimit.average=20"
+      - "traefik.http.middlewares.public-ratelimit.ratelimit.burst=40"
+      # Le tableau de bord contient codes de porte et noms de voyageurs : mot de passe obligatoire
+      - "traefik.http.middlewares.admin-auth.basicauth.users=${ADMIN_USERS:?ADMIN_USERS manquant dans .env}"
+      - "traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.secure-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=no-referrer"
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Paris
+      GENERIC_TIMEZONE: Europe/Paris
+      N8N_HOST: ${N8N_HOST:-n8n.${DOMAIN}}
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://${N8N_HOST:-n8n.${DOMAIN}}/
+      N8N_PROXY_HOPS: "1"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY manquant dans .env}
+    volumes:
+      - n8ndata:/home/node/.n8n
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`${N8N_HOST:-n8n.${DOMAIN}}`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=le"
+      - "traefik.http.routers.n8n.middlewares=secure-headers"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+
+networks:
+  # Reseau isole : seuls Traefik et le filtre s'y trouvent, sans acces a Internet
+  socket:
+    internal: true
+
+volumes:
+  appdata:
+  n8ndata:
+  letsencrypt:
