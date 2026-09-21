@@ -3,8 +3,8 @@ import { randomInt } from 'node:crypto'
 import type { AccessCode } from './types'
 
 // Horaires de repli si Lodgify n'en renvoie pas ; le code s'ouvre 1 h avant le check-in et se ferme 1 h apres le check-out
-const DEFAULT_CHECKIN = '15:00'
-const DEFAULT_CHECKOUT = '11:00'
+export const DEFAULT_CHECKIN = '15:00'
+export const DEFAULT_CHECKOUT = '11:00'
 const MARGIN_MS = 60 * 60 * 1000
 const TZ = 'Europe/Paris'
 

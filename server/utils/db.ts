@@ -44,6 +44,24 @@ export async function initDb() {
     id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, title TEXT NOT NULL, category TEXT NOT NULL,
     doc_date TEXT NOT NULL, amount REAL, note TEXT NOT NULL DEFAULT '', file_path TEXT NOT NULL, original_name TEXT NOT NULL,
     mime TEXT NOT NULL, size INTEGER NOT NULL, created_at TEXT NOT NULL)`)
+  // Explorateur de fichiers (menu Documents) : arborescence libre de dossiers et fichiers, un espace par logement.
+  // parent_id NULL = racine du logement. Les fichiers sont sur disque (meme stockage securise que les documents).
+  await db.exec(`CREATE TABLE IF NOT EXISTS fs_node (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, parent_id INTEGER, kind TEXT NOT NULL,
+    name TEXT NOT NULL, file_path TEXT, mime TEXT, size INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`)
+  await db.exec('CREATE INDEX IF NOT EXISTS fs_node_parent ON fs_node (logement_id, parent_id)')
+  // Domotique par logement (Homey Pro) : connexion (la cle d'API reste dans .env : HOMEY_API_KEY) et regle de prechauffage.
+  // Phase de preparation : la regle sert a SIMULER, aucune commande n'est envoyee.
+  await db.exec(`CREATE TABLE IF NOT EXISTS domotique_config (
+    logement_id INTEGER PRIMARY KEY, homey_mode TEXT NOT NULL DEFAULT 'local', homey_url TEXT NOT NULL DEFAULT '',
+    preheat_enabled INTEGER NOT NULL DEFAULT 0, preheat_hours REAL NOT NULL DEFAULT 3, comfort_temp REAL NOT NULL DEFAULT 20,
+    eco_temp REAL NOT NULL DEFAULT 17, eco_delay_min INTEGER NOT NULL DEFAULT 60, updated_at TEXT NOT NULL DEFAULT '')`)
+  const domoCols = ((await db.prepare('PRAGMA table_info(domotique_config)').all()) as any[]).map(c => String(c.name))
+  if (!domoCols.includes('homey_id')) await addColumn("ALTER TABLE domotique_config ADD COLUMN homey_id TEXT NOT NULL DEFAULT ''")
+  // Etiquettes (tags) de couleur, communes a tous les logements, posees sur des fichiers ou dossiers de l'explorateur
+  await db.exec('CREATE TABLE IF NOT EXISTS fs_tag (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL COLLATE NOCASE UNIQUE, color TEXT NOT NULL DEFAULT \'blue\')')
+  await db.exec('CREATE TABLE IF NOT EXISTS fs_node_tag (node_id INTEGER NOT NULL, tag_id INTEGER NOT NULL, PRIMARY KEY (node_id, tag_id))')
+  await db.exec('CREATE INDEX IF NOT EXISTS fs_node_tag_tag ON fs_node_tag (tag_id)')
   // Imports (n8n -> appli) : provenance des documents (dedoublonnage par source + id externe, ou par contenu), lignes de releves
   // de plateformes (commissions, taxes de sejour, reversements) et journal. logement_id = 0 : pas encore affecte a un logement.
   const docCols = ((await db.prepare('PRAGMA table_info(document)').all()) as any[]).map(c => String(c.name))

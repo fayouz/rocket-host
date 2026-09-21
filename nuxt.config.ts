@@ -9,6 +9,10 @@ export default defineNuxtConfig({
     nukiApiToken: process.env.NUKI_API_TOKEN || '',
     webhookToken: process.env.WEBHOOK_TOKEN || '',
     imapPassword: process.env.IMAP_PASSWORD || '', // mot de passe de la boite e-mail : jamais en base, jamais renvoye au navigateur
+    homeyClientId: process.env.HOMEY_CLIENT_ID || '', // application OAuth Homey (mode cloud) : identifiant et secret restent dans .env
+    homeyClientSecret: process.env.HOMEY_CLIENT_SECRET || '',
+    homeyRedirectUri: process.env.HOMEY_REDIRECT_URI || '', // facultatif : adresse de retour OAuth si elle ne se deduit pas de l'adresse du site
+    homeyApiKey: process.env.HOMEY_API_KEY || '', // cle d'API Homey Pro : jamais en base, jamais renvoyee au navigateur
     demo: process.env.DEMO || '',
   },
   // Mini base SQLite (fichier .data/db.sqlite3, ignore par git)

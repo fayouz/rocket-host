@@ -25,9 +25,12 @@ const menu = computed(() => {
     { label: 'Codes', icon: 'i-lucide-key-round', to: `${base}/codes` },
     { label: 'Timeline', icon: 'i-lucide-git-commit-vertical', to: `${base}/timeline` },
     { label: 'Stock', icon: 'i-lucide-package', to: `${base}/stock` },
+    { label: 'Domotique', icon: 'i-lucide-thermometer', to: `${base}/domotique` },
     { label: 'QR code ménage', icon: 'i-lucide-qr-code', to: `${base}/qr` },
+    { label: 'Fichiers', icon: 'i-lucide-folder-tree', to: `${base}/fichiers` },
     { label: 'Documents', icon: 'i-lucide-folder-open', to: `${base}/documents` },
     { label: 'Bilan', icon: 'i-lucide-calculator', to: `${base}/bilan` },
+    { label: 'E-mails', icon: 'i-lucide-mail', to: `${base}/mails` },
     { label: 'Contacts', icon: 'i-lucide-contact', to: `${base}/contacts` },
   ]
 })

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <UHeader title="LoussaHousing" to="/" class="print:hidden">
+    <UHeader title="LoussaHousing" to="/" class="print:hidden" :ui="{ container: 'max-w-none' }">
       <UNavigationMenu :items="links" />
       <template #right>
         <UBadge v-if="demo" color="warning" variant="subtle" label="Mode démo" />
@@ -11,7 +11,7 @@
       </template>
     </UHeader>
     <UMain>
-      <UContainer class="py-6">
+      <UContainer class="max-w-none py-6">
         <slot />
       </UContainer>
     </UMain>
@@ -24,6 +24,7 @@ const { data: lg } = await useFetch('/api/logements', { key: 'logements' })
 const links = computed(() => [
   { label: 'Aujourd\'hui', to: '/' },
   { label: 'Logements', to: '/logements', children: (lg.value?.logements ?? []).map(l => ({ label: l.name, to: `/logements/${l.id}` })) },
+  { label: 'Documents', to: '/documents' },
   { label: 'E-mails', to: '/mail' },
   { label: 'Contacts', to: '/contacts' },
   { label: 'Rentabilité', to: '/profit' },
