@@ -8,7 +8,7 @@ Tableau de bord Nuxt lisant Lodgify : page **Aujourd'hui** (arrivées, départs,
 (Réservations, Serrures, Codes, Timeline, Stock, QR code ménage, Documents, Bilan, Contacts) ; page Aujourd'hui en deux colonnes (journée / widgets et timeline commune).
 
 **Exploitation** : codes clavier Nuki par réservation (création sur clic) ; ménages et messages calculés d'après Lodgify ; stock par logement (OK / Bas / Vide, QR code, panier Amazon pré-rempli) ;
-documents par logement et bilan annuel ; mini CRM (comptable, artisans…, historique, relances) ; imports de factures et de relevés (n8n, IMAP).
+documents par logement et bilan annuel ; **explorateur de fichiers** façon Finder (menu Documents + onglet Fichiers de chaque logement : dossiers et sous-dossiers, glisser-déposer, renommer, aperçu, recherche, étiquettes de couleur filtrables) ; mini CRM (comptable, artisans…, historique, relances) ; imports de factures et de relevés (n8n, IMAP).
 
 **E-mail** (`docs/mail.md`) : lecture, envoi (SMTP), dossiers de la boîte, rangement automatique (copie + original dans « Traité » ou « Archive »), rattachement aux réservations et aux contacts.
 
@@ -22,3 +22,10 @@ documents par logement et bilan annuel ; mini CRM (comptable, artisans…, histo
 
 ## V3 — plus tard
 Voir `docs/roadmap-v3.md` : livret d'accueil et écran TV inspirés de WelcomeScreen, séjour personnalisé, extras, avis, IA, suivi des clés par traceur.
+
+## Prochain chantier — connecteurs d'import
+Voir `docs/connecteurs-imports.md` : Free, TotalEnergies, assurances, banques ; API d'abord, puis e-mails, scraping n8n en dernier recours ; configuration dans Réglages > Connecteurs.
+
+## V4 — marketing automation (plus tard)
+Voir `docs/roadmap-v4.md` : base voyageurs avec consentement, scénarios après séjour (avis, réservation directe), remplissage des creux du calendrier, segments et campagnes, mesure ;
+tout envoi validé par Faez avant départ, désinscription et règles des plateformes respectées. S'appuie sur la V3 (livret, avis).
