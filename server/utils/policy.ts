@@ -13,6 +13,9 @@ export interface Rule { method: string; path: string; roles: string; summary: st
 const RAW: [string, string, string, string, Scope, string, string?][] = [
   // --- Compte et acces public
   ['POST', '/api/auth/login', 'P', 'Connexion (ouvre une session)', '', 'Compte', '{ username, password }'],
+  ['POST', '/api/auth/forgot', 'P', 'Mot de passe oublie : envoie un lien de reinitialisation par e-mail (reponse identique que le compte existe ou non)', '', 'Compte', '{ identifier }'],
+  ['GET', '/api/auth/activate', 'P', 'Verifier un lien d\'invitation ou de reinitialisation (jeton secret)', '', 'Compte', '?token='],
+  ['POST', '/api/auth/activate', 'P', 'Choisir son mot de passe avec un lien a usage unique', '', 'Compte', '{ token, password }'],
   ['POST', '/api/auth/logout', 'AGCM', 'Deconnexion', '', 'Compte'],
   ['GET', '/api/auth/me', 'AGCM', 'Utilisateur connecte', '', 'Compte'],
   ['POST', '/api/auth/password', 'AGCM', 'Changer son mot de passe (ferme les autres sessions)', '', 'Compte', '{ current, next }'],
@@ -117,6 +120,14 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['GET', '/api/homey/callback', 'A', 'Retour de l\'autorisation OAuth Homey', '', 'Homey'],
   ['POST', '/api/homey/disconnect', 'A', 'Deconnecter le compte Homey', '', 'Homey'],
   ['GET', '/api/homey/homeys', 'A', 'Homey du compte connecte', '', 'Homey'],
+  // --- Utilisateurs (administrateur)
+  ['GET', '/api/users', 'A', 'Liste des comptes et de leurs logements', '', 'Utilisateurs'],
+  ['POST', '/api/users', 'A', 'Creer un compte (sans mot de passe : il s\'active par invitation)', '', 'Utilisateurs', '{ username, displayName, email?, role, logements[] }'],
+  ['PUT', '/api/users/:id', 'A', 'Modifier nom, e-mail, role, logements, etat actif', '', 'Utilisateurs', '{ displayName, email?, role, logements[], active? }'],
+  ['DELETE', '/api/users/:id', 'A', 'Supprimer un compte (jamais soi-meme ni le dernier administrateur)', '', 'Utilisateurs'],
+  ['POST', '/api/users/:id/invite', 'A', 'Lien d\'invitation ou de reinitialisation a usage unique (affiche une fois ; envoi par e-mail facultatif)', '', 'Utilisateurs', '{ send?: boolean }'],
+  ['POST', '/api/users/:id/revoke-sessions', 'A', 'Fermer toutes les sessions d\'un compte', '', 'Utilisateurs'],
+  ['GET', '/api/audit', 'A', 'Journal d\'audit (connexions, gestion des comptes)', '', 'Utilisateurs'],
   // --- Documentation
   ['GET', '/api/docs/openapi.json', 'A', 'Specification OpenAPI (Swagger) generee depuis cette table', '', 'Documentation'],
 ]
@@ -146,7 +157,7 @@ export const PAGES: [string, string][] = [
   ['/logements/:id/stock', 'AGM'], ['/logements/:id/qr', 'A'], ['/logements/:id/fichiers', 'AGC'], ['/logements/:id/documents', 'AGC'], ['/logements/:id/bilan', 'AGC'],
   ['/logements/:id/domotique', 'AG'], ['/logements/:id/mails', 'A'], ['/logements/:id/contacts', 'A'],
   ['/documents', 'AGC'], ['/contacts', 'A'], ['/mail', 'A'], ['/profit', 'A'],
-  ['/settings', 'A'], ['/settings/imap', 'A'], ['/settings/imports', 'A'], ['/settings/stock', 'A'], ['/docs-api', 'A'],
+  ['/settings', 'A'], ['/settings/utilisateurs', 'A'], ['/settings/imap', 'A'], ['/settings/imports', 'A'], ['/settings/stock', 'A'], ['/docs-api', 'A'],
   ['/mon-compte', 'AGCM'],
 ]
 const PAGE_RULES = PAGES.map(([path, roles]) => ({ path, roles, ...compile(path) }))

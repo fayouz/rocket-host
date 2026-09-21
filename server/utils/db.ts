@@ -57,6 +57,10 @@ export async function initDb() {
     role TEXT NOT NULL DEFAULT 'admin', active INTEGER NOT NULL DEFAULT 1, password_hash TEXT NOT NULL, must_change INTEGER NOT NULL DEFAULT 0,
     default_password INTEGER NOT NULL DEFAULT 0, session_version INTEGER NOT NULL DEFAULT 1, failed_count INTEGER NOT NULL DEFAULT 0, locked_until TEXT,
     created_at TEXT NOT NULL, last_login_at TEXT, password_changed_at TEXT)`)
+  // Jetons d'invitation / de reinitialisation : usage unique, expiration, seul le HACHAGE du jeton est stocke (le lien n'est affiche qu'une fois)
+  await db.exec(`CREATE TABLE IF NOT EXISTS user_token (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, token_hash TEXT NOT NULL UNIQUE, purpose TEXT NOT NULL, expires_at TEXT NOT NULL,
+    used_at TEXT, created_by INTEGER, created_at TEXT NOT NULL)`)
   // Logements accessibles a un compte non administrateur (l'administrateur voit tout). Aucune ligne = aucun logement.
   await db.exec('CREATE TABLE IF NOT EXISTS user_logement (user_id INTEGER NOT NULL, logement_id INTEGER NOT NULL, PRIMARY KEY (user_id, logement_id))')
   await db.exec(`CREATE TABLE IF NOT EXISTS audit_log (

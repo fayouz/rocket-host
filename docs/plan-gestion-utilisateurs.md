@@ -1,6 +1,6 @@
 # Plan — gestion des utilisateurs (avant toute mise en ligne)
 
-Statut : **étapes U1 (socle) et U2 (rôles et périmètre) construites et testées le 2026-09-21** ; U3 (création de comptes, invitations, réinitialisation par e-mail) et la suite à faire. Un **Swagger** est maintenu (voir §9). Choix technique : sessions par cookie chiffré avec les outils de h3 déjà présents (aucune dépendance ajoutée) plutôt que `nuxt-auth-utils` ; pas de double authentification (décision du user).
+Statut : **étapes U1 (socle), U2 (rôles et périmètre), U3 et U4 (gestion des comptes par l'administrateur, invitations, journal) construites et testées** ; le **« mot de passe oublié » en libre-service** est fait ; reste la bascule en production (U6). Un **Swagger** est maintenu (voir §9). Choix technique : sessions par cookie chiffré avec les outils de h3 déjà présents (aucune dépendance ajoutée) plutôt que `nuxt-auth-utils` ; pas de double authentification (décision du user).
 
 ## 1. Constat
 
@@ -61,8 +61,8 @@ Chaque compte a une **liste de logements autorisés** (Gaston, Le ponant, ou les
 | **U0** | Décisions | Rôles, personnes concernées, méthode de double authentification, Cloudflare Access ou non | 0,5 j |
 | **U1** ✅ | Socle | Tables, connexion / déconnexion, compte `admin` de départ, sessions, changement de mot de passe obligatoire, verrouillage, journal (connexions), refus par défaut (tout est réservé à l'administrateur en attendant U2) | fait |
 | **U2** ✅ | Refus par défaut + rôles | Table des permissions unique (`server/utils/policy.ts`), contrôle par rôle et par logement sur les 98 routes et les pages, menus adaptés au rôle, explorateur en lecture seule pour le comptable | fait |
-| **U3** | Comptes et invitations | Création de comptes par l'administrateur, invitations et réinitialisation du mot de passe par e-mail (lien à usage unique) | 1 j |
-| **U4** | Audit et interface | Journal, Réglages > Utilisateurs, Mon compte | 1 j |
+| **U3** ✅ | Comptes et invitations | Création de comptes par l'administrateur, invitations et réinitialisation du mot de passe (lien à usage unique, affiché une fois, envoi par e-mail sur clic) | fait |
+| **U4** ✅ | Audit et interface | Réglages > Utilisateurs (comptes, journal), Mon compte | fait |
 | **U5** ✅ (script) | Tests automatiques | **Matrice d'autorisation** `scripts/authz-matrix.mjs` : 589 vérifications, chaque route avec chaque rôle et sans session ; reste à l'intégrer à la CI (`docs/plan-integration-continue.md`) | fait |
 | **U6** | Bascule | Retrait (ou maintien) du mot de passe Traefik, test complet avant mise en ligne | 0,5 j |
 
@@ -90,3 +90,23 @@ Chaque compte a une **liste de logements autorisés** (Gaston, Le ponant, ou les
 - **Périmètre `handler`** : la route filtre elle-même selon les logements autorisés (`scopeOf`, `assertLogement`). C'est le cas de la liste des logements, Aujourd'hui, la timeline, l'explorateur (liste, dossier, dépôt, étiquettes) et le niveau de stock.
 - **Matrice de tests** : `node scripts/authz-matrix.mjs <http://localhost:PORT> <base SQLite de TEST>` (jamais sur une base réelle : elle crée des comptes et supprime des données). Vérifie sans session → 401, rôle interdit → 403, logement interdit → 403, cas autorisés → ni 401 ni 403, filtrage des listes, pages. Testée aussi par **mutation** : contrôle du périmètre, des rôles ou de la session désactivé volontairement → le script détecte 49, 276 et 89 échecs.
 - **Limites actuelles** : sans interface pour créer des comptes (étape U3), les comptes se créent à la main en base ; le gestionnaire n'a pas encore accès aux contacts, à l'e-mail ni aux réglages (réservés à l'administrateur) ; le ménage n'a que le stock de ses logements (les pages par QR restent publiques).
+
+## 10. Gestion des comptes par l'administrateur (Réglages > Utilisateurs)
+
+- **Créer** : identifiant (minuscules, chiffres, `. _ -`), nom, e-mail facultatif, rôle, logements autorisés. Le compte est créé **sans mot de passe** (impossible de s'y connecter) jusqu'à l'activation.
+- **Invitation** : lien personnel **à usage unique**, valable **72 h** (24 h pour une réinitialisation), **affiché une seule fois** à l'administrateur ; seul son **hachage** est enregistré. L'administrateur peut aussi l'**envoyer par e-mail d'un clic** (avec confirmation) ; jamais d'envoi automatique. Un nouveau lien annule les précédents. La personne choisit son mot de passe (12 caractères au moins) sur la page publique `/activation`.
+- **Réinitialiser** un mot de passe = nouveau lien ; l'activation ferme les autres sessions du compte.
+- **Modifier** rôle, logements, e-mail : effet **immédiat** (relus à chaque requête). **Désactiver** : sessions coupées tout de suite, connexion refusée ; **Réactiver** : le mot de passe est conservé. **Fermer les sessions** : déconnexion forcée. **Supprimer** : définitif (le journal garde l'identifiant).
+- **Garde-fous** : on ne peut ni se supprimer, ni se désactiver, ni se retirer le rôle d'administrateur ; il reste toujours un administrateur actif.
+- **Journal** (onglet Journal) : connexions, échecs, gestion des comptes, sans mot de passe ni lien. Limitation des essais de lien : 20 par 10 minutes et par adresse.
+- **Tests** (copie isolée, 107 routes) : matrice d'autorisation 630 vérifications, 0 échec ; parcours complet vérifié (création, invitation, activation, réutilisation refusée, expiration, réinitialisation, changement de rôle immédiat, désactivation, fermeture des sessions, garde-fous, aucun jeton ni mot de passe dans le journal ni en base). Envoi d'e-mail testé **à blanc uniquement** (`LH_MAIL_DRYRUN=1`, aucun message envoyé).
+- **Limites** : les e-mails (invitation, mot de passe oublié) partent de la boîte configurée dans Réglages > E-mail (IMAP/SMTP) : il faut l'avoir configurée, sinon l'administrateur transmet le lien lui-même. Ces e-mails ne sont **pas copiés** dans le dossier « Envoyés » (le lien secret ne reste pas dans la boîte).
+
+## 11. Mot de passe oublié (libre-service)
+
+- **Parcours** : lien « Mot de passe oublié ? » sur la page de connexion → page publique `/mot-de-passe-oublie` (identifiant **ou** adresse e-mail) → e-mail avec un lien personnel (**valable 1 heure, à usage unique**) → `/activation` pour choisir un nouveau mot de passe (les autres sessions du compte sont fermées).
+- **Aucune fuite sur l'existence d'un compte** : la réponse est **toujours la même et immédiate** (l'envoi se fait en arrière-plan), que le compte existe, soit inconnu, désactivé, sans e-mail, etc.
+- **Garde-fous** : 5 demandes par adresse et par 10 minutes (sinon 429) ; **un seul lien par compte toutes les 5 minutes** ; plafond de 30 e-mails par heure au total ; aucun envoi pour un compte désactivé, en attente d'invitation, sans e-mail, ou dont l'adresse est partagée par plusieurs comptes.
+- **Journal** (administrateur) : chaque demande est tracée avec sa suite (`oubli_envoye`, `oubli_demande` + motif, `oubli_echec`), sans jeton ni lien.
+- **Secours** : `node scripts/reset-password.mjs <identifiant> <base sqlite> <adresse du site>` (à lancer **sur le serveur**) affiche un lien à usage unique de 1 heure, sans envoyer d'e-mail ; utile si l'administrateur est enfermé dehors et que l'e-mail n'est pas configuré. Tracé dans le journal (`reinitialisation_secours`).
+- **Tests** (copie isolée, envoi à blanc) : réponses et temps identiques compte existant / inconnu, jeton d'1 h créé sans administrateur, délai de garde, limite par adresse, cas sans envoi (désactivé, en attente, sans e-mail, adresse partagée), script de secours, journal sans secret, matrice d'autorisation 630/630.

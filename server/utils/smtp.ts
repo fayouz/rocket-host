@@ -45,7 +45,8 @@ export function validateSend(i: SendInput) {
 }
 
 // dryRun : construit et valide le message sans rien envoyer
-export async function sendMail(input: SendInput, opts: { dryRun?: boolean } = {}) {
+// noSentCopy : ne depose PAS de copie dans « Envoyes » (messages contenant un lien secret : invitations, mot de passe oublie)
+export async function sendMail(input: SendInput, opts: { dryRun?: boolean; noSentCopy?: boolean } = {}) {
   const v = validateSend(input)
   const cfg = await getImapConfig()
   const missing = need(cfg)
@@ -65,6 +66,7 @@ export async function sendMail(input: SendInput, opts: { dryRun?: boolean } = {}
 
   // Copie dans « Envoyes » (ecriture limitee a ce dossier). L'echec de la copie n'annule pas l'envoi.
   let saved = false
+  if (opts.noSentCopy) return { ok: true, dryRun: false, messageId, size: raw.length, recipients: v.to.length + v.cc.length, savedInSent: false }
   try {
     const client = connect(cfg)
     client.on('error', () => {})

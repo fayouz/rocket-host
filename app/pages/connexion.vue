@@ -10,6 +10,7 @@
         <UFormField label="Mot de passe"><UInput v-model="password" type="password" autocomplete="current-password" class="w-full" /></UFormField>
         <p v-if="error" class="text-sm text-error" role="alert">{{ error }}</p>
         <UButton type="submit" block label="Se connecter" :loading="busy" :disabled="!username || !password" />
+        <UButton color="neutral" variant="link" block label="Mot de passe oublié ?" to="/mot-de-passe-oublie" />
       </form>
     </UCard>
   </div>

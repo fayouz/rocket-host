@@ -13,6 +13,7 @@
 <script setup lang="ts">
 const menu = [
   { label: 'Logements et serrures', icon: 'i-lucide-house', to: '/settings', exact: true },
+  { label: 'Utilisateurs', icon: 'i-lucide-users', to: '/settings/utilisateurs' },
   { label: 'Stock', icon: 'i-lucide-package', to: '/settings/stock' },
   { label: 'Imports', icon: 'i-lucide-inbox', to: '/settings/imports' },
   { label: 'E-mail (IMAP)', icon: 'i-lucide-mail', to: '/settings/imap' },

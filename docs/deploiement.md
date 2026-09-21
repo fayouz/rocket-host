@@ -83,3 +83,5 @@ Seul Traefik publie des ports : l'appli et n8n ne sont pas exposés directement.
 L'appli a maintenant sa propre page de connexion (`docs/plan-gestion-utilisateurs.md`). Au **premier démarrage en production**, le compte `admin` est créé avec le mot de passe de `ADMIN_INITIAL_PASSWORD`
 (12 caractères au moins, pas un mot de passe courant) ; l'appli **refuse de démarrer** sans lui, ou si un compte utilise encore un mot de passe par défaut. Ce mot de passe est à **changer dès la première connexion** (l'appli l'exige).
 `SESSION_SECRET` est facultatif (sinon une clé est générée dans le volume, `.data/session-secret`). Le mot de passe Traefik (`ADMIN_USERS`) reste en seconde barrière. Les pages du ménage (QR) et les appels de n8n ne demandent pas de connexion (jetons).
+
+Les comptes se gèrent ensuite dans **Réglages > Utilisateurs** (invitations par lien à usage unique). Pour envoyer l'invitation par e-mail, configure d'abord **Réglages > E-mail** ; sinon copie le lien à la main. `LH_MAIL_DRYRUN=1` (tests uniquement) construit les messages sans les envoyer.

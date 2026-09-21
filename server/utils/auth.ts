@@ -132,7 +132,7 @@ export async function login(event: H3Event, usernameRaw: unknown, password: unkn
   const db = useDatabase()
   const r = ((await db.sql`SELECT * FROM app_user WHERE username = ${username}`).rows as any[])[0]
   const locked = r?.locked_until && Date.parse(String(r.locked_until)) > Date.now()
-  const ok = await verifyPassword(password, r?.password_hash ?? await dummyHash())
+  const ok = await verifyPassword(password, r?.password_hash || await dummyHash()) // compte inconnu ou en attente (sans mot de passe) : meme temps de calcul
   if (!r || !Number(r.active) || locked || !ok) {
     ipFails.set(ip, [...recent, Date.now()])
     if (r) {

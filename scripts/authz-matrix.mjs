@@ -60,7 +60,7 @@ const spec = JSON.parse((await call('admin', 'GET', '/api/docs/openapi.json')).t
 const ops = []
 for (const [path, item] of Object.entries(spec.paths)) for (const [method, op] of Object.entries(item)) ops.push({ method: method.toUpperCase(), path, roles: op['x-roles'].join(''), scope: op['x-scope'] === 'aucun' ? '' : op['x-scope'], params: (op.parameters ?? []).map(p => p.name) })
 const SKIP_ALL = /^\/api\/auth\//
-const NO_ADMIN_CALL = /^\/api\/(imap|mail|homey|codes\/)/ // appels vers l'exterieur : inutile de les provoquer pour l'administrateur
+const NO_ADMIN_CALL = /^\/api\/(imap|mail|homey|codes\/|users\/\{id\}\/revoke-sessions)/ // appels vers l'exterieur, ou qui couperaient la session de l'administrateur de test lui-meme
 ops.sort((a, b) => (a.method === 'DELETE') - (b.method === 'DELETE')) // les suppressions en dernier
 
 const fill = (op, side) => op.path.replace(/\{(\w+)\}/g, (_m, name) => {
