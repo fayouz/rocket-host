@@ -3,7 +3,7 @@
     <h2 class="section-title !mt-0">Codes clavier</h2>
     <p class="text-sm text-muted">Chaque code s'ouvre 1 h avant le check-in et se ferme 1 h après le check-out (horaires lus dans Lodgify, heure de Paris). Rien n'est envoyé à Nuki avant ton clic.</p>
     <UCard v-for="i in data.items" :key="i.bookingId" :class="{ 'border-l-4 border-l-error': i.status === 'error' || i.outdated }">
-      <div class="flex justify-between gap-3"><b>{{ i.guest }}</b><span class="text-sm text-muted">{{ i.source }}</span></div>
+      <div class="flex justify-between gap-3"><b>{{ i.guest }}</b><PlatformBadge :source="i.source" /></div>
       <p class="text-sm text-muted">{{ fr(i.arrival) }} → {{ fr(i.departure) }}</p>
       <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
         <span><span class="font-mono text-lg font-semibold tracking-widest">{{ i.code }}</span><span class="text-sm text-muted"> · {{ hour(i.validFrom) }} → {{ hour(i.validUntil) }}</span></span>

@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const folders = ((await useDatabase().sql`SELECT DISTINCT folder FROM mail_message ORDER BY folder`).rows as any[]).map(r => String(r.folder))
   const r = await listMail({
     folder: (({ inbox: cfg.folder, sent: cfg.sentFolder, spam: cfg.spamFolder } as Record<string, string>)[String(q.box ?? '')]) || (typeof q.folder === 'string' && q.folder ? q.folder : undefined), q: typeof q.q === 'string' ? q.q : undefined,
-    link: typeof q.link === 'string' ? q.link : undefined, booking: num(q.booking), contact: num(q.contact), limit: num(q.limit), offset: Number(q.offset) || 0,
+    link: typeof q.link === 'string' ? q.link : undefined, booking: num(q.booking), contact: num(q.contact), logement: num(q.logement), limit: num(q.limit), offset: Number(q.offset) || 0,
   })
   return {
     ...r, folders, syncing: isMailSyncing(), passwordSet: !!useRuntimeConfig().imapPassword,

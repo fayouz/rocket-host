@@ -24,7 +24,7 @@ export async function mailLabels() {
   }
 }
 
-export async function listMail(f: { folder?: string; q?: string; link?: string; booking?: number; contact?: number; limit?: number; offset?: number }) {
+export async function listMail(f: { folder?: string; q?: string; link?: string; booking?: number; contact?: number; logement?: number; limit?: number; offset?: number }) {
   const db = useDatabase()
   const where: string[] = []
   const args: (string | number)[] = []
@@ -36,6 +36,17 @@ export async function listMail(f: { folder?: string; q?: string; link?: string; 
   const exists = (kind: string, id?: number) => `EXISTS (SELECT 1 FROM mail_link l WHERE l.message_id = m.id AND l.kind = '${kind}' AND l.method != 'removed'${id ? ' AND l.target_id = ?' : ''})`
   if (f.booking) { where.push(exists('booking', f.booking)); args.push(f.booking) }
   if (f.contact) { where.push(exists('contact', f.contact)); args.push(f.contact) }
+  if (f.logement) {
+    // Mails du logement : rattaches a une de ses reservations, ou a un contact lie specifiquement a ce logement
+    const lg = (await ensureLogements()).find(l => l.id === f.logement)
+    const { bookings } = await loadData()
+    const bookingIds = lg ? bookings.filter(b => b.propertyId === lg.lodgifyPropertyId).map(b => Number(b.id)) : []
+    const contactIds = ((await db.sql`SELECT contact_id FROM contact_logement WHERE logement_id = ${f.logement}`).rows as any[]).map(r => Number(r.contact_id))
+    const ors: string[] = []
+    if (bookingIds.length) { ors.push(`(l.kind = 'booking' AND l.target_id IN (${bookingIds.map(() => '?').join(',')}))`); args.push(...bookingIds) }
+    if (contactIds.length) { ors.push(`(l.kind = 'contact' AND l.target_id IN (${contactIds.map(() => '?').join(',')}))`); args.push(...contactIds) }
+    where.push(ors.length ? `EXISTS (SELECT 1 FROM mail_link l WHERE l.message_id = m.id AND l.method != 'removed' AND (${ors.join(' OR ')}))` : '0')
+  }
   if (f.link === 'booking') where.push(exists('booking'))
   if (f.link === 'contact') where.push(exists('contact'))
   if (f.link === 'none') where.push(`NOT ${exists('booking')} AND NOT ${exists('contact')}`)

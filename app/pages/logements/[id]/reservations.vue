@@ -8,7 +8,7 @@
           <UBadge v-if="phase(b) === 'now'" color="success" label="En cours" />
           <UBadge v-else-if="phase(b) === 'next'" color="info" variant="subtle" label="À venir" />
           <UBadge :color="statusColor(b.status)" variant="subtle" :label="b.status" />
-          <UBadge color="neutral" variant="outline" :label="b.source" />
+          <PlatformBadge :source="b.source" />
           <UButton v-if="b.mails" size="xs" color="neutral" variant="soft" icon="i-lucide-mail" :label="String(b.mails)" :to="`/mail?booking=${b.id}`" title="E-mails rattachés à cette réservation" />
         </div>
       </div>

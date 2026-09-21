@@ -6,6 +6,7 @@
         <p class="text-sm text-muted">Ta boîte, rattachée automatiquement aux réservations et aux contacts, et rangée dans des dossiers.</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <UButton :color="mode === 'filing' ? 'primary' : 'neutral'" :variant="mode === 'filing' ? 'soft' : 'outline'" icon="i-lucide-folder-input" label="Tri automatique" :disabled="!list?.passwordSet" @click="openFiling" />
         <UButton color="neutral" variant="outline" icon="i-lucide-link" label="Relancer l'association" :loading="busy === 'relink'" @click="relink" />
         <UButton icon="i-lucide-refresh-cw" label="Synchroniser" :loading="syncing" :disabled="!list?.passwordSet" @click="sync" />
         <UButton color="neutral" variant="outline" icon="i-lucide-settings" to="/settings/imap" title="Réglages e-mail" />
@@ -23,6 +24,10 @@
       <aside :class="selected && mode === 'list' ? 'hidden lg:block' : ''" class="space-y-3">
         <UButton block size="lg" icon="i-lucide-square-pen" label="Nouveau message" :disabled="!list?.passwordSet" @click="startCompose()" />
         <UNavigationMenu orientation="vertical" :items="menu" class="w-full" />
+        <form v-if="folderForm !== null" class="space-y-2" @submit.prevent="newFolder">
+          <UInput v-model="folderForm" autofocus class="w-full" placeholder="Nom (ou Parent/Nom)" />
+          <div class="flex gap-2"><UButton type="submit" size="sm" label="Créer" :disabled="!folderForm.trim()" /><UButton size="sm" color="neutral" variant="ghost" label="Annuler" @click="folderForm = null" /></div>
+        </form>
       </aside>
 
       <div class="min-w-0">
@@ -61,7 +66,14 @@
             </div>
             <div class="mt-3 flex gap-2">
               <UButton icon="i-lucide-eye" color="neutral" variant="outline" label="Voir l'aperçu" :loading="busy === 'preview'" @click="preview" />
-              <UButton icon="i-lucide-folder-input" label="Ranger maintenant" :loading="busy === 'file'" :disabled="!plan || !plan.items.length" @click="fileNow" />
+              <UButton icon="i-lucide-folder-input" label="Ranger maintenant" :loading="busy === 'file'" :disabled="!plan || !plan.items.length" @click="confirming = true" />
+            </div>
+          </UCard>
+          <UCard v-if="confirming && plan?.items.length" class="ring-2 ring-primary">
+            <p class="text-sm">Ranger <b>{{ Math.min(plan.items.length, 50) }}</b> e-mail(s) maintenant ? Une copie ira dans chaque dossier cible et l'original sera déplacé dans « {{ fdata?.treated }} ». Les dossiers manquants seront créés dans ta boîte. Rien n'est supprimé.</p>
+            <div class="mt-3 flex gap-2">
+              <UButton icon="i-lucide-check" label="Confirmer le rangement" :loading="busy === 'file'" @click="fileNow" />
+              <UButton color="neutral" variant="ghost" label="Annuler" @click="confirming = false" />
             </div>
           </UCard>
           <UCard v-if="plan">
@@ -84,11 +96,11 @@
             <UInput v-model="q" icon="i-lucide-search" placeholder="Rechercher (objet, expéditeur, aperçu…)" class="min-w-56 flex-1" />
             <USelect v-model="link" :items="linkItems" class="w-56" />
           </div>
-          <p v-if="bookingId || contactId" class="mb-2 flex items-center gap-2 text-sm">
-            <UBadge color="primary" variant="subtle" :label="bookingId ? `Réservation n°${bookingId}` : `Contact n°${contactId}`" />
+          <p v-if="bookingId || contactId || logementId" class="mb-2 flex items-center gap-2 text-sm">
+            <UBadge color="primary" variant="subtle" :label="logementId ? 'Mails du logement' : bookingId ? `Réservation n°${bookingId}` : `Contact n°${contactId}`" />
             <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" label="Retirer ce filtre" @click="clearTarget" />
           </p>
-          <div class="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <div class="grid gap-4" :class="selected ? 'xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_17rem]' : 'xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]'">
             <div :class="selected ? 'hidden xl:block' : ''" class="min-w-0 space-y-2">
               <UCard v-for="m in items" :key="m.id" :class="selected?.id === m.id ? 'ring-2 ring-primary' : 'cursor-pointer'" @click="open(m)">
                 <div class="flex items-baseline justify-between gap-2">
@@ -122,20 +134,6 @@
                     À {{ selected.to.join(', ') || '—' }}<br>
                     {{ when(selected.date) }} · dossier « {{ selected.folder }} »
                   </p>
-                  <div class="mt-3 border-t border-default pt-3">
-                    <p class="mb-1 text-sm font-medium">Rattaché à</p>
-                    <div class="flex flex-wrap items-center gap-1">
-                      <UBadge v-for="l in selected.links" :key="l.kind + l.targetId" :color="l.kind === 'booking' ? 'info' : 'primary'" variant="subtle" :icon="l.kind === 'booking' ? 'i-lucide-calendar-days' : 'i-lucide-contact'">
-                        {{ l.label }} <span class="text-xs opacity-70">· {{ l.method === 'manual' ? 'manuel' : `auto ${l.score} %` }}</span>
-                        <UButton size="xs" color="neutral" variant="link" icon="i-lucide-x" title="Retirer ce rattachement" @click="unlink(l)" />
-                      </UBadge>
-                      <span v-if="!selected.links.length" class="text-sm text-muted">Aucun rattachement.</span>
-                    </div>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      <USelectMenu v-model="target" :items="targetItems" value-key="value" v-model:search-term="targetQ" :filter="false" placeholder="Rattacher à une réservation ou un contact…" class="min-w-64 flex-1" />
-                      <UButton size="sm" color="neutral" variant="outline" label="Rattacher" :disabled="!target" @click="linkManual" />
-                    </div>
-                  </div>
                 </UCard>
 
                 <UCard v-if="selected.attachments.length">
@@ -165,11 +163,44 @@
                 <UCard>
                   <p v-if="reading" class="text-sm text-muted">Lecture du message dans la boîte…</p>
                   <p v-else-if="detail?.bodyError" class="text-sm text-error">{{ detail.bodyError }}</p>
-                  <pre v-else class="max-h-[60vh] overflow-auto whitespace-pre-wrap break-words font-sans text-sm">{{ detail?.body?.text || '(message sans texte)' }}</pre>
-                  <p class="mt-2 text-xs text-muted">Texte seul : les images et le contenu HTML ne sont jamais chargés. Le corps est lu à la demande et n'est pas conservé dans l'appli.</p>
+                  <template v-else>
+                    <MailBody v-if="detail?.body?.html" :html="detail.body.html" />
+                    <pre v-else class="max-h-[60vh] overflow-auto whitespace-pre-wrap break-words font-sans text-sm">{{ detail?.body?.text || '(message sans texte)' }}</pre>
+                  </template>
+                  <p class="mt-2 text-xs text-muted">Mis en forme, mais sans script ni image distante (les pixels espions sont bloqués). Le corps est lu à la demande et n'est pas conservé dans l'appli.</p>
                 </UCard>
               </div>
             </div>
+
+            <!-- Colonne de droite : rattachements du message -->
+            <aside v-if="selected" class="min-w-0 xl:sticky xl:top-20 xl:self-start">
+              <UCard>
+                <p class="mb-1 text-sm font-medium">Rattaché à</p>
+                <div class="flex flex-wrap items-center gap-1">
+                  <UBadge v-for="l in selected.links" :key="l.kind + l.targetId" :color="l.kind === 'booking' ? 'info' : 'primary'" variant="subtle" :icon="l.kind === 'booking' ? 'i-lucide-calendar-days' : 'i-lucide-contact'">
+                    {{ l.label }} <span class="text-xs opacity-70">· {{ l.method === 'manual' ? 'manuel' : `auto ${l.score} %` }}</span>
+                    <UButton size="xs" color="neutral" variant="link" icon="i-lucide-x" title="Retirer ce rattachement" @click="unlink(l)" />
+                  </UBadge>
+                  <span v-if="!selected.links.length" class="text-sm text-muted">Aucun rattachement.</span>
+                </div>
+                <div v-if="!selected.links.length" class="mt-3 border-t border-default pt-3">
+                <p class="mb-1 text-sm font-medium">Suggestions (réservations au plus près)</p>
+                <p v-if="suggesting" class="text-sm text-muted">Recherche…</p>
+                <p v-else-if="!suggestions.length" class="text-sm text-muted">Aucune autre réservation à proposer.</p>
+                <ul v-else class="space-y-2">
+                  <li v-for="s in suggestions" :key="s.id" class="rounded-md border border-default p-2 text-sm">
+                    <p>{{ s.label }}</p>
+                    <p class="text-xs text-muted">{{ s.reason }}</p>
+                    <UButton size="xs" class="mt-1" color="neutral" variant="outline" icon="i-lucide-link" label="Rattacher" @click="linkBooking(s.id)" />
+                  </li>
+                </ul>
+              </div>
+              <div class="mt-3 space-y-2">
+                  <USelectMenu v-model="target" :items="targetItems" value-key="value" v-model:search-term="targetQ" :filter="false" placeholder="Rattacher à une réservation ou un contact…" class="w-full" />
+                  <UButton size="sm" color="neutral" variant="outline" label="Rattacher" :disabled="!target" @click="linkManual" />
+                </div>
+              </UCard>
+            </aside>
           </div>
         </template>
       </div>
@@ -189,7 +220,8 @@ const q = ref('')
 const link = ref('all')
 const bookingId = ref(Number(route.query.booking) || 0)
 const contactId = ref(Number(route.query.contact) || 0)
-if (bookingId.value || contactId.value) box.value = 'all'
+const logementId = ref(Number(route.query.logement) || 0)
+if (bookingId.value || contactId.value || logementId.value) box.value = 'all'
 
 const list = ref<any>(null)
 const items = ref<any[]>([])
@@ -207,7 +239,7 @@ async function load(reset: boolean) {
   try {
     const r: any = await $fetch('/api/mail/messages', { query: {
       q: q.value || undefined, box: ['inbox', 'sent', 'spam'].includes(box.value) ? box.value : undefined, folder: box.value === 'folder' ? folderPath.value : undefined,
-      link: link.value === 'all' ? undefined : link.value, booking: bookingId.value || undefined, contact: contactId.value || undefined, limit: PAGE, offset: reset ? 0 : items.value.length,
+      link: link.value === 'all' ? undefined : link.value, booking: bookingId.value || undefined, contact: contactId.value || undefined, logement: logementId.value || undefined, limit: PAGE, offset: reset ? 0 : items.value.length,
     } })
     list.value = r
     items.value = reset ? r.items : [...items.value, ...r.items]
@@ -216,15 +248,15 @@ async function load(reset: boolean) {
 }
 await Promise.all([loadFolders(), load(true)])
 let timer: ReturnType<typeof setTimeout> | undefined
-watch([q, link, box, folderPath, bookingId, contactId], () => { clearTimeout(timer); timer = setTimeout(() => load(true), 250) })
+watch([q, link, box, folderPath, bookingId, contactId, logementId], () => { clearTimeout(timer); timer = setTimeout(() => load(true), 250) })
 function go(b: string, path = '') {
-  mode.value = 'list'; box.value = b; folderPath.value = path; selected.value = null; bookingId.value = 0; contactId.value = 0
+  mode.value = 'list'; box.value = b; folderPath.value = path; selected.value = null; bookingId.value = 0; contactId.value = 0; logementId.value = 0
   router.replace({ query: path ? { folder: path, box: 'folder' } : { box: b } })
 }
-const clearTarget = () => { bookingId.value = 0; contactId.value = 0; box.value = 'inbox'; router.replace({ query: {} }) }
+const clearTarget = () => { bookingId.value = 0; contactId.value = 0; logementId.value = 0; box.value = 'inbox'; router.replace({ query: {} }) }
 
 // ---------- menu vertical ----------
-interface FolderRow { path: string; name: string; delimiter: string; role: string; managed: string; count: number }
+interface FolderRow { path: string; name: string; delimiter: string; role: string; managed: string; count: number; virtual?: boolean }
 const menu = computed(() => {
   const f = fdata.value
   const badge = (n: number) => (n ? n : undefined)
@@ -258,20 +290,29 @@ const menu = computed(() => {
     if (r.role === 'trash') node.icon = 'i-lucide-trash-2'
     if (r.role === 'drafts') node.icon = 'i-lucide-file-pen'
     if (r.managed === 'compta') node.icon = 'i-lucide-calculator'
+    if (r.managed === 'logements') node.icon = 'i-lucide-building-2'
+    if (r.managed === 'logement') node.icon = 'i-lucide-home'
+    if (r.virtual) node.class = 'opacity-60' // pas encore cree dans la boite : cree au premier rangement
   }
   const strip = (nodes: any[]): any[] => nodes.map(n => ({ ...n, children: n.children ? strip(n.children) : undefined, defaultOpen: !!n.children, ...(n.children && !n.path ? { onSelect: undefined } : {}) }))
-  const hasManaged = rows.some(r => r.managed === 'compta' || r.managed === 'logement')
   const actions = [
-    { label: 'Ranger la réception…', icon: 'i-lucide-folder-input', active: mode.value === 'filing', onSelect: () => { mode.value = 'filing'; selected.value = null; plan.value = null; loadFolders() } },
-    { label: 'Nouveau dossier', icon: 'i-lucide-folder-plus', onSelect: newFolder },
+    { label: 'Nouveau dossier', icon: 'i-lucide-folder-plus', onSelect: () => { folderForm.value = folderPath.value ? `${folderPath.value}/` : '' } },
   ]
-  return [boxes, [{ label: 'Dossiers', type: 'label' as const }, ...strip(tree), ...(!hasManaged ? [{ label: 'Logements, Comptabilité : créés au premier rangement', disabled: true }] : [])], actions]
+  return [boxes, [{ label: 'Dossiers', type: 'label' as const }, ...strip(tree)], actions]
 })
+function openFiling() { mode.value = 'filing'; selected.value = null; plan.value = null; confirming.value = false; loadFolders(); preview() }
+const confirming = ref(false)
+const folderForm = ref<string | null>(null)
 async function newFolder() {
-  const name = window.prompt('Nom du nouveau dossier (créé dans ta boîte) :')
-  if (!name?.trim()) return
+  const raw = folderForm.value
+  if (!raw?.trim()) return
+  folderForm.value = null
+  const delim = fdata.value?.folders?.[0]?.delimiter || '/'
+  const parts = raw.trim().split(delim === '/' ? '/' : /[/.]/).filter(Boolean)
+  const name = parts.pop() ?? ''
+  const parent = parts.join(delim)
   error.value = ''
-  try { await $fetch('/api/mail/folders', { method: 'POST', body: { name } }); await loadFolders(); notice.value = 'Dossier créé.' } catch (e: any) { error.value = e?.data?.statusMessage || 'Création impossible' }
+  try { await $fetch('/api/mail/folders', { method: 'POST', body: { name, parent: parent || undefined } }); await loadFolders(); notice.value = 'Dossier créé.' } catch (e: any) { error.value = e?.data?.statusMessage || 'Création impossible' }
 }
 
 // ---------- synchronisation / association ----------
@@ -308,8 +349,8 @@ async function preview() {
   busy.value = ''
 }
 async function fileNow() {
-  const n = plan.value?.items.length ?? 0
-  if (!n || !window.confirm(`Ranger ${Math.min(n, 50)} e-mail(s) maintenant ?\n\nUne copie ira dans chaque dossier cible et l'original sera déplacé dans « ${fdata.value?.treated} ». Les dossiers manquants seront créés dans ta boîte. Rien n'est supprimé.`)) return
+  if (!plan.value?.items.length) return
+  confirming.value = false
   busy.value = 'file'; error.value = ''; notice.value = ''
   try {
     const r: any = await $fetch('/api/mail/file', { method: 'POST', body: { dryRun: false } })
@@ -324,7 +365,7 @@ const selected = ref<any>(null)
 const detail = ref<any>(null)
 const reading = ref(false)
 async function open(m: any) {
-  selected.value = m; detail.value = null; reading.value = true; saving.value = null; saveMsg.value = ''
+  selected.value = m; detail.value = null; reading.value = true; saving.value = null; saveMsg.value = ''; suggestions.value = []; if (!m.links.length) loadSuggestions()
   try {
     detail.value = await $fetch(`/api/mail/messages/${m.id}`)
     if (detail.value.body?.attachments?.length) selected.value = { ...m, attachments: detail.value.body.attachments.map((a: any) => ({ name: a.name, size: a.size, type: a.type })) }
@@ -336,6 +377,7 @@ async function refreshSelected() {
   await load(true)
   const fresh = items.value.find(i => i.id === id)
   if (fresh) selected.value = { ...fresh, attachments: selected.value.attachments }
+  if (fresh && !fresh.links.length) loadSuggestions() // rattachement retire : les suggestions reviennent
 }
 const linkItems = [
   { label: 'Tous les e-mails', value: 'all' }, { label: 'Liés à une réservation', value: 'booking' },
@@ -354,6 +396,20 @@ const targetItems = computed(() => [
   { type: 'label' as const, label: 'Réservations' }, ...targets.value.bookings.map(b => ({ label: b.label, value: `booking:${b.id}` })),
   { type: 'label' as const, label: 'Contacts' }, ...targets.value.contacts.map(c => ({ label: c.label, value: `contact:${c.id}` })),
 ])
+// Suggestions : reservations dont les dates sont les plus proches de celle du message
+const suggestions = ref<{ id: number; label: string; reason: string }[]>([])
+const suggesting = ref(false)
+async function loadSuggestions() {
+  const id = selected.value?.id
+  if (!id) return
+  suggesting.value = true
+  try { const r = await $fetch<any[]>(`/api/mail/messages/${id}/suggest`); if (selected.value?.id === id) suggestions.value = r } catch { suggestions.value = [] }
+  suggesting.value = false
+}
+async function linkBooking(bookingId: number) {
+  try { await $fetch(`/api/mail/messages/${selected.value.id}/links`, { method: 'POST', body: { kind: 'booking', targetId: bookingId } }); await refreshSelected() }
+  catch (e: any) { error.value = e?.data?.statusMessage || 'Échec' }
+}
 async function linkManual() {
   if (!target.value || !selected.value) return
   const [kind, id] = target.value.split(':')
@@ -432,4 +488,6 @@ async function send() {
 const when = (d: string) => new Date(d).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 const shortDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', day: 'numeric', month: 'short' })
 const size = (n: number) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} Mo` : `${Math.max(1, Math.round(n / 1024))} Ko`)
+// Ouverture directe d'un message (lien depuis la page E-mails d'un logement)
+if (route.query.open) { const m = items.value.find(i => i.id === Number(route.query.open)); if (m) open(m) }
 </script>

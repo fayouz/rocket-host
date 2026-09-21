@@ -4,6 +4,7 @@
 // Vie privee : seuls les en-tetes et un apercu de 300 caracteres sont stockes ; le corps et les pieces jointes sont relus dans
 // la boite quand on ouvre un message. Rien n'est jamais marque lu ni supprime.
 import { simpleParser } from 'mailparser'
+import sanitizeHtml from 'sanitize-html'
 import { connect, errText, getImapConfig, need } from './imap'
 import { COMPTA_FOLDER, LOGEMENTS_FOLDER, syncFolderTree } from './mailFolders'
 
@@ -18,7 +19,8 @@ export interface MailRow {
 }
 
 // ---------- association automatique ----------
-// Signaux (score) : e-mail du voyageur = adresse du message (100) ; identifiant de reservation Lodgify cite, ex. « #B1000001 » (95) ;
+// Signaux (score) : e-mail du voyageur = adresse du message (100) ; identifiant de reservation Lodgify cite, ex. « #B1000001 » ou nombre nu (95) ;
+// prenom seul dans l'objet, si une seule reservation proche le porte (75) ;
 // nom du voyageur dans l'expediteur / l'objet / l'apercu pendant son sejour (70). Contact : adresse exacte (100), meme domaine professionnel (60).
 export function computeLinks(m: Pick<MailRow, 'from_name' | 'from_addr' | 'to_addrs' | 'subject' | 'date' | 'snippet'>, ctx: {
   bookings: { id: number; guest: string; guestEmail?: string; arrival: string; departure: string }[]
@@ -41,8 +43,16 @@ export function computeLinks(m: Pick<MailRow, 'from_name' | 'from_addr' | 'to_ad
   }
 
   const text = norm(`${m.from_name} ${m.subject} ${m.snippet}`)
-  const ids = new Set([...`${m.subject} ${m.snippet}`.matchAll(/(?:#|\bB)(\d{7,9})\b/g)].map(x => Number(x[1])))
+  // Numero de reservation : « #B123… », « B123… » ou nombre nu (« pour la réservation 22988326 ») ; seuls les numeros de reservations connues comptent
+  const ids = new Set([...`${m.subject} ${m.snippet}`.matchAll(/(?<!\d)(\d{7,9})(?!\d)/g)].map(x => Number(x[1])))
+  // Prenom seul dans l'objet (« Rappel : Mélissa arrive bientôt ») : retenu si UNE seule reservation proche porte ce prenom
+  const subj = norm(`${m.from_name} ${m.subject}`)
+  const firstNamed = ctx.bookings.filter((b) => {
+    const first = norm(b.guest).trim().split(/\s+/)[0] ?? ''
+    return first.length >= 3 && new RegExp(`(?<![a-z])${first.replace(/[^a-z]/g, '')}(?![a-z])`).test(subj) && near(b, 10, 1)
+  })
   for (const b of ctx.bookings) {
+    if (firstNamed.length === 1 && firstNamed[0]!.id === b.id) push('booking', b.id, 75)
     if (b.guestEmail && addrs.includes(b.guestEmail) && near(b, 90, 60)) push('booking', b.id, 100)
     if (ids.has(b.id)) push('booking', b.id, 95)
     const name = norm(b.guest).trim()
@@ -181,11 +191,21 @@ export async function getMailRow(id: number): Promise<MailRow> {
   return row as MailRow
 }
 
-// Corps (texte seulement : jamais de HTML, donc ni script ni image distante) et liste des pieces jointes
+// HTML nettoye : ni script, ni formulaire, ni image/ressource distante ; liens ouverts dans un nouvel onglet, sans referent
+const cleanHtml = (html: string) => sanitizeHtml(html.slice(0, 500_000), {
+  allowedTags: [...sanitizeHtml.defaults.allowedTags, 'style', 'font', 'center', 'u', 's', 'small', 'span', 'div', 'hr', 'caption', 'colgroup', 'col', 'tfoot', 'sub', 'sup'],
+  allowedAttributes: { '*': ['style', 'align', 'valign', 'bgcolor', 'color', 'width', 'height', 'colspan', 'rowspan', 'border', 'cellpadding', 'cellspacing', 'dir', 'lang'], a: ['href', 'name', 'title'], font: ['face', 'size', 'color'] },
+  allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+  allowVulnerableTags: true, // <style> : sans danger ici (iframe sans script + CSP qui interdit tout chargement)
+  transformTags: { a: (tag, attribs) => ({ tagName: tag, attribs: { ...attribs, target: '_blank', rel: 'noopener noreferrer nofollow' } }) },
+})
+
+// Corps (texte + HTML nettoye, jamais de ressource distante) et liste des pieces jointes
 export async function readMessage(m: MailRow) {
   const mail = await simpleParser(await fetchSource(m))
   return {
     text: (mail.text || '').slice(0, 200_000),
+    html: typeof mail.html === 'string' && mail.html.trim() ? cleanHtml(mail.html) : '',
     attachments: (mail.attachments || []).map((a, index) => ({ index, name: a.filename || `pièce-${index + 1}`, size: a.size, type: a.contentType })),
   }
 }

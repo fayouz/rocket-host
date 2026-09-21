@@ -12,7 +12,7 @@
       <template v-for="s in sections" :key="s.title">
         <h2 class="section-title">{{ s.title }}</h2>
         <UCard v-for="b in s.items" :key="b.id">
-          <div class="flex justify-between gap-3"><b>{{ b.property }}</b><span class="text-sm text-muted">{{ b.source }}</span></div>
+          <div class="flex justify-between gap-3"><b>{{ b.property }}</b><PlatformBadge :source="b.source" /></div>
           <p class="text-sm text-muted">{{ b.guest }} · {{ fr(b.arrival) }} → {{ fr(b.departure) }}</p>
         </UCard>
         <UCard v-if="!s.items.length"><p class="text-sm text-muted">Aucune</p></UCard>
