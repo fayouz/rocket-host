@@ -26,6 +26,13 @@ Voir `docs/roadmap-v3.md` : livret d'accueil et écran TV inspirés de WelcomeSc
 ## Prochain chantier — connecteurs d'import
 Voir `docs/connecteurs-imports.md` : Free, TotalEnergies, assurances, banques ; API d'abord, puis e-mails, scraping n8n en dernier recours ; configuration dans Réglages > Connecteurs.
 
+## Chantiers avant mise en ligne
+- **Gestion des utilisateurs** (prérequis) : `docs/plan-gestion-utilisateurs.md` — connexion et rôles faits (admin, gestionnaire, comptable, ménage ; périmètre par logement ; Swagger généré depuis la table des permissions) ; reste : création de comptes et invitations par e-mail. Pas de double authentification.
+- **Hébergement gratuit** : `docs/hebergement-gratuit.md` — Oracle Always Free en tête (offre ARM réduite à 2 processeurs / 12 Go en 2026, risque de récupération), serveur maison + Cloudflare Tunnel, petit VPS payant en plan B ; les offres gratuites qui s'endorment (Render, Koyeb) sont écartées.
+
+## Chantier transverse — intégration continue
+Voir `docs/plan-integration-continue.md` : GitHub Actions gratuit (types, build, tests, secrets, image Docker), aucun service réel ni secret dans la CI ; livraison continue plus tard.
+
 ## V4 — marketing automation (plus tard)
 Voir `docs/roadmap-v4.md` : base voyageurs avec consentement, scénarios après séjour (avis, réservation directe), remplissage des creux du calendrier, segments et campagnes, mesure ;
 tout envoi validé par Faez avant départ, désinscription et règles des plateformes respectées. S'appuie sur la V3 (livret, avis).
