@@ -7,7 +7,7 @@
           <b>{{ l.name }}</b>
           <p class="text-sm text-muted">{{ l.lodgifyName ? `Lodgify : ${l.lodgifyName}` : 'Non associé à Lodgify' }}</p>
         </div>
-        <UButton :to="`/logements/${l.id}/reservations`" label="Ouvrir" trailing-icon="i-lucide-arrow-right" />
+        <UButton :to="firstLogementPage(l.id)" label="Ouvrir" trailing-icon="i-lucide-arrow-right" />
       </div>
     </UCard>
     <UCard v-if="!data.logements.length"><p class="text-sm text-muted">Aucun logement.</p></UCard>
@@ -16,4 +16,6 @@
 
 <script setup lang="ts">
 const { data } = await useFetch('/api/logements', { key: 'logements' })
+const { refresh, firstLogementPage } = useAuth()
+await refresh()
 </script>

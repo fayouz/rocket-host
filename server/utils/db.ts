@@ -50,6 +50,18 @@ export async function initDb() {
     id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, parent_id INTEGER, kind TEXT NOT NULL,
     name TEXT NOT NULL, file_path TEXT, mime TEXT, size INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`)
   await db.exec('CREATE INDEX IF NOT EXISTS fs_node_parent ON fs_node (logement_id, parent_id)')
+  // Comptes utilisateurs et journal d'audit (voir docs/plan-gestion-utilisateurs.md). Mots de passe : hachage scrypt, jamais en clair.
+  // session_version : incremente a chaque changement de mot de passe, ce qui invalide toutes les sessions ouvertes.
+  await db.exec(`CREATE TABLE IF NOT EXISTS app_user (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL COLLATE NOCASE UNIQUE, email TEXT NOT NULL DEFAULT '', display_name TEXT NOT NULL DEFAULT '',
+    role TEXT NOT NULL DEFAULT 'admin', active INTEGER NOT NULL DEFAULT 1, password_hash TEXT NOT NULL, must_change INTEGER NOT NULL DEFAULT 0,
+    default_password INTEGER NOT NULL DEFAULT 0, session_version INTEGER NOT NULL DEFAULT 1, failed_count INTEGER NOT NULL DEFAULT 0, locked_until TEXT,
+    created_at TEXT NOT NULL, last_login_at TEXT, password_changed_at TEXT)`)
+  // Logements accessibles a un compte non administrateur (l'administrateur voit tout). Aucune ligne = aucun logement.
+  await db.exec('CREATE TABLE IF NOT EXISTS user_logement (user_id INTEGER NOT NULL, logement_id INTEGER NOT NULL, PRIMARY KEY (user_id, logement_id))')
+  await db.exec(`CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, user_id INTEGER, username TEXT NOT NULL DEFAULT '', action TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '', ip TEXT NOT NULL DEFAULT '')`)
+  await db.exec('CREATE INDEX IF NOT EXISTS audit_log_at ON audit_log (at)')
   // Domotique par logement (Homey Pro) : connexion (la cle d'API reste dans .env : HOMEY_API_KEY) et regle de prechauffage.
   // Phase de preparation : la regle sert a SIMULER, aucune commande n'est envoyee.
   await db.exec(`CREATE TABLE IF NOT EXISTS domotique_config (

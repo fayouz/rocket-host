@@ -15,23 +15,26 @@
 
 <script setup lang="ts">
 const route = useRoute()
+const { can, refresh } = useAuth()
+await refresh()
 const { data: logement } = await useFetch(() => `/api/logements/${route.params.id}`)
 if (!logement.value) throw createError({ statusCode: 404, statusMessage: 'Logement introuvable', fatal: true })
 const menu = computed(() => {
   const base = `/logements/${route.params.id}`
+  // Lettres = rôles autorisés (mêmes que la table des permissions du serveur, qui reste seule juge)
   return [
-    { label: 'Réservations', icon: 'i-lucide-calendar-days', to: `${base}/reservations` },
-    { label: 'Serrures', icon: 'i-lucide-lock', to: `${base}/serrures` },
-    { label: 'Codes', icon: 'i-lucide-key-round', to: `${base}/codes` },
-    { label: 'Timeline', icon: 'i-lucide-git-commit-vertical', to: `${base}/timeline` },
-    { label: 'Stock', icon: 'i-lucide-package', to: `${base}/stock` },
-    { label: 'Domotique', icon: 'i-lucide-thermometer', to: `${base}/domotique` },
-    { label: 'QR code ménage', icon: 'i-lucide-qr-code', to: `${base}/qr` },
-    { label: 'Fichiers', icon: 'i-lucide-folder-tree', to: `${base}/fichiers` },
-    { label: 'Documents', icon: 'i-lucide-folder-open', to: `${base}/documents` },
-    { label: 'Bilan', icon: 'i-lucide-calculator', to: `${base}/bilan` },
-    { label: 'E-mails', icon: 'i-lucide-mail', to: `${base}/mails` },
-    { label: 'Contacts', icon: 'i-lucide-contact', to: `${base}/contacts` },
-  ]
+    ['AG', { label: 'Réservations', icon: 'i-lucide-calendar-days', to: `${base}/reservations` }],
+    ['AG', { label: 'Serrures', icon: 'i-lucide-lock', to: `${base}/serrures` }],
+    ['AG', { label: 'Codes', icon: 'i-lucide-key-round', to: `${base}/codes` }],
+    ['AG', { label: 'Timeline', icon: 'i-lucide-git-commit-vertical', to: `${base}/timeline` }],
+    ['AGM', { label: 'Stock', icon: 'i-lucide-package', to: `${base}/stock` }],
+    ['AG', { label: 'Domotique', icon: 'i-lucide-thermometer', to: `${base}/domotique` }],
+    ['A', { label: 'QR code ménage', icon: 'i-lucide-qr-code', to: `${base}/qr` }],
+    ['AGC', { label: 'Fichiers', icon: 'i-lucide-folder-tree', to: `${base}/fichiers` }],
+    ['AGC', { label: 'Documents', icon: 'i-lucide-folder-open', to: `${base}/documents` }],
+    ['AGC', { label: 'Bilan', icon: 'i-lucide-calculator', to: `${base}/bilan` }],
+    ['A', { label: 'E-mails', icon: 'i-lucide-mail', to: `${base}/mails` }],
+    ['A', { label: 'Contacts', icon: 'i-lucide-contact', to: `${base}/contacts` }],
+  ].filter(([letters]) => can(letters as string)).map(([, item]) => item)
 })
 </script>

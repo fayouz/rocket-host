@@ -3,10 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev",
-    "build": "nuxt build",
+    "dev": "node scripts/copy-swagger.mjs && nuxt dev",
+    "build": "node scripts/copy-swagger.mjs && nuxt build",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "check:policy": "node scripts/check-policy.mjs"
   },
   "dependencies": {
     "@iconify-json/simple-icons": "^1.2.97",
@@ -18,6 +19,7 @@
     "nuxt": "^4.5.2",
     "qrcode": "^1.5.4",
     "sanitize-html": "^2.17.7",
+    "swagger-ui-dist": "^5.33.0",
     "tailwindcss": "^4.3.3",
     "vue": "latest",
     "vue-router": "latest"

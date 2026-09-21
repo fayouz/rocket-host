@@ -4,6 +4,9 @@
       <UNavigationMenu :items="links" />
       <template #right>
         <UBadge v-if="demo" color="warning" variant="subtle" label="Mode démo" />
+        <UDropdownMenu v-if="user" :items="userMenu" :content="{ align: 'end' }">
+          <UButton color="neutral" variant="ghost" icon="i-lucide-circle-user" :label="user.displayName" class="hidden sm:inline-flex" />
+        </UDropdownMenu>
         <UColorModeButton />
       </template>
       <template #body>
@@ -21,13 +24,19 @@
 <script setup lang="ts">
 const demo = useState('demo', () => false)
 const { data: lg } = await useFetch('/api/logements', { key: 'logements' })
+const { user, refresh, logout, can } = useAuth()
+await refresh()
+const userMenu = computed(() => [[{ label: user.value?.username ?? '', type: 'label' as const }], [
+  { label: 'Mon compte', icon: 'i-lucide-user-cog', to: '/mon-compte' },
+  { label: 'Se déconnecter', icon: 'i-lucide-log-out', onSelect: logout },
+]])
 const links = computed(() => [
-  { label: 'Aujourd\'hui', to: '/' },
+  can('AG') && { label: 'Aujourd\'hui', to: '/' },
   { label: 'Logements', to: '/logements', children: (lg.value?.logements ?? []).map(l => ({ label: l.name, to: `/logements/${l.id}` })) },
-  { label: 'Documents', to: '/documents' },
-  { label: 'E-mails', to: '/mail' },
-  { label: 'Contacts', to: '/contacts' },
-  { label: 'Rentabilité', to: '/profit' },
-  { label: 'Réglages', to: '/settings' },
-])
+  can('AGC') && { label: 'Documents', to: '/documents' },
+  can('A') && { label: 'E-mails', to: '/mail' },
+  can('A') && { label: 'Contacts', to: '/contacts' },
+  can('A') && { label: 'Rentabilité', to: '/profit' },
+  can('A') && { label: 'Réglages', to: '/settings' },
+].filter(Boolean) as { label: string; to: string; children?: { label: string; to: string }[] }[])
 </script>

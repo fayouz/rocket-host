@@ -6,7 +6,8 @@
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   const db = useDatabase()
-  const logements = await ensureLogements()
+  const scope = await scopeOf(event) // null = administrateur (tout) ; sinon les logements autorises
+  const logements = (await ensureLogements()).filter(l => !scope || scope.has(l.id))
   const q0 = String(q.q ?? '').trim().slice(0, 80)
   const tagId = q.tag === undefined || q.tag === '' ? null : (await getTag(q.tag)).id
 
@@ -16,12 +17,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const lg = q.logement === undefined || q.logement === '' ? null : await getLogement(q.logement)
+  if (lg) await assertLogement(event, lg.id)
   const lgList = logements.map(l => ({ id: l.id, name: l.name }))
 
   if (q0 || tagId !== null) {
     const like = `%${q0.replace(/[\\%_]/g, m => `\\${m}`)}%`
     const where = ['1=1']; const args: (string | number)[] = []
     if (lg) { where.push('n.logement_id = ?'); args.push(lg.id) }
+    else if (scope) { where.push(`n.logement_id IN (${[...scope, 0].map(() => '?').join(',')})`); args.push(...scope, 0) } // recherche globale : seulement les logements autorises
     if (q0) { where.push("n.name LIKE ? ESCAPE '\\'"); args.push(like) }
     if (tagId !== null) { where.push('EXISTS (SELECT 1 FROM fs_node_tag x WHERE x.node_id = n.id AND x.tag_id = ?)'); args.push(tagId) }
     const rows = (await db.prepare(`SELECT n.* FROM fs_node n WHERE ${where.join(' AND ')} ORDER BY n.kind, n.name LIMIT 100`).all(...args)) as any[]

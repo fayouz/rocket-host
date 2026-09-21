@@ -12,7 +12,10 @@ export default defineEventHandler(async (event) => {
   const add = ids(b.add, 'Étiquettes', 50)
   const remove = ids(b.remove, 'Étiquettes', 50)
   if (!nodes.length) throw createError({ statusCode: 400, statusMessage: 'Aucun élément' })
-  for (const n of nodes) await getNode(n)
+  for (const n of nodes) {
+    const node = await getNode(n)
+    await assertLogement(event, Number(node.logement_id)) // seulement des elements de logements autorises
+  }
   for (const t of [...add, ...remove]) await getTag(t)
   const db = useDatabase()
   for (const n of nodes) {

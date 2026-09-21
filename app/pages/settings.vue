@@ -16,5 +16,6 @@ const menu = [
   { label: 'Stock', icon: 'i-lucide-package', to: '/settings/stock' },
   { label: 'Imports', icon: 'i-lucide-inbox', to: '/settings/imports' },
   { label: 'E-mail (IMAP)', icon: 'i-lucide-mail', to: '/settings/imap' },
+  { label: 'API (Swagger)', icon: 'i-lucide-book-open', to: '/docs-api' },
 ]
 </script>

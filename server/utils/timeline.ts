@@ -17,9 +17,13 @@ function channelOf(source: string) {
 
 export interface TimelineEvent { at: string; kind: 'stay' | 'code' | 'sent' | 'planned' | 'cleaning' | 'stock'; title: string; description: string; icon: string }
 
-export async function buildTimeline(opts: { pastDays?: number; futureDays?: number } = {}) {
+export async function buildTimeline(opts: { pastDays?: number; futureDays?: number; propertyIds?: number[] } = {}) {
   const db = useDatabase()
-  const { properties, bookings, demo } = await loadData()
+  const data = await loadData()
+  const { demo } = data
+  const only = opts.propertyIds ? new Set(opts.propertyIds) : null // filtre par logements autorises
+  const properties = only ? data.properties.filter(p => only.has(p.id)) : data.properties
+  const bookings = only ? data.bookings.filter(b => only.has(b.propertyId)) : data.bookings
   const now = Date.now()
   const from = now - (opts.pastDays ?? 3) * DAY
   const to = now + (opts.futureDays ?? 45) * DAY

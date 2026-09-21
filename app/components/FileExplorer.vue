@@ -27,8 +27,8 @@
         <UButton color="neutral" :variant="view === 'icons' ? 'solid' : 'outline'" icon="i-lucide-layout-grid" aria-label="Icônes" @click="view = 'icons'" />
         <UButton color="neutral" :variant="view === 'list' ? 'solid' : 'outline'" icon="i-lucide-list" aria-label="Liste" @click="view = 'list'" />
       </UFieldGroup>
-      <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-folder-plus" label="Dossier" :disabled="!canWrite" @click="newFolder" />
-      <UButton size="sm" icon="i-lucide-upload" label="Ajouter" :disabled="!canWrite" :loading="uploading" @click="fileInput?.click()" />
+      <UButton v-if="!readonly" size="sm" color="neutral" variant="outline" icon="i-lucide-folder-plus" label="Dossier" :disabled="!canWrite" @click="newFolder" />
+      <UButton v-if="!readonly" size="sm" icon="i-lucide-upload" label="Ajouter" :disabled="!canWrite" :loading="uploading" @click="fileInput?.click()" />
       <input ref="fileInput" type="file" multiple class="hidden" @change="onPick">
     </div>
 
@@ -40,7 +40,7 @@
         <span class="size-2 rounded-full" :class="DOT[t.color]" /> {{ t.name }} <span class="text-muted">{{ t.count }}</span>
       </button>
       <span v-if="!tags.length" class="text-muted">aucune pour l'instant</span>
-      <button type="button" class="flex items-center gap-1 rounded-full px-2 py-0.5 text-muted hover:bg-elevated" @click="manageOpen = true"><UIcon name="i-lucide-settings-2" class="size-3" /> Gérer</button>
+      <button v-if="!readonly" type="button" class="flex items-center gap-1 rounded-full px-2 py-0.5 text-muted hover:bg-elevated" @click="manageOpen = true"><UIcon name="i-lucide-settings-2" class="size-3" /> Gérer</button>
     </div>
 
     <div class="flex min-h-0 flex-1">
@@ -77,7 +77,7 @@
               <UIcon name="i-lucide-folder" class="size-12 text-sky-500" />
               <input ref="newInput" v-model="creating.name" class="rename" @keydown.enter.prevent="commitNew" @keydown.esc.prevent="creating = null" @blur="commitNew">
             </div>
-            <div v-for="it in items" :key="key(it)" class="cell" :class="{ sel: isSel(it), drop: dropHint === key(it) }" draggable="true"
+            <div v-for="it in items" :key="key(it)" class="cell" :class="{ sel: isSel(it), drop: dropHint === key(it) }" :draggable="!readonly"
                  @click.stop="select(it, $event)" @dblclick.stop="open(it)" @contextmenu="onContextItem(it)" @dragstart="onDragStart(it, $event)"
                  @dragover.prevent.stop="onDragOverItem(it)" @dragleave.stop="dropHint = ''" @drop.prevent.stop="onDropItem(it, $event)">
               <UIcon :name="iconOf(it)" class="size-12" :class="colorOf(it)" />
@@ -102,7 +102,7 @@
                 <td class="px-2 py-1" colspan="4"><span class="flex items-center gap-2"><UIcon name="i-lucide-folder" class="size-5 text-sky-500" />
                   <input ref="newInput" v-model="creating.name" class="rename !text-left" @keydown.enter.prevent="commitNew" @keydown.esc.prevent="creating = null" @blur="commitNew"></span></td>
               </tr>
-              <tr v-for="it in items" :key="key(it)" class="row" :class="{ sel: isSel(it), drop: dropHint === key(it) }" draggable="true"
+              <tr v-for="it in items" :key="key(it)" class="row" :class="{ sel: isSel(it), drop: dropHint === key(it) }" :draggable="!readonly"
                   @click.stop="select(it, $event)" @dblclick.stop="open(it)" @contextmenu="onContextItem(it)" @dragstart="onDragStart(it, $event)"
                   @dragover.prevent.stop="onDragOverItem(it)" @dragleave.stop="dropHint = ''" @drop.prevent.stop="onDropItem(it, $event)">
                 <td class="px-2 py-1">
@@ -180,7 +180,7 @@ interface Loc { logement?: number; folder?: number | null }
 interface TagList { colors: string[]; tags: (Tag & { count: number })[] }
 interface ListResult { root: boolean; search?: string; logement: { id: number; name: string } | null; path: { id: number; name: string }[]; logements: { id: number; name: string }[]; items: Item[] }
 
-const props = withDefaults(defineProps<{ logementId?: number; height?: string }>(), { logementId: undefined, height: '32rem' })
+const props = withDefaults(defineProps<{ logementId?: number; height?: string; readonly?: boolean }>(), { logementId: undefined, height: '32rem', readonly: false })
 const lockedLogement = computed(() => props.logementId !== undefined)
 
 // --- Position, historique (précédent / suivant) ---
@@ -223,7 +223,7 @@ const error = ref('')
 const msg = (e: any) => e?.data?.statusMessage || 'Échec, réessaie.'
 watch(loadError, (e) => { error.value = e ? msg(e) : '' })
 watch(loc, () => { selected.value = []; renaming.value = ''; creating.value = null; notes.value = []; error.value = '' })
-const canWrite = computed(() => loc.value.logement !== undefined && !searching.value)
+const canWrite = computed(() => !props.readonly && loc.value.logement !== undefined && !searching.value) // readonly : rôle en lecture seule (le serveur refuse aussi)
 
 // --- Fil d'Ariane ---
 const crumbs = computed(() => {
@@ -318,7 +318,7 @@ const focusIn = (r: () => typeof renameInput.value) => nextTick(() => { const v 
 const creating = ref<{ name: string } | null>(null)
 
 function startRename(it: Item) {
-  if (it.kind === 'logement') return
+  if (props.readonly || it.kind === 'logement') return
   renaming.value = key(it); renameValue.value = it.name
   focusIn(() => renameInput.value)
 }
@@ -343,6 +343,7 @@ async function commitNew() {
   await call(() => $fetch('/api/explorer/folder', { method: 'POST', body: { logement: loc.value.logement, parent: loc.value.folder ?? null, name } }))
 }
 async function removeSel() {
+  if (props.readonly) return
   const list = selItems.value.filter(i => i.kind !== 'logement')
   if (!list.length) return
   const hasFolder = list.some(i => i.kind === 'folder')
@@ -359,7 +360,7 @@ async function call(fn: () => Promise<unknown>) {
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
 async function upload(files: File[], target: Loc = loc.value) {
-  if (!files.length || target.logement === undefined) return
+  if (props.readonly || !files.length || target.logement === undefined) return
   uploading.value = true
   error.value = ''
   notes.value = []
@@ -386,7 +387,7 @@ const MIME = 'application/x-explorer-items'
 const dropHint = ref('')
 const hasFiles = (e: DragEvent) => [...(e.dataTransfer?.types ?? [])].includes('Files')
 function onDragStart(it: Item, e: DragEvent) {
-  if (it.kind === 'logement') { e.preventDefault(); return }
+  if (props.readonly || it.kind === 'logement') { e.preventDefault(); return }
   if (!isSel(it)) selected.value = [key(it)]
   e.dataTransfer?.setData(MIME, JSON.stringify(selItems.value.filter(i => i.kind !== 'logement').map(i => ({ id: i.id, logement: i.logementId }))))
   if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
@@ -418,6 +419,7 @@ async function dropOnCrumb(c: { loc: Loc; search?: boolean }, e: DragEvent) {
   else await moveTo({ logement: c.loc.logement, folder: c.loc.folder ?? null }, e)
 }
 async function moveTo(target: { logement?: number; folder: number | null }, e: DragEvent) {
+  if (props.readonly) return
   let moved: { id: number; logement: number }[] = []
   try { moved = JSON.parse(e.dataTransfer?.getData(MIME) || '[]') } catch { /* rien à déplacer */ }
   if (!moved.length) return
@@ -427,6 +429,7 @@ async function moveTo(target: { logement?: number; folder: number | null }, e: D
 
 // --- Étiquettes : pose sur la sélection, gestion (créer, renommer, recolorer, supprimer) ---
 async function setTag(id: number, on: boolean) {
+  if (props.readonly) return
   const nodes = selItems.value.filter(i => i.kind !== 'logement').map(i => i.id)
   if (!nodes.length) return
   await call(() => $fetch('/api/explorer/tags/assign', { method: 'POST', body: { nodes, [on ? 'add' : 'remove']: [id] } }))
@@ -480,7 +483,7 @@ const menuItems = computed(() => {
       { label: 'Ajouter des fichiers…', icon: 'i-lucide-upload', disabled: !canWrite.value, onSelect: () => fileInput.value?.click() },
     ]]
   }
-  const real = selItems.value.some(i => i.kind !== 'logement')
+  const real = selItems.value.some(i => i.kind !== 'logement') && !props.readonly
   return [
     [
       { label: 'Ouvrir', icon: 'i-lucide-folder-open', disabled: !one, onSelect: () => one && open(one) },

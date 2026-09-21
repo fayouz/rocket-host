@@ -6,6 +6,7 @@ export default defineEventHandler(async (event) => {
   if (!parts) throw createError({ statusCode: 400, statusMessage: 'Fichier requis' })
   const field = (n: string) => parts.find(p => p.name === n && !p.filename)?.data.toString('utf8')
   const lg = await getLogement(field('logement'))
+  await assertLogement(event, lg.id)
   const parentRaw = field('parent')
   const parent = parentRaw ? Number(parentRaw) : null
   await checkParent(lg.id, parent)
