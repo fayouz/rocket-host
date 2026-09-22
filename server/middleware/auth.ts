@@ -1,6 +1,6 @@
 // Refus par defaut : toute page et toute route API exige une session, sauf la liste blanche ci-dessous.
 // (Les jetons secrets du menage et de n8n gardent leur propre controle ; Traefik n'expose deja que ces chemins sans mot de passe.)
-const PUBLIC_PREFIXES = ['/_nuxt/', '/api/_nuxt_icon/', '/r/', '/api/r/', '/g/', '/api/g/', '/_docs-ui/'] // /_docs-ui : fichiers open source de Swagger UI (la specification, elle, exige l'administrateur)
+const PUBLIC_PREFIXES = ['/_nuxt/', '/api/_nuxt_icon/', '/r/', '/api/r/', '/g/', '/api/g/', '/tv/', '/api/tv/', '/_docs-ui/'] // /_docs-ui : fichiers open source de Swagger UI (la specification, elle, exige l'administrateur)
 const PUBLIC_EXACT = new Set(['/connexion', '/activation', '/mot-de-passe-oublie', '/api/auth/login', '/api/auth/activate', '/api/auth/forgot', '/favicon.ico', '/robots.txt', '/api/cleaning-tasks', '/api/import/documents', '/api/import/transactions'])
 const ACCOUNT = (p: string) => p === '/mon-compte' || p.startsWith('/api/auth/')
 

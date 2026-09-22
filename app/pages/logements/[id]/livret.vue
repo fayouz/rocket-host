@@ -14,9 +14,15 @@
             <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-eye" label="Aperçu" :to="link" external target="_blank" />
             <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-refresh-cw" label="Régénérer le lien" @click="regenerate" />
           </div>
-          <p class="text-xs text-muted">Régénérer invalide l'ancien lien immédiatement (utile si le QR affiché quelque part doit être remplacé).</p>
+          <p class="text-xs text-muted">Régénérer invalide l'ancien lien immédiatement (utile si le QR affiché quelque part doit être remplacé) : le lien TV ci-dessous change aussi.</p>
         </div>
       </div>
+    </UCard>
+
+    <UCard>
+      <template #header><b>Écran TV</b></template>
+      <p class="text-sm text-muted">Même lien, en plein écran, pensé pour être ouvert sur la TV du logement (grand texte, voyageur du jour affiché s'il y en a un).</p>
+      <UButton class="mt-2" size="sm" color="neutral" variant="outline" icon="i-lucide-tv" label="Ouvrir l'écran TV" :to="tvLink" external target="_blank" />
     </UCard>
 
     <UCard>
@@ -60,6 +66,7 @@ watch(() => data.value?.content, (c) => { if (c) Object.assign(form, c) }, { imm
 
 const origin = useRequestURL().origin
 const link = computed(() => data.value ? `${origin}/g/${data.value.token}` : '')
+const tvLink = computed(() => data.value ? `${origin}/tv/${data.value.token}` : '')
 const qrUrl = computed(() => `/api/logements/${route.params.id}/livret/qr`)
 const copied = ref(false)
 async function copy() { try { await navigator.clipboard.writeText(link.value); copied.value = true; setTimeout(() => { copied.value = false }, 2000) } catch { /* copie manuelle possible */ } }

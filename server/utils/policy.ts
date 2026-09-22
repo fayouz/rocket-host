@@ -126,6 +126,7 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['POST', '/api/logements/:id/livret/token', 'A', 'Regenerer le lien secret du livret', 'logement', 'Livret d\'accueil'],
   ['GET', '/api/logements/:id/livret/qr', 'AG', 'QR code du livret d\'accueil', 'logement', 'Livret d\'accueil'],
   ['GET', '/api/g/:token', 'P', 'Page publique du livret d\'accueil (lien secret)', '', 'Public (jeton)'],
+  ['GET', '/api/tv/:token', 'P', 'Page TV plein ecran (meme lien secret) : accueil du voyageur du jour + livret', '', 'Public (jeton)'],
   // --- Utilisateurs (administrateur)
   ['GET', '/api/users', 'A', 'Liste des comptes et de leurs logements', '', 'Utilisateurs'],
   ['POST', '/api/users', 'A', 'Creer un compte (sans mot de passe : il s\'active par invitation)', '', 'Utilisateurs', '{ username, displayName, email?, role, logements[] }'],
