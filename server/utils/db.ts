@@ -50,6 +50,14 @@ export async function initDb() {
     id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, parent_id INTEGER, kind TEXT NOT NULL,
     name TEXT NOT NULL, file_path TEXT, mime TEXT, size INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`)
   await db.exec('CREATE INDEX IF NOT EXISTS fs_node_parent ON fs_node (logement_id, parent_id)')
+  // Livret d'accueil par logement (V3 inspiree de WelcomeScreen) : contenu edite par l'hote, page publique a lien secret.
+  await db.exec(`CREATE TABLE IF NOT EXISTS guestbook (
+    logement_id INTEGER PRIMARY KEY, wifi_ssid TEXT NOT NULL DEFAULT '', wifi_password TEXT NOT NULL DEFAULT '',
+    welcome_text TEXT NOT NULL DEFAULT '', house_rules TEXT NOT NULL DEFAULT '', checkin_info TEXT NOT NULL DEFAULT '',
+    checkout_info TEXT NOT NULL DEFAULT '', access_directions TEXT NOT NULL DEFAULT '', local_tips TEXT NOT NULL DEFAULT '',
+    faq TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '')`)
+  // Lien secret separe de celui du stock (droits differents : lecture seule pour le voyageur, jamais d'ecriture)
+  await db.exec('CREATE TABLE IF NOT EXISTS guestbook_token (logement_id INTEGER PRIMARY KEY, token TEXT NOT NULL UNIQUE)')
   // Comptes utilisateurs et journal d'audit (voir docs/plan-gestion-utilisateurs.md). Mots de passe : hachage scrypt, jamais en clair.
   // session_version : incremente a chaque changement de mot de passe, ce qui invalide toutes les sessions ouvertes.
   await db.exec(`CREATE TABLE IF NOT EXISTS app_user (

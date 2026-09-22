@@ -120,6 +120,12 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['GET', '/api/homey/callback', 'A', 'Retour de l\'autorisation OAuth Homey', '', 'Homey'],
   ['POST', '/api/homey/disconnect', 'A', 'Deconnecter le compte Homey', '', 'Homey'],
   ['GET', '/api/homey/homeys', 'A', 'Homey du compte connecte', '', 'Homey'],
+  // --- Livret d'accueil (V3)
+  ['GET', '/api/logements/:id/livret', 'AG', 'Contenu du livret d\'accueil, pour edition', 'logement', 'Livret d\'accueil'],
+  ['PUT', '/api/logements/:id/livret', 'AG', 'Enregistrer le livret d\'accueil', 'logement', 'Livret d\'accueil'],
+  ['POST', '/api/logements/:id/livret/token', 'A', 'Regenerer le lien secret du livret', 'logement', 'Livret d\'accueil'],
+  ['GET', '/api/logements/:id/livret/qr', 'AG', 'QR code du livret d\'accueil', 'logement', 'Livret d\'accueil'],
+  ['GET', '/api/g/:token', 'P', 'Page publique du livret d\'accueil (lien secret)', '', 'Public (jeton)'],
   // --- Utilisateurs (administrateur)
   ['GET', '/api/users', 'A', 'Liste des comptes et de leurs logements', '', 'Utilisateurs'],
   ['POST', '/api/users', 'A', 'Creer un compte (sans mot de passe : il s\'active par invitation)', '', 'Utilisateurs', '{ username, displayName, email?, role, logements[] }'],
@@ -155,7 +161,7 @@ export const PAGES: [string, string][] = [
   ['/', 'AG'], ['/logements', 'AGCM'], ['/logements/:id', 'AGCM'],
   ['/logements/:id/reservations', 'AG'], ['/logements/:id/serrures', 'AG'], ['/logements/:id/codes', 'AG'], ['/logements/:id/timeline', 'AG'],
   ['/logements/:id/stock', 'AGM'], ['/logements/:id/qr', 'A'], ['/logements/:id/fichiers', 'AGC'], ['/logements/:id/documents', 'AGC'], ['/logements/:id/bilan', 'AGC'],
-  ['/logements/:id/domotique', 'AG'], ['/logements/:id/mails', 'A'], ['/logements/:id/contacts', 'A'],
+  ['/logements/:id/domotique', 'AG'], ['/logements/:id/livret', 'AG'], ['/logements/:id/mails', 'A'], ['/logements/:id/contacts', 'A'],
   ['/documents', 'AGC'], ['/contacts', 'A'], ['/mail', 'A'], ['/profit', 'A'],
   ['/settings', 'A'], ['/settings/utilisateurs', 'A'], ['/settings/imap', 'A'], ['/settings/imports', 'A'], ['/settings/stock', 'A'], ['/docs-api', 'A'],
   ['/mon-compte', 'AGCM'],

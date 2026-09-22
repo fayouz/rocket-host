@@ -30,6 +30,7 @@ const menu = computed(() => {
     ['AGM', { label: 'Stock', icon: 'i-lucide-package', to: `${base}/stock` }],
     ['AG', { label: 'Domotique', icon: 'i-lucide-thermometer', to: `${base}/domotique` }],
     ['A', { label: 'QR code ménage', icon: 'i-lucide-qr-code', to: `${base}/qr` }],
+    ['AG', { label: 'Livret d\'accueil', icon: 'i-lucide-book-heart', to: `${base}/livret` }],
     ['AGC', { label: 'Fichiers', icon: 'i-lucide-folder-tree', to: `${base}/fichiers` }],
     ['AGC', { label: 'Documents', icon: 'i-lucide-folder-open', to: `${base}/documents` }],
     ['AGC', { label: 'Bilan', icon: 'i-lucide-calculator', to: `${base}/bilan` }],
