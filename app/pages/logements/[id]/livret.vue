@@ -2,6 +2,7 @@
   <div v-if="data" class="space-y-3">
     <h2 class="section-title !mt-0">Livret d'accueil</h2>
     <p class="text-sm text-muted">Une page pour le voyageur, sans compte à créer, accessible par lien ou QR code. Infos du logement seulement : pour personnaliser par séjour (code de porte, dates), voir plus tard.</p>
+    <p class="text-sm text-muted">Le règlement intérieur se gère maintenant à part : <ULink :to="`/logements/${route.params.id}/reglement`" class="text-primary">page Règlement intérieur</ULink>. Il est repris automatiquement ici.</p>
 
     <UCard>
       <template #header><b>Lien du livret</b></template>
@@ -56,12 +57,11 @@ const sections = [
   { key: 'checkinInfo', label: 'Arrivée', hint: 'Horaire habituel, comment entrer (au-delà du code, déjà géré ailleurs).', rows: 4, placeholder: 'Arrivée à partir de 15h. …' },
   { key: 'checkoutInfo', label: 'Départ', hint: 'Horaire limite, consignes (clés, poubelles…).', rows: 4, placeholder: 'Départ avant 11h. …' },
   { key: 'accessDirections', label: 'Accès', hint: 'Adresse, parking, digicode, étage…', rows: 4, placeholder: '' },
-  { key: 'houseRules', label: 'Règlement intérieur', hint: '', rows: 5, placeholder: 'Non fumeur, pas de fête…' },
   { key: 'localTips', label: 'Conseils du quartier', hint: 'Boulangerie, restaurants, transports…', rows: 5, placeholder: '' },
   { key: 'faq', label: 'Questions fréquentes', hint: '', rows: 5, placeholder: '' },
 ] as const
 
-const form = reactive({ wifiSsid: '', wifiPassword: '', welcomeText: '', houseRules: '', checkinInfo: '', checkoutInfo: '', accessDirections: '', localTips: '', faq: '' })
+const form = reactive({ wifiSsid: '', wifiPassword: '', welcomeText: '', checkinInfo: '', checkoutInfo: '', accessDirections: '', localTips: '', faq: '' })
 watch(() => data.value?.content, (c) => { if (c) Object.assign(form, c) }, { immediate: true })
 
 const origin = useRequestURL().origin
