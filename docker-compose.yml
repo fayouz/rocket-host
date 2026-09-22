@@ -86,7 +86,8 @@ services:
       - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=no-referrer"
 
   n8n:
-    image: docker.n8n.io/n8nio/n8n:latest
+    # ghcr.io plutot que docker.n8n.io/docker.io : les telechargements anonymes Docker Hub sont limites par IP (deja rencontre en local)
+    image: ghcr.io/n8n-io/n8n:latest
     restart: unless-stopped
     environment:
       TZ: Europe/Paris
