@@ -12,6 +12,7 @@ Recherche faite le 2026-09-21 (sources en bas). Tout ce qui est importé passe p
 | **Consommation d'énergie** (en complément) | **Enedis Data Connect** (Linky) et **GRDF ADICT** (gaz) : gratuits, avec consentement du titulaire, mais délai de mise en place de plusieurs semaines. Ils donnent la **consommation**, pas les factures | — | Idée à part (suivi de consommation par logement), pas un import de factures |
 | **Assurances** | Non recherché (dépend de l'assureur) | Généralement facture / avis d'échéance en pièce jointe | Règle IMAP par assureur. **Il faut connaître les assureurs** |
 | **Banques** | **DSP2 / agrégateurs** : Powens (B2B, tarif sur devis, bac à sable gratuit) ; GoCardless Bank Account Data : **offre gratuite fermée** aux nouveaux comptes depuis mi-2025 ; **Enable Banking : accès gratuit « production restreinte » à ses propres comptes** (comptes à lier soi-même dans leur portail). Bridge : tarification non vérifiée | Relevés PDF par e-mail selon la banque | **1) export CSV/OFX déposé à la main ou par e-mail** (fiable, gratuit) ; **2) Enable Banking** si on veut de l'automatique ; jamais de scraping |
+| **Indy (indy.fr, compta)** | **Aucune trouvée pour ce plan.** Le suivi indépendant des API ne relève qu'un accès par formulaire de contact, sans documentation publique (recherche 2026-09-22 ; à ne pas confondre avec weareindy.com, un autre produit du même nom). | Non vérifié (Indy peut envoyer des documents comptables par e-mail — à confirmer sur un vrai e-mail) | Comme Free/TotalEnergies : règle IMAP si un PDF est joint, sinon dépôt manuel dans l'explorateur |
 
 ## Scraping avec n8n : ce qu'il faut savoir avant de choisir
 
@@ -33,6 +34,7 @@ Nouvelle page dans Réglages, au-dessus des circuits existants (Imports, E-mail 
 ## À trancher avant de construire
 
 1. Quels **assureurs** exactement (habitation, PNO, RC…) et quelle **banque** ? Les modes dépendent de ces réponses.
+1b. **Indy (comptabilité)** : à ajouter au même circuit qu'un fournisseur (règle IMAP) une fois confirmé le format de ses documents envoyés par e-mail.
 2. Free : **Freebox** (internet des logements) ou mobile ? Un abonnement par logement ?
 3. Banque : export **CSV/OFX manuel** (gratuit, simple) ou automatisation via **Enable Banking** (gratuit, mais 1 à 2 heures de mise en place et consentement bancaire à renouveler) ?
 4. Scraping n8n : exclu, ou accepté pour Free / TotalEnergies seulement, à tes risques ?
