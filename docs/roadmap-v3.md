@@ -34,8 +34,29 @@ reproduire **à notre façon** dans une V3. On reprend les idées, jamais leurs 
 2. **Personnalisation par séjour** — un lien par réservation (`/g/<jeton-séjour>`) : prénom, dates, **code de la serrure valable pendant le séjour**, heure de check-out ; le lien est envoyé dans le message « instructions d'accès » (règle Lodgify existante ou n8n).
 3. **Écran TV** — page plein écran `/tv/<jeton>` (accueil du voyageur du jour, Wi-Fi, météo, conseils) ; d'abord ouverte à la main sur la TV (navigateur ou boîtier), puis automatisée via Home Assistant / Google TV.
 4. **Marque** — logo, couleurs, ton, réglables par logement (Réglages).
-5. **Extras et avis** (plus tard) — demandes d'extras (simples formulaires transmis par e-mail) ; message de demande d'avis après le départ (workflow n8n) ; lien vers le site de réservation directe.
+5. **Boutique d'upsell par logement** (précisé le 2026-09-22, voir détail ci-dessous) et lien vers le site de réservation directe. Demande d'avis après le départ : **Lodgify a déjà cette automatisation** (vérifié le 2026-09-22) — à vérifier si activée dans ses réglages plutôt qu'à construire ; voir `docs/idees-futures.md` (idée 9) pour ce qui resterait éventuellement à faire (alerte en cas de mauvais avis).
 6. **IA concierge** (à évaluer, dernier) — répondre aux questions du voyageur sur la base du contenu du livret ; à traiter avec prudence (données personnelles, coût des appels, validation des réponses).
+
+## Boutique d'upsell par logement (détaillé le 2026-09-22)
+
+Un vrai paiement en ligne, pas un simple formulaire : le voyageur choisit et paie des « plus » depuis le livret (late check-out, panier petit-déjeuner, ménage supplémentaire, parking, bois de chauffage, activité locale…).
+
+**Paiement — Stripe Checkout** (recherché le 2026-09-22) :
+- Page de paiement **hébergée par Stripe** : LoussaHousing ne touche jamais les numéros de carte, pas de conformité PCI à notre charge — cohérent avec la règle « jamais d'identifiants financiers dans l'appli ».
+- Frais (cartes européennes, 2026) : **1,5 % + 0,25 €** par paiement (cartes premium : 2,8 % + 0,25 € à partir d'octobre 2026) ; aucun abonnement, on ne paie qu'à la vente. Compte Stripe au nom du user (le sien, un auto-entrepreneur/entreprise ne change rien au tarif de base d'après mes lectures — à confirmer avec Violette SERY, la comptable, notamment pour la TVA et la déclaration de ce revenu).
+- Le compte Stripe reste **celui du user** ; LoussaHousing s'y connecte par API (clé secrète dans `.env`, jamais en base ni renvoyée au navigateur — même principe que Lodgify/Nuki/Homey).
+
+**Modèle de données envisagé** (même logique que le catalogue de stock : commun, avec activation/prix par logement) :
+- `upsell_item` : catalogue commun (nom, description, photo, catégorie).
+- `upsell_offer` : activation par logement (prix, quantité limitée ou non, fenêtre de disponibilité — ex. « jusqu'à 48 h avant l'arrivée » pour le petit-déjeuner).
+- `upsell_order` : commande d'un voyageur (logement, réservation liée si trouvable, articles, montant, statut Stripe, état de préparation : reçue → préparée → livrée) — sur le modèle du suivi des tâches de ménage déjà en place.
+- Revenu à intégrer au **Bilan** existant (nouvelle catégorie de recette, ou rapprochement avec les lignes importées de plateformes).
+
+**Garde-fous** :
+- Aucune charge sans action explicite du voyageur sur la page Stripe (c'est lui qui paie, jamais un prélèvement déclenché par l'appli).
+- Alerte à l'hôte (encart sur l'accueil, comme « À relancer ») à chaque nouvelle commande payée, pour préparer/livrer.
+- Remboursement : à la main du user dans Stripe ou depuis l'appli (jamais automatique).
+- Prix affichés TTC, avec la commission Stripe déjà intégrée dans le prix de vente (sinon elle rogne la marge sans que ce soit visible).
 
 ## À trancher avant de commencer
 

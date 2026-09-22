@@ -26,6 +26,11 @@ Voir `docs/roadmap-v3.md` : livret d'accueil et écran TV inspirés de WelcomeSc
 ## Prochain chantier — connecteurs d'import
 Voir `docs/connecteurs-imports.md` : Free, TotalEnergies, assurances, banques ; API d'abord, puis e-mails, scraping n8n en dernier recours ; configuration dans Réglages > Connecteurs.
 
+## Idées notées, pas encore développées
+- **Autres idées (2026-09-22)** : voir `docs/idees-futures.md` (score de préparation, échéances administratives, taxe de séjour, export comptable, entretien récurrent, mode hors ligne, suivi énergie, notifications push, avis clients).
+- **Boutique d'upsell par logement** (V3) : voir `docs/roadmap-v3.md`.
+- **Assistant de tâches pour le ménage** (wizard, checklist, photos, stock intégré, accès compte + lien secret) : voir `docs/plan-assistant-menage.md`.
+
 ## Chantiers avant mise en ligne
 - **Gestion des utilisateurs** (prérequis) : `docs/plan-gestion-utilisateurs.md` — connexion et rôles faits (admin, gestionnaire, comptable, ménage ; périmètre par logement ; Swagger généré depuis la table des permissions) ; gestion des comptes par l'administrateur faite (création, invitations à lien unique, désactivation, journal). « mot de passe oublié » en libre-service et script de secours faits. Pas de double authentification. Reste : bascule en production.
 - **Hébergement gratuit** : `docs/hebergement-gratuit.md` — Oracle Always Free en tête (offre ARM réduite à 2 processeurs / 12 Go en 2026, risque de récupération), serveur maison + Cloudflare Tunnel, petit VPS payant en plan B ; les offres gratuites qui s'endorment (Render, Koyeb) sont écartées.
