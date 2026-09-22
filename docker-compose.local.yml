@@ -16,13 +16,13 @@ services:
       - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_HOST:-traefik.local}`)"
       - "traefik.http.routers.dashboard.entrypoints=web"
       - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.routers.dashboard.middlewares=admin-auth"
+      # Pas de mot de passe : usage local uniquement (noms *.local, jamais exposé sur Internet)
   app:
     labels: !override
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`${APP_HOST:-loussahousing.local}`)"
       - "traefik.http.routers.app.entrypoints=web"
-      - "traefik.http.routers.app.middlewares=admin-auth,secure-headers"
+      - "traefik.http.routers.app.middlewares=secure-headers"
       - "traefik.http.services.app.loadbalancer.server.port=3000"
       - "traefik.http.routers.app-public.rule=Host(`${APP_HOST:-loussahousing.local}`) && (PathPrefix(`/r/`) || PathPrefix(`/api/r/`) || PathPrefix(`/_nuxt/`) || PathPrefix(`/api/_nuxt_icon/`))"
       - "traefik.http.routers.app-public.priority=1000"
@@ -31,7 +31,6 @@ services:
       - "traefik.http.routers.app-public.middlewares=public-ratelimit,secure-headers"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.average=20"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.burst=40"
-      - "traefik.http.middlewares.admin-auth.basicauth.users=${ADMIN_USERS:?ADMIN_USERS manquant}"
       - "traefik.http.middlewares.secure-headers.headers.frameDeny=true"
       - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
       - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=no-referrer"

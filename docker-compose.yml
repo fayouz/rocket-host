@@ -66,7 +66,7 @@ services:
       - "traefik.http.routers.app.rule=Host(`${APP_HOST:-app.${DOMAIN:?DOMAIN manquant dans .env}}`)"
       - "traefik.http.routers.app.entrypoints=websecure"
       - "traefik.http.routers.app.tls.certresolver=le"
-      - "traefik.http.routers.app.middlewares=admin-auth,secure-headers"
+      - "traefik.http.routers.app.middlewares=secure-headers"
       - "traefik.http.services.app.loadbalancer.server.port=3000"
       # Page menage ouverte par QR code (lien secret, sans mot de passe) : seuls ces chemins passent sans authentification,
       # avec limitation de debit. Les fichiers /_nuxt/ (JS/CSS) et les icones sont necessaires a l'affichage de la page.
@@ -78,8 +78,8 @@ services:
       - "traefik.http.routers.app-public.middlewares=public-ratelimit,secure-headers"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.average=20"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.burst=40"
-      # Le tableau de bord contient codes de porte et noms de voyageurs : mot de passe obligatoire
-      - "traefik.http.middlewares.admin-auth.basicauth.users=${ADMIN_USERS:?ADMIN_USERS manquant dans .env}"
+      # Mot de passe Traefik retire (2026-09-23) : l'appli protege deja tout elle-meme (comptes, roles, refus par defaut
+      # sur toute route hors pages publiques a jeton) depuis docs/plan-gestion-utilisateurs.md. ADMIN_USERS n'est plus utilise.
       - "traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000"
       - "traefik.http.middlewares.secure-headers.headers.frameDeny=true"
       - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
