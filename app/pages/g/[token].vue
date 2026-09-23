@@ -9,8 +9,30 @@
       </div>
 
       <template v-if="data.layout.navMode === 'tabs'">
-        <UTabs v-if="visibleWidgets.length" v-model="activeTab" :items="tabItems" :content="false" :ui="data.background ? { list: 'bg-white/10', indicator: 'bg-white/20', label: 'text-white' } : {}" />
-        <GuestWidgetCard v-if="activeWidget" :id="activeWidget" :content="c" :weather="data.weather" :devices="devices" :card-ui="cardUi" :busy="busy" :dark="!!data.background" @send="send" />
+        <UCarousel
+          v-if="visibleWidgets.length" ref="carouselRef" :items="visibleWidgets" dots
+          :ui="{ item: 'basis-full', dots: 'mt-3', dot: data.background ? 'bg-white/30 data-[state=active]:bg-white' : undefined }"
+          class="pb-20" @select="onSelect"
+        >
+          <template #default="{ item }">
+            <GuestWidgetCard :id="item" :content="c" :weather="data.weather" :devices="devices" :card-ui="cardUi" :busy="busy" :dark="!!data.background" @send="send" />
+          </template>
+        </UCarousel>
+
+        <!-- Barre de navigation fixe (icônes), pour sauter directement à un widget sans balayer -->
+        <div v-if="visibleWidgets.length > 1" class="fixed inset-x-0 bottom-4 z-10 flex justify-center px-4">
+          <div class="flex max-w-full items-center gap-1 overflow-x-auto rounded-full bg-gray-900/80 p-1.5 text-white backdrop-blur-xl">
+            <button
+              v-for="(id, i) in visibleWidgets" :key="id" type="button"
+              class="flex shrink-0 flex-col items-center gap-0.5 rounded-full px-3 py-1.5 text-[11px] transition-colors"
+              :class="i === activeIndex ? 'bg-white text-gray-900' : 'text-white/70 hover:text-white'"
+              @click="goTo(i)"
+            >
+              <UIcon :name="WIDGET_CATALOG.find(w => w.id === id)?.icon ?? 'i-lucide-circle'" class="size-4" />
+              {{ widgetLabel(id) }}
+            </button>
+          </div>
+        </div>
       </template>
 
       <div v-else class="grid gap-4" :class="data.layout.gridColumns === 2 ? 'grid-cols-2' : 'grid-cols-1'">
@@ -58,9 +80,10 @@ function hasContent(id: string) {
 const visibleWidgets = computed(() => (data.value?.widgetOrder ?? []).filter(hasContent))
 const empty = computed(() => !!data.value && !c.value.welcomeText && !visibleWidgets.value.length)
 
-// --- Navigation par onglets (option, livret mobile seulement) ---
-const activeTab = ref('')
-watch(visibleWidgets, (ids) => { if (!ids.includes(activeTab.value)) activeTab.value = ids[0] ?? '' }, { immediate: true })
-const activeWidget = computed(() => activeTab.value || undefined)
-const tabItems = computed(() => visibleWidgets.value.map(id => ({ label: widgetLabel(id), icon: WIDGET_CATALOG.find(w => w.id === id)?.icon, value: id })))
+// --- Navigation par carrousel (option, livret mobile seulement) : balayage tactile + barre de navigation fixe ---
+const carouselRef = ref<{ emblaApi?: { scrollTo: (i: number) => void } } | null>(null)
+const activeIndex = ref(0)
+watch(visibleWidgets, () => { activeIndex.value = 0 }) // nouvelle liste (widget ajoute/retire) : repart au debut
+function onSelect(i: number) { activeIndex.value = i }
+function goTo(i: number) { carouselRef.value?.emblaApi?.scrollTo(i) }
 </script>
