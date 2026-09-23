@@ -84,10 +84,10 @@ const groups = computed(() => ([
   { label: '', items: [can('AG') && { label: 'Aujourd\'hui', icon: 'i-lucide-layout-dashboard', to: '/' }].filter(Boolean) },
   {
     label: 'Logements',
-    items: [{
-      label: 'Logements', icon: 'i-lucide-building-2', to: '/logements',
-      children: (lg.value?.logements ?? []).map(l => ({ label: l.name, to: `/logements/${l.id}` })),
-    }],
+    items: [
+      { label: 'Tous les logements', icon: 'i-lucide-building-2', to: '/logements' },
+      ...(lg.value?.logements ?? []).map(l => ({ label: l.name, icon: 'i-lucide-home', to: `/logements/${l.id}` })),
+    ],
   },
   {
     label: 'Gestion',
