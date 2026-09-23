@@ -66,6 +66,9 @@ export async function initDb() {
   // Widgets affiches sur le livret/ecran TV : liste ordonnee (separee par des virgules) des identifiants visibles,
   // parmi WIDGET_IDS (server/utils/guestbook.ts). Vide = ordre par defaut, tous visibles (comportement d'avant).
   if (!guestbookCols.includes('widget_order')) await addColumn("ALTER TABLE guestbook ADD COLUMN widget_order TEXT NOT NULL DEFAULT ''")
+  // Reclame la migration widget_order -> pages une seule fois par logement (UPDATE atomique : si deux requetes
+  // arrivent en meme temps sur un logement jamais configure, une seule gagne la course et cree la page par defaut).
+  if (!guestbookCols.includes('pages_migrated')) await addColumn('ALTER TABLE guestbook ADD COLUMN pages_migrated INTEGER NOT NULL DEFAULT 0')
   // Mise en page (V3) : navigation du livret par defilement (defaut) ou par onglets ; colonnes separees pour le livret
   // (defaut 1 : page etroite, pensee mobile) et l'ecran TV (defaut 2, comportement d'avant cette option). L'ecran TV
   // reste toujours en defilement, jamais d'onglets : aucune interaction tactile prevue la-bas.

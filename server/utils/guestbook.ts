@@ -177,9 +177,16 @@ function pageBgKey(pageId: number) { return `page-${pageId}` }
 // Cree une page par defaut au premier acces d'un logement jamais configure, a partir de l'ancien reglage widget_order
 // s'il existe (migration douce des logements deja en place), sinon tous les widgets dans l'ordre par defaut.
 export async function ensurePages(logementId: number) {
+  await ensureGuestbook(logementId)
   const db = useDatabase()
-  const count = Number(((await db.sql`SELECT COUNT(*) AS n FROM guestbook_page WHERE logement_id = ${logementId}`).rows as any[])[0]?.n ?? 0)
-  if (count) return
+  // Reclame la migration avec un UPDATE atomique (SQLite serialise les ecritures) : si deux requetes arrivent en
+  // meme temps sur un logement jamais configure, une seule voit changes=1 et cree la page par defaut, l'autre sort.
+  const claimed = await db.sql`UPDATE guestbook SET pages_migrated = 1 WHERE logement_id = ${logementId} AND pages_migrated = 0`
+  if (!Number((claimed as any).changes ?? 0)) return
+  // Deja des pages (logement configure avant l'ajout de pages_migrated ci-dessus) : rien a migrer, la reclamation
+  // ci-dessus sert juste a eviter de repasser ici a chaque lecture pour ce logement.
+  const already = Number(((await db.sql`SELECT COUNT(*) AS n FROM guestbook_page WHERE logement_id = ${logementId}`).rows as any[])[0]?.n ?? 0)
+  if (already) return
   const legacy = ((await db.sql`SELECT widget_order FROM guestbook WHERE logement_id = ${logementId}`).rows as any[])[0]
   const raw = String(legacy?.widget_order || '').split(',').map((s: string) => s.trim()).filter((s: string): s is WidgetId => (WIDGET_IDS as readonly string[]).includes(s))
   const widgets = raw.length ? raw : [...WIDGET_IDS]
@@ -251,6 +258,11 @@ export async function deletePage(pageId: number) {
 export async function assignWidgetToPage(logementId: number, widgetId: WidgetId, pageId: number | null) {
   const db = useDatabase()
   const pageIds = ((await db.sql`SELECT id FROM guestbook_page WHERE logement_id = ${logementId}`).rows as any[]).map(r => Number(r.id))
+  // Deja sur la page cible : rien a faire (evite de le renvoyer en fin d'ordre pour une reaffectation "no-op").
+  if (pageId !== null) {
+    const already = ((await db.sql`SELECT 1 AS x FROM page_widget WHERE page_id = ${pageId} AND widget_id = ${widgetId}`).rows as any[])[0]
+    if (already) return
+  }
   for (const pid of pageIds) await db.sql`DELETE FROM page_widget WHERE page_id = ${pid} AND widget_id = ${widgetId}`
   if (pageId === null) return
   const pos = Number(((await db.sql`SELECT COALESCE(MAX(position), -1) AS m FROM page_widget WHERE page_id = ${pageId}`).rows as any[])[0]?.m ?? -1) + 1
