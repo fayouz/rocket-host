@@ -7,7 +7,7 @@
         <p class="text-3xl text-white/70">{{ t.welcomeTo }}</p>
         <h1 class="text-6xl font-semibold">{{ data.logement }}</h1>
       </div>
-      <div v-if="data.weather" class="flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-3 text-white/80 backdrop-blur-xl">
+      <div v-if="showWeather && data.weather" class="flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-3 text-white/80 backdrop-blur-xl">
         <UIcon :name="weatherIcon(data.weather.code, data.weather.isDay)" class="size-10" />
         <div>
           <p class="text-3xl font-semibold text-white">{{ data.weather.tempC }}°C</p>
@@ -22,36 +22,33 @@
     </div>
 
     <div class="relative grid grid-cols-2 gap-10">
-      <div v-if="c.wifiSsid || c.wifiPassword" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
-        <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-wifi" class="size-8" /> {{ t.wifi }}</p>
-        <p v-if="c.wifiSsid" class="mt-3 text-3xl font-mono">{{ c.wifiSsid }}</p>
-        <p v-if="c.wifiPassword" class="text-3xl font-mono text-white/80">{{ c.wifiPassword }}</p>
-      </div>
-
-      <div v-if="c.localTips" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
-        <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-compass" class="size-8" /> {{ t.tips }}</p>
-        <p class="mt-3 whitespace-pre-line text-2xl">{{ c.localTips }}</p>
-      </div>
-
-      <div v-if="c.checkoutInfo" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
-        <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-log-out" class="size-8" /> {{ t.checkout }}</p>
-        <p class="mt-3 whitespace-pre-line text-2xl">{{ c.checkoutInfo }}</p>
-      </div>
-
       <div v-if="c.welcomeText" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
         <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-heart" class="size-8" /> {{ t.welcomeText }}</p>
         <p class="mt-3 whitespace-pre-line text-2xl">{{ c.welcomeText }}</p>
       </div>
 
-      <div v-if="devices.length" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
-        <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-cpu" class="size-8" /> {{ t.devices }}</p>
-        <ul class="mt-3 space-y-1 text-xl">
-          <li v-for="d in devices" :key="d.id" class="flex justify-between gap-3">
-            <span class="truncate">{{ d.name }}</span>
-            <b class="shrink-0 text-white/80">{{ !d.available ? t.deviceOffline : summary(d) }}</b>
-          </li>
-        </ul>
-      </div>
+      <template v-for="id in gridOrder" :key="id">
+        <div v-if="id === 'wifi' && (c.wifiSsid || c.wifiPassword)" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
+          <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-wifi" class="size-8" /> {{ t.wifi }}</p>
+          <p v-if="c.wifiSsid" class="mt-3 text-3xl font-mono">{{ c.wifiSsid }}</p>
+          <p v-if="c.wifiPassword" class="text-3xl font-mono text-white/80">{{ c.wifiPassword }}</p>
+        </div>
+
+        <div v-else-if="SECTIONS[id] && c[SECTIONS[id]!.key]" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
+          <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon :name="SECTIONS[id]!.icon" class="size-8" /> {{ SECTIONS[id]!.label }}</p>
+          <p class="mt-3 whitespace-pre-line text-2xl">{{ c[SECTIONS[id]!.key] }}</p>
+        </div>
+
+        <div v-else-if="id === 'devices' && devices.length" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
+          <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-cpu" class="size-8" /> {{ t.devices }}</p>
+          <ul class="mt-3 space-y-1 text-xl">
+            <li v-for="d in devices" :key="d.id" class="flex justify-between gap-3">
+              <span class="truncate">{{ d.name }}</span>
+              <b class="shrink-0 text-white/80">{{ !d.available ? t.deviceOffline : summary(d) }}</b>
+            </li>
+          </ul>
+        </div>
+      </template>
     </div>
 
     <p v-if="empty" class="relative text-2xl text-white/60">{{ t.empty }}</p>
@@ -66,6 +63,16 @@ const { data, refresh } = await useFetch(`/api/tv/${route.params.token}`)
 if (import.meta.server && !data.value) setResponseStatus(useRequestEvent()!, 404)
 const c = computed(() => data.value?.content ?? {} as Record<string, string>)
 const { lang, t } = useGuestLang()
+const SECTIONS = computed<Record<string, { key: string; label: string; icon: string }>>(() => ({
+  checkin: { key: 'checkinInfo', label: t.checkin, icon: 'i-lucide-log-in' },
+  checkout: { key: 'checkoutInfo', label: t.checkout, icon: 'i-lucide-log-out' },
+  access: { key: 'accessDirections', label: t.access, icon: 'i-lucide-map-pin' },
+  rules: { key: 'houseRules', label: t.rules, icon: 'i-lucide-list-checks' },
+  tips: { key: 'localTips', label: t.tips, icon: 'i-lucide-compass' },
+  faq: { key: 'faq', label: t.faq, icon: 'i-lucide-circle-help' },
+}))
+const showWeather = computed(() => data.value?.widgetOrder?.includes('weather') ?? true)
+const gridOrder = computed(() => (data.value?.widgetOrder ?? []).filter(id => id !== 'weather'))
 const empty = computed(() => !!data.value && !data.value.guest && !c.value.wifiSsid && !c.value.welcomeText && !c.value.localTips && !c.value.checkoutInfo)
 
 // Domotique mise à disposition : affichage seul (pas d'interaction tactile prévue sur une TV)

@@ -5,5 +5,6 @@ export default defineEventHandler(async (event) => {
   const token = ((await useDatabase().sql`SELECT token FROM guestbook_token WHERE logement_id = ${lg.id}`).rows as any[])[0]?.token
   const background = await getBackgroundRow(lg.id)
   const defaultBackground = await getDefaultBackground()
-  return { logement: { id: lg.id, name: lg.name }, content, token, background: { ...background, hasFile: !!background.ext }, hasDefaultBackground: !!defaultBackground }
+  const widgetOrder = await getWidgetOrder(lg.id)
+  return { logement: { id: lg.id, name: lg.name }, content, token, background: { ...background, hasFile: !!background.ext }, hasDefaultBackground: !!defaultBackground, widgetOrder }
 })

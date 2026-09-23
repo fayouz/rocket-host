@@ -135,6 +135,7 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['PUT', '/api/logements/:id/livret/background-mode', 'AG', 'Forcer aucun fond, ou revenir au fond general', 'logement', 'Livret d\'accueil', '{ mode: inherit|none }'],
   ['PUT', '/api/logements/:id/livret/animated', 'AG', 'Activer/desactiver l\'animation du fond pour ce logement', 'logement', 'Livret d\'accueil', '{ animated }'],
   ['GET', '/api/logements/:id/livret/search', 'AG', 'Rechercher des images de fond libres de droits (Openverse)', 'logement', 'Livret d\'accueil', '?q='],
+  ['PUT', '/api/logements/:id/livret/widgets', 'AG', 'Choisir les widgets affiches et leur ordre', 'logement', 'Livret d\'accueil', '{ order: string[] }'],
   ['GET', '/api/g/:token/background', 'P', 'Image de fond propre au logement (lien secret)', '', 'Public (jeton)'],
   ['GET', '/api/g/:token/devices', 'P', 'Appareils domotiques mis a disposition du voyageur, etat en direct (lien secret)', '', 'Public (jeton)'],
   ['PUT', '/api/g/:token/devices/:deviceId', 'P', 'Commander un appareil mis a disposition (lien secret, bornes verifiees)', '', 'Public (jeton)', '{ capabilityId, value }'],

@@ -9,5 +9,6 @@ export default defineEventHandler(async (event) => {
   const content = await getGuestbook(logementId)
   const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
   const background = await resolveBackground(logementId, `/api/g/${token}/background`)
-  return { logement: lg.name, content, weather, background }
+  const widgetOrder = await getWidgetOrder(logementId)
+  return { logement: lg.name, content, weather, background, widgetOrder }
 })
