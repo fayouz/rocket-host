@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
       reloadAt = at.toISOString()
     }
   }
+  if (content.welcomeText) content.welcomeText = applyGuestPlaceholder(content.welcomeText, guest?.firstName ?? null)
   const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
   const background = await resolveBackground(logementId, `/api/g/${token}/background`)
   const widgetOrder = await getWidgetOrder(logementId)

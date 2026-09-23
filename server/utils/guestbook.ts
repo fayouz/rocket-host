@@ -34,6 +34,23 @@ export async function logementByGuestToken(token: string) {
   return Number(r.logement_id)
 }
 
+// Prenom du voyageur en cours de sejour (si le logement est relie a Lodgify), pour le remplacement de {{guest}}
+// dans le mot de bienvenue. /api/tv/:token calcule deja ce prenom lui-meme (il a besoin de la liste complete des
+// reservations pour le reload programme) : cette fonction sert uniquement /api/g/:token, qui n'a pas ce besoin.
+export async function getCurrentGuestFirstName(lg: { lodgifyPropertyId: number | null }) {
+  if (lg.lodgifyPropertyId === null) return null
+  const today = new Date().toISOString().slice(0, 10)
+  const { bookings } = await loadData()
+  const b = bookings.find(x => x.propertyId === lg.lodgifyPropertyId && isActiveBooking(x) && x.arrival <= today && x.departure > today)
+  return b ? (b.guest.split(' ')[0] || b.guest).slice(0, 40) : null
+}
+
+// Remplace {{guest}} par le prenom du voyageur en cours (ou un mot generique si personne n'est actuellement present :
+// livret consulte hors sejour, ou logement sans synchronisation Lodgify).
+export function applyGuestPlaceholder(text: string, firstName: string | null) {
+  return text.replaceAll('{{guest}}', firstName || 'voyageur')
+}
+
 // Validation des champs envoyes par l'hote (toutes facultatives : un livret se remplit progressivement)
 export function parseGuestbook(b: Record<string, unknown>): Partial<GuestbookContent> {
   const out: Partial<GuestbookContent> = {}
