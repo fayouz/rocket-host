@@ -41,14 +41,14 @@
     <div v-if="revenueByMonth.length" class="grid gap-6 lg:grid-cols-2">
       <UCard>
         <template #header>
-          <p class="text-xs font-medium uppercase tracking-wide text-muted">Revenus des 6 derniers mois</p>
+          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-euro" class="size-3.5" /> Revenus des 6 derniers mois</p>
           <p class="mt-1 text-2xl font-bold">{{ eur(revenueThisMonth) }}</p>
         </template>
         <AreaChart :series="[{ label: 'Revenus', color: 'var(--ui-primary)', data: revenueByMonth.map(m => m.value), fill: true }]" :labels="revenueByMonth.map(m => m.label)" :height="180" />
       </UCard>
       <UCard>
         <template #header>
-          <p class="text-xs font-medium uppercase tracking-wide text-muted">Revenus vs charges</p>
+          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-scale" class="size-3.5" /> Revenus vs charges</p>
           <p class="mt-1 text-2xl font-bold">{{ eur(revenueThisMonth - chargesThisMonth) }} <span class="text-sm font-normal text-muted">de marge ce mois</span></p>
         </template>
         <AreaChart :series="revenueVsCharges" :labels="revenueByMonth.map(m => m.label)" :height="180" />
@@ -56,7 +56,7 @@
     </div>
 
     <div class="grid gap-6 lg:grid-cols-3">
-    <!-- Colonne gauche (2/3) : vue d'ensemble puis la journee -->
+    <!-- Colonne gauche (2/3) : vue d'ensemble (turnover, stock, serrures) + la journee (arrivees, departs, prochaines) -->
     <div class="min-w-0 space-y-2 lg:col-span-2">
       <h2 class="section-title !mt-0">Vue d'ensemble</h2>
       <div class="grid gap-4 sm:grid-cols-3">
@@ -65,23 +65,33 @@
         <LocksWidget />
       </div>
 
-      <template v-for="s in sections" :key="s.title">
-        <h2 class="section-title">{{ s.title }}</h2>
-        <UCard v-for="b in s.items" :key="b.id">
-          <div class="flex justify-between gap-3"><b>{{ b.property }}</b><PlatformBadge :source="b.source" /></div>
-          <p class="text-sm text-muted">{{ b.guest }} · {{ fr(b.arrival) }} → {{ fr(b.departure) }}</p>
+      <h2 class="section-title">La journée</h2>
+      <div class="grid gap-4 sm:grid-cols-3">
+        <UCard v-for="s in sections" :key="s.title">
+          <template #header>
+            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon :name="s.icon" class="size-4 text-muted" /> {{ s.title }}</h3>
+          </template>
+          <p v-if="!s.items.length" class="text-sm text-muted">Aucune</p>
+          <ul v-else class="space-y-3">
+            <li v-for="b in s.items" :key="b.id" class="text-sm">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="font-medium">{{ b.property }}</span>
+                <PlatformBadge :source="b.source" />
+              </div>
+              <p class="text-muted">{{ b.guest }} · {{ fr(b.arrival) }} → {{ fr(b.departure) }}</p>
+            </li>
+          </ul>
         </UCard>
-        <UCard v-if="!s.items.length"><p class="text-sm text-muted">Aucune</p></UCard>
-      </template>
+      </div>
     </div>
 
-    <!-- Colonne droite (1/3) : contacts et timeline de tous les logements (stock/serrures/turnover : voir la vue d'ensemble a gauche) -->
+    <!-- Colonne droite (1/3) : contacts et timeline de tous les logements, memes rangee que la vue d'ensemble -->
     <aside class="min-w-0 space-y-4 lg:col-span-1">
       <ContactsWidget />
       <UCard v-if="tl">
         <template #header>
           <div>
-            <h3 class="font-semibold">Timeline · tous les logements</h3>
+            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-history" class="size-4 text-muted" /> Timeline · tous les logements</h3>
             <p class="text-sm text-muted">Hier et les 7 prochains jours : séjours, codes, ménages, messages et réassort.</p>
           </div>
         </template>
@@ -94,7 +104,7 @@
 
     <UCard v-if="occupancyByMonth.length">
       <template #header>
-        <p class="text-xs font-medium uppercase tracking-wide text-muted">Taux d'occupation des 6 derniers mois</p>
+        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-percent" class="size-3.5" /> Taux d'occupation des 6 derniers mois</p>
         <p class="mt-1 text-2xl font-bold">{{ occupancyThisMonth }} % <span class="text-sm font-normal text-muted">ce mois-ci</span></p>
       </template>
       <AreaChart
@@ -131,9 +141,9 @@ const demo = useState('demo')
 watchEffect(() => { demo.value = !!data.value?.demo })
 const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
 const sections = computed(() => data.value ? [
-  { title: 'Arrivées', items: data.value.arrivals },
-  { title: 'Départs', items: data.value.departures },
-  { title: 'Prochaines arrivées', items: data.value.upcoming },
+  { title: 'Arrivées', icon: 'i-lucide-log-in', items: data.value.arrivals },
+  { title: 'Départs', icon: 'i-lucide-log-out', items: data.value.departures },
+  { title: 'Prochaines arrivées', icon: 'i-lucide-calendar-clock', items: data.value.upcoming },
 ] : [])
 
 // KPI et graphe (revenus/occupation) : reservés au role admin cote serveur (/api/profit, /api/stock) — la requete
