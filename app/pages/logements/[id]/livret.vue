@@ -187,8 +187,8 @@
         <div class="lg:col-span-1">
           <UCard class="lg:sticky lg:top-4" :ui="{ body: 'p-0 sm:p-0' }">
             <template #header><b>Aperçu</b></template>
-            <div class="tv-preview-frame overflow-hidden bg-black">
-              <iframe :src="tvLink" class="tv-preview-iframe" title="Aperçu de l'écran TV" />
+            <div ref="tvFrameEl" class="tv-preview-frame overflow-hidden bg-black">
+              <iframe :src="tvLink" class="tv-preview-iframe" :style="{ transform: `scale(${tvPreviewScale})` }" title="Aperçu de l'écran TV" />
             </div>
             <div class="flex flex-wrap gap-2 p-3">
               <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir" @click="tvPreviewKey++" />
@@ -252,6 +252,17 @@ const livretPreviewLink = computed(() => livretPreviewKey.value ? `${link.value}
 const tvLinkBase = computed(() => data.value ? `${origin}/tv/${data.value.token}` : '')
 const tvPreviewKey = ref(0)
 const tvLink = computed(() => tvPreviewKey.value ? `${tvLinkBase.value}?v=${tvPreviewKey.value}` : tvLinkBase.value)
+// L'aperçu (encart 1/3 large) n'a plus une largeur garantie (avant : colonne fixe 480px) : l'échelle de l'iframe
+// (rendue à sa taille réelle 1920x1080 puis réduite visuellement) s'ajuste à la largeur du cadre plutôt qu'un
+// facteur fixe, pour ne pas être rognée quand la colonne est plus étroite que 480px.
+const tvFrameEl = ref<HTMLElement>()
+const tvPreviewScale = ref(0.25)
+if (import.meta.client) {
+  const updateScale = () => { if (tvFrameEl.value) tvPreviewScale.value = tvFrameEl.value.clientWidth / 1920 }
+  const ro = new ResizeObserver(updateScale)
+  onMounted(() => { if (tvFrameEl.value) ro.observe(tvFrameEl.value) })
+  onUnmounted(() => ro.disconnect())
+}
 // Les deux aperçus (livret mobile, écran TV) doivent se recharger tout seuls après un enregistrement (contenu, fond,
 // mise en page, widgets) : sinon ils restent figés sur l'état d'avant tant qu'on ne clique pas "Rafraîchir" à la main.
 function bumpPreviews() { livretPreviewKey.value++; tvPreviewKey.value++ }
@@ -449,7 +460,6 @@ async function save() {
   width: 1920px;
   height: 1080px;
   border: 0;
-  transform: scale(0.25);
   transform-origin: top left;
 }
 
