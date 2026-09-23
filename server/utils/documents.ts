@@ -110,6 +110,22 @@ export function parseFields(b: Record<string, unknown>, partial = false) {
   return out
 }
 
+// Charges (documents de categorie kind='charge') totalisees par mois, tous logements confondus — pour le graphe
+// revenus/charges du tableau de bord. Approximation volontairement simple (pas la substitution frais-de-plateforme
+// du Bilan par logement, voir buildBilan) : suffisante pour une tendance, pas pour un chiffre exact par logement.
+const CHARGE_CATEGORIES = Object.entries(CATEGORIES).filter(([, c]) => c.kind === 'charge').map(([k]) => k)
+export async function getChargesByMonth(months: string[]): Promise<Record<string, number>> {
+  if (!months.length) return {}
+  const db = useDatabase()
+  const placeholders = CHARGE_CATEGORIES.map(() => '?').join(',')
+  const rows = (await db.prepare(
+    `SELECT substr(doc_date, 1, 7) AS m, SUM(amount) AS total FROM document
+     WHERE amount IS NOT NULL AND category IN (${placeholders}) GROUP BY m`,
+  ).all(...CHARGE_CATEGORIES)) as any[]
+  const byMonth = Object.fromEntries(rows.map(r => [String(r.m), Number(r.total)]))
+  return Object.fromEntries(months.map(m => [m, Math.round((byMonth[m] ?? 0) * 100) / 100]))
+}
+
 // Ligne de la table -> objet renvoye au navigateur (jamais le chemin du fichier sur le disque)
 export function docFromRow(r: any) {
   const cat = (isCategory(r.category) ? CATEGORIES[r.category] : { label: String(r.category), kind: 'doc' }) as { label: string; kind: string }
