@@ -21,7 +21,47 @@
       <p class="text-2xl text-white/80">{{ formatGuestDate(data.guest.arrival, lang) }} → {{ formatGuestDate(data.guest.departure, lang) }}</p>
     </div>
 
-    <div class="relative grid gap-10" :class="(data.layout?.tvColumns ?? 2) === 1 ? 'grid-cols-1' : 'grid-cols-2'">
+    <template v-if="data.layout?.navMode === 'tabs'">
+      <UCarousel
+        v-if="tvSlides.length" ref="carouselRef" :items="tvSlides"
+        :ui="{ item: 'basis-full' }" class="relative pb-8" @select="onSelect"
+      >
+        <template #default="{ item }">
+          <div class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
+            <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon :name="tvIcon(item)" class="size-8" /> {{ tvLabel(item) }}</p>
+            <p v-if="item === 'welcome'" class="mt-3 whitespace-pre-line text-2xl">{{ c.welcomeText }}</p>
+            <template v-else-if="item === 'wifi'">
+              <p v-if="c.wifiSsid" class="mt-3 text-3xl font-mono">{{ c.wifiSsid }}</p>
+              <p v-if="c.wifiPassword" class="text-3xl font-mono text-white/80">{{ c.wifiPassword }}</p>
+            </template>
+            <ul v-else-if="item === 'devices'" class="mt-3 space-y-1 text-xl">
+              <li v-for="d in devices" :key="d.id" class="flex justify-between gap-3">
+                <span class="truncate">{{ d.name }}</span>
+                <b class="shrink-0 text-white/80">{{ !d.available ? t.deviceOffline : summary(d) }}</b>
+              </li>
+            </ul>
+            <p v-else class="mt-3 whitespace-pre-line text-2xl">{{ c[SECTIONS[item]!.key] }}</p>
+          </div>
+        </template>
+      </UCarousel>
+
+      <div v-if="tvSlides.length > 1" class="relative flex justify-center">
+        <div class="flex max-w-full items-center gap-2 overflow-x-auto rounded-full bg-white/10 p-2 text-white backdrop-blur-xl">
+          <button
+            v-for="(id, i) in tvSlides" :key="id" type="button"
+            class="flex shrink-0 flex-col items-center gap-1 rounded-full px-5 py-2.5 text-base transition-colors"
+            :class="i === activeIndex ? 'bg-white text-gray-900' : 'text-white/70 hover:text-white'"
+            :aria-current="i === activeIndex || undefined"
+            @click="goTo(i)"
+          >
+            <UIcon :name="tvIcon(id)" class="size-6" />
+            <span class="whitespace-nowrap">{{ tvLabel(id) }}</span>
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <div v-else class="relative grid gap-10" :class="(data.layout?.tvColumns ?? 2) === 1 ? 'grid-cols-1' : 'grid-cols-2'">
       <div v-if="c.welcomeText" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
         <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-heart" class="size-8" /> {{ t.welcomeText }}</p>
         <p class="mt-3 whitespace-pre-line text-2xl">{{ c.welcomeText }}</p>
@@ -88,6 +128,35 @@ function summary(d: DeviceView) {
   if (temp && temp.value !== null) parts.push(`${temp.value}°C`)
   return parts.join(' · ') || '—'
 }
+
+// --- Navigation par carrousel (option, partagee avec le livret mobile via layout.navMode) ---
+function tvHasContent(id: string) {
+  if (id === 'wifi') return !!(c.value.wifiSsid || c.value.wifiPassword)
+  if (id === 'devices') return devices.value.length > 0
+  const sec = SECTIONS.value[id]
+  return sec ? !!c.value[sec.key] : false
+}
+const tvSlides = computed(() => {
+  const ids = gridOrder.value.filter(tvHasContent)
+  return c.value.welcomeText ? ['welcome', ...ids] : ids
+})
+function tvIcon(id: string) {
+  if (id === 'welcome') return 'i-lucide-heart'
+  if (id === 'wifi') return 'i-lucide-wifi'
+  if (id === 'devices') return 'i-lucide-cpu'
+  return SECTIONS.value[id]?.icon ?? 'i-lucide-circle'
+}
+function tvLabel(id: string) {
+  if (id === 'welcome') return t.welcomeText
+  if (id === 'wifi') return t.wifi
+  if (id === 'devices') return t.devices
+  return SECTIONS.value[id]?.label ?? id
+}
+const carouselRef = ref<{ emblaApi?: { scrollTo: (i: number) => void } } | null>(null)
+const activeIndex = ref(0)
+watch(tvSlides, () => { activeIndex.value = 0; carouselRef.value?.emblaApi?.scrollTo(0) })
+function onSelect(i: number) { activeIndex.value = i }
+function goTo(i: number) { carouselRef.value?.emblaApi?.scrollTo(i) }
 
 // Reste affiche des jours d'affilee sur une TV : on rafraichit les donnees regulierement (meteo, contenu modifie),
 // et on recharge la PAGE ENTIERE (pas juste les donnees) un peu avant l'arrivee du prochain voyageur (data.reloadAt,
