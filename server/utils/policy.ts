@@ -44,6 +44,8 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['PUT', '/api/logements/:id/domotique', 'A', 'Modifier les reglages domotique (connexion, regle)', 'logement', 'Domotique'],
   ['POST', '/api/logements/:id/domotique/test', 'AG', 'Verifier la connexion Homey (sans lire les appareils)', 'logement', 'Domotique'],
   ['POST', '/api/logements/:id/domotique/discover', 'AG', 'Decouvrir les appareils Homey (lecture seule)', 'logement', 'Domotique'],
+  ['GET', '/api/logements/:id/domotique/guest-devices', 'AG', 'Appareils mis a disposition du voyageur', 'logement', 'Domotique'],
+  ['PUT', '/api/logements/:id/domotique/guest-devices', 'AG', 'Choisir les appareils et bornes de temperature pour le voyageur', 'logement', 'Domotique', '{ devices: [{deviceId, deviceName, deviceClass, minTemp?, maxTemp?}] }'],
   // --- Vues agregees
   ['GET', '/api/today', 'AG', 'Journee : arrivees, departs, menages (filtre selon les logements autorises)', 'handler', 'Vues agregees'],
   ['GET', '/api/timeline', 'AG', 'Chronologie de tous les logements autorises', 'handler', 'Vues agregees'],
@@ -134,6 +136,8 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['PUT', '/api/logements/:id/livret/animated', 'AG', 'Activer/desactiver l\'animation du fond pour ce logement', 'logement', 'Livret d\'accueil', '{ animated }'],
   ['GET', '/api/logements/:id/livret/search', 'AG', 'Rechercher des images de fond libres de droits (Openverse)', 'logement', 'Livret d\'accueil', '?q='],
   ['GET', '/api/g/:token/background', 'P', 'Image de fond propre au logement (lien secret)', '', 'Public (jeton)'],
+  ['GET', '/api/g/:token/devices', 'P', 'Appareils domotiques mis a disposition du voyageur, etat en direct (lien secret)', '', 'Public (jeton)'],
+  ['PUT', '/api/g/:token/devices/:deviceId', 'P', 'Commander un appareil mis a disposition (lien secret, bornes verifiees)', '', 'Public (jeton)', '{ capabilityId, value }'],
   ['GET', '/api/bg-default', 'P', 'Image de fond par defaut des reglages generaux', '', 'Public (jeton)'],
   ['GET', '/api/g/:token', 'P', 'Page publique du livret d\'accueil (lien secret)', '', 'Public (jeton)'],
   ['GET', '/api/tv/:token', 'P', 'Page TV plein ecran (meme lien secret) : accueil du voyageur du jour + livret', '', 'Public (jeton)'],

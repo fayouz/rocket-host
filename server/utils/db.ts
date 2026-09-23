@@ -100,6 +100,11 @@ export async function initDb() {
     eco_temp REAL NOT NULL DEFAULT 17, eco_delay_min INTEGER NOT NULL DEFAULT 60, updated_at TEXT NOT NULL DEFAULT '')`)
   const domoCols = ((await db.prepare('PRAGMA table_info(domotique_config)').all()) as any[]).map(c => String(c.name))
   if (!domoCols.includes('homey_id')) await addColumn("ALTER TABLE domotique_config ADD COLUMN homey_id TEXT NOT NULL DEFAULT ''")
+  // Appareils mis a disposition du voyageur (V3, widget domotique du livret) : liste blanche par logement, avec bornes de
+  // temperature pour les thermostats (jamais au-dela de LIMITS_GUEST_TEMP dans server/utils/guestDevices.ts, meme sans bornes posees ici).
+  await db.exec(`CREATE TABLE IF NOT EXISTS guest_device (
+    logement_id INTEGER NOT NULL, device_id TEXT NOT NULL, device_name TEXT NOT NULL DEFAULT '',
+    min_temp REAL, max_temp REAL, PRIMARY KEY (logement_id, device_id))`)
   // Etiquettes (tags) de couleur, communes a tous les logements, posees sur des fichiers ou dossiers de l'explorateur
   await db.exec('CREATE TABLE IF NOT EXISTS fs_tag (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL COLLATE NOCASE UNIQUE, color TEXT NOT NULL DEFAULT \'blue\')')
   await db.exec('CREATE TABLE IF NOT EXISTS fs_node_tag (node_id INTEGER NOT NULL, tag_id INTEGER NOT NULL, PRIMARY KEY (node_id, tag_id))')

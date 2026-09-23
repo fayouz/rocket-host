@@ -42,6 +42,16 @@
         <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-heart" class="size-8" /> {{ t.welcomeText }}</p>
         <p class="mt-3 whitespace-pre-line text-2xl">{{ c.welcomeText }}</p>
       </div>
+
+      <div v-if="devices.length" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
+        <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-cpu" class="size-8" /> {{ t.devices }}</p>
+        <ul class="mt-3 space-y-1 text-xl">
+          <li v-for="d in devices" :key="d.id" class="flex justify-between gap-3">
+            <span class="truncate">{{ d.name }}</span>
+            <b class="shrink-0 text-white/80">{{ !d.available ? t.deviceOffline : summary(d) }}</b>
+          </li>
+        </ul>
+      </div>
     </div>
 
     <p v-if="empty" class="relative text-2xl text-white/60">{{ t.empty }}</p>
@@ -57,6 +67,20 @@ if (import.meta.server && !data.value) setResponseStatus(useRequestEvent()!, 404
 const c = computed(() => data.value?.content ?? {} as Record<string, string>)
 const { lang, t } = useGuestLang()
 const empty = computed(() => !!data.value && !data.value.guest && !c.value.wifiSsid && !c.value.welcomeText && !c.value.localTips && !c.value.checkoutInfo)
+
+// Domotique mise à disposition : affichage seul (pas d'interaction tactile prévue sur une TV)
+interface DeviceCtrl { capabilityId: string; kind: 'onoff' | 'dim' | 'target_temperature'; value: unknown; units: string | null }
+interface DeviceView { id: string; name: string; available: boolean; controls: DeviceCtrl[] }
+const { data: devicesData } = await useFetch<{ devices: DeviceView[] }>(`/api/g/${route.params.token}/devices`)
+const devices = computed(() => devicesData.value?.devices ?? [])
+function summary(d: DeviceView) {
+  const onoff = d.controls.find(c => c.kind === 'onoff')
+  const temp = d.controls.find(c => c.kind === 'target_temperature')
+  const parts = []
+  if (onoff) parts.push(onoff.value ? t.deviceOn : t.deviceOff)
+  if (temp && temp.value !== null) parts.push(`${temp.value}°C`)
+  return parts.join(' · ') || '—'
+}
 
 // Reste affiche des jours d'affilee sur une TV : on rafraichit tout seul (nouveau voyageur, contenu modifie).
 if (import.meta.client) {

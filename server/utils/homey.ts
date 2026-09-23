@@ -1,6 +1,7 @@
-// Adaptateur Homey Pro : acces LOCAL (cle d'API, en-tete Authorization: Bearer) ou CLOUD (OAuth, voir homeyCloud.ts). LECTURE SEULE pour l'instant : aucune commande n'est envoyee.
+// Adaptateur Homey Pro : acces LOCAL (cle d'API, en-tete Authorization: Bearer) ou CLOUD (OAuth, voir homeyCloud.ts).
 // La cle vient uniquement de .env (HOMEY_API_KEY) ; elle n'apparait ni dans les erreurs, ni dans les journaux, ni dans les reponses.
-// Routes utilisees (specification HTTP officielle de Homey) : GET /api/manager/devices/device
+// Routes utilisees (specification HTTP officielle de Homey) : GET /api/manager/devices/device, PUT .../capability/:id (commande,
+// reservee au widget domotique du voyageur, voir server/utils/guestDevices.ts pour la liste blanche et les bornes de securite).
 export interface HomeyDevice {
   id: string; name: string; class: string; available: boolean
   capabilities: { id: string; title: string; value: unknown; units: string | null }[]
@@ -8,7 +9,7 @@ export interface HomeyDevice {
 
 const TIMEOUT_MS = 8000
 
-async function homeyGet(cfg: DomoConfig, path: string): Promise<unknown> {
+async function homeyRequest(cfg: DomoConfig, path: string, init?: { method?: string; body?: unknown }): Promise<unknown> {
   const fail = (statusCode: number, statusMessage: string) => createError({ statusCode, statusMessage })
   const cloud = cfg.homeyMode === 'cloud'
   const local = () => {
@@ -19,7 +20,12 @@ async function homeyGet(cfg: DomoConfig, path: string): Promise<unknown> {
   }
   const call = async (t: { base: string; token: string }) => {
     try {
-      return await fetch(t.base + path, { headers: { authorization: `Bearer ${t.token}`, accept: 'application/json' }, signal: AbortSignal.timeout(TIMEOUT_MS), redirect: 'error' })
+      return await fetch(t.base + path, {
+        method: init?.method || 'GET',
+        headers: { authorization: `Bearer ${t.token}`, accept: 'application/json', ...(init?.body !== undefined ? { 'content-type': 'application/json' } : {}) },
+        body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+        signal: AbortSignal.timeout(TIMEOUT_MS), redirect: 'error',
+      })
     } catch (e: any) {
       const timeout = e?.name === 'TimeoutError' || e?.name === 'AbortError'
       throw fail(502, timeout ? `Homey ne répond pas (${TIMEOUT_MS / 1000} s). ${cloud ? 'Est-il en ligne ?' : 'Le serveur de l\'appli atteint-il le réseau de Homey ?'}` : cloud ? 'Homey injoignable via le cloud' : 'Homey injoignable depuis le serveur (adresse, réseau ou VPN à vérifier)')
@@ -29,10 +35,12 @@ async function homeyGet(cfg: DomoConfig, path: string): Promise<unknown> {
   let res = await call(target)
   if (cloud && res.status === 401) { dropSession(target.id); target = await cloudTarget(cfg.homeyId); res = await call(target) } // session expiree : une seule nouvelle tentative
   if (res.status === 401) throw fail(502, cloud ? 'Session Homey refusée : reconnecte le compte Homey' : 'Clé d\'API refusée par Homey (vérifie HOMEY_API_KEY)')
-  if (res.status === 403) throw fail(502, 'Droits insuffisants (il faut au moins lire les appareils)')
+  if (res.status === 403) throw fail(502, 'Droits insuffisants (il faut au moins lire et commander les appareils)')
   if (!res.ok) throw fail(502, `Homey a répondu avec l'erreur ${res.status}`)
-  try { return await res.json() } catch { throw fail(502, 'Réponse de Homey illisible (l\'adresse est-elle bien celle d\'un Homey ?)') }
+  if (res.status === 204) return null
+  try { return await res.json() } catch { return null }
 }
+const homeyGet = (cfg: DomoConfig, path: string) => homeyRequest(cfg, path)
 
 const str = (v: unknown, d = '') => (typeof v === 'string' ? v : d)
 
@@ -58,4 +66,10 @@ export async function pingHomey(cfg: DomoConfig): Promise<{ homey?: string; coun
     return { homey: h?.name }
   }
   return { count: (await listHomeyDevices(cfg)).length }
+}
+
+// Envoie une commande a UNE capacite d'UN appareil. Reserve au widget domotique du voyageur (liste blanche +
+// bornes verifiees par l'appelant, server/utils/guestDevices.ts) : jamais appele directement avec une valeur non validee.
+export async function setHomeyCapability(cfg: DomoConfig, deviceId: string, capabilityId: string, value: unknown) {
+  await homeyRequest(cfg, `/api/manager/devices/device/${encodeURIComponent(deviceId)}/capability/${encodeURIComponent(capabilityId)}`, { method: 'PUT', body: { value } })
 }

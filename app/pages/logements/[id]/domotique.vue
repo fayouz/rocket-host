@@ -61,6 +61,16 @@
                 </li>
                 <li v-if="d.capabilities.length > 6" class="text-xs text-muted">+ {{ d.capabilities.length - 6 }} autres propriétés</li>
               </ul>
+              <div v-if="EXCLUDED_CLASSES.has(d.class)" class="mt-2 text-xs text-muted">Jamais partageable avec un voyageur (type {{ d.class }}).</div>
+              <template v-else>
+                <UCheckbox class="mt-2" :model-value="!!guestSelection[d.id]" label="Disponible pour le voyageur" @update:model-value="toggleGuest(d, $event)" />
+                <div v-if="guestSelection[d.id] && d.capabilities.some(c => c.id === 'target_temperature')" class="mt-2 flex items-center gap-2 text-sm">
+                  <span class="text-muted">Bornes (°C) :</span>
+                  <UInput v-model.number="guestSelection[d.id]!.minTemp" type="number" :min="GUEST_TEMP_LIMITS[0]" :max="GUEST_TEMP_LIMITS[1]" size="xs" class="w-16" @change="saveGuestDevices" />
+                  <span class="text-muted">à</span>
+                  <UInput v-model.number="guestSelection[d.id]!.maxTemp" type="number" :min="GUEST_TEMP_LIMITS[0]" :max="GUEST_TEMP_LIMITS[1]" size="xs" class="w-16" @change="saveGuestDevices" />
+                </div>
+              </template>
             </UCard>
           </div>
         </section>
@@ -231,6 +241,29 @@ async function discover() {
   discovering.value = false
 }
 const show = (c: { value: unknown; units: string | null }) => c.value === null ? '—' : typeof c.value === 'boolean' ? (c.value ? 'oui' : 'non') : `${c.value}${c.units ? ` ${c.units}` : ''}`
+
+// --- Appareils mis a disposition du voyageur (livret/ecran TV) ---
+const EXCLUDED_CLASSES = new Set(['lock', 'garagedoor', 'camera', 'doorbell'])
+const GUEST_TEMP_LIMITS = [16, 24] as const
+const guestSelection = reactive<Record<string, { minTemp: number; maxTemp: number }>>({})
+async function loadGuestDevices() {
+  const r = await $fetch<{ devices: { deviceId: string; minTemp: number | null; maxTemp: number | null }[] }>(`/api/logements/${route.params.id}/domotique/guest-devices`)
+  for (const key of Object.keys(guestSelection)) delete guestSelection[key]
+  for (const d of r.devices) guestSelection[d.deviceId] = { minTemp: d.minTemp ?? GUEST_TEMP_LIMITS[0], maxTemp: d.maxTemp ?? GUEST_TEMP_LIMITS[1] }
+}
+loadGuestDevices()
+function toggleGuest(d: Dev, on: boolean) {
+  if (on) guestSelection[d.id] = { minTemp: GUEST_TEMP_LIMITS[0], maxTemp: GUEST_TEMP_LIMITS[1] }
+  else delete guestSelection[d.id]
+  saveGuestDevices()
+}
+async function saveGuestDevices() {
+  const list = (devices.value ?? []).filter(d => guestSelection[d.id]).map(d => ({
+    deviceId: d.id, deviceName: d.name, deviceClass: d.class,
+    minTemp: guestSelection[d.id]!.minTemp, maxTemp: guestSelection[d.id]!.maxTemp,
+  }))
+  await $fetch(`/api/logements/${route.params.id}/domotique/guest-devices`, { method: 'PUT', body: { devices: list } })
+}
 const hour = (d: string) => new Date(d).toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
 const icon = (k: string) => k === 'comfort' ? 'i-lucide-flame' : k === 'eco' ? 'i-lucide-leaf' : 'i-lucide-equal'
