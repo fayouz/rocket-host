@@ -78,14 +78,27 @@ services:
       - "traefik.http.routers.app-public.middlewares=public-ratelimit,secure-headers"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.average=20"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.burst=40"
+      # Livret d'accueil et ecran TV (lien secret par logement) : mis a part de app-public ci-dessus pour pouvoir
+      # assouplir SEULEMENT ici l'encadrement (iframe), voir middleware public-frame-headers plus bas.
+      - "traefik.http.routers.app-tv.rule=Host(`${APP_HOST:-app.${DOMAIN}}`) && (PathPrefix(`/tv/`) || PathPrefix(`/api/tv/`) || PathPrefix(`/g/`) || PathPrefix(`/api/g/`))"
+      - "traefik.http.routers.app-tv.priority=1000"
+      - "traefik.http.routers.app-tv.entrypoints=websecure"
+      - "traefik.http.routers.app-tv.tls.certresolver=le"
+      - "traefik.http.routers.app-tv.service=app"
+      - "traefik.http.routers.app-tv.middlewares=public-ratelimit,public-frame-headers"
       # Mot de passe Traefik retire (2026-09-23) : l'appli protege deja tout elle-meme (comptes, roles, refus par defaut
       # sur toute route hors pages publiques a jeton) depuis docs/plan-gestion-utilisateurs.md. ADMIN_USERS n'est plus utilise.
       - "traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000"
-      # SAMEORIGIN plutot que frameDeny (DENY) : l'ecran TV (/tv/:token) doit pouvoir s'afficher en apercu integre
-      # dans l'editeur du livret (meme origine) ; un site tiers ne peut toujours pas nous encadrer (clickjacking).
-      - "traefik.http.middlewares.secure-headers.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.middlewares.secure-headers.headers.frameDeny=true"
       - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
       - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=no-referrer"
+      # Meme chose que secure-headers, sauf l'encadrement : SAMEORIGIN au lieu de DENY, uniquement pour /tv/ et /g/
+      # (app-tv ci-dessus) — l'editeur du livret affiche /tv/:token dans un iframe (meme origine). Le reste de
+      # l'appli (comptes, toutes les pages admin) garde frameDeny=true, sans exception.
+      - "traefik.http.middlewares.public-frame-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.public-frame-headers.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.middlewares.public-frame-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.public-frame-headers.headers.referrerPolicy=no-referrer"
 
   n8n:
     # ghcr.io plutot que docker.n8n.io/docker.io : les telechargements anonymes Docker Hub sont limites par IP (deja rencontre en local)

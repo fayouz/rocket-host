@@ -29,11 +29,19 @@ services:
       - "traefik.http.routers.app-public.entrypoints=web"
       - "traefik.http.routers.app-public.service=app"
       - "traefik.http.routers.app-public.middlewares=public-ratelimit,secure-headers"
+      - "traefik.http.routers.app-tv.rule=Host(`${APP_HOST:-loussahousing.local}`) && (PathPrefix(`/tv/`) || PathPrefix(`/api/tv/`) || PathPrefix(`/g/`) || PathPrefix(`/api/g/`))"
+      - "traefik.http.routers.app-tv.priority=1000"
+      - "traefik.http.routers.app-tv.entrypoints=web"
+      - "traefik.http.routers.app-tv.service=app"
+      - "traefik.http.routers.app-tv.middlewares=public-ratelimit,public-frame-headers"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.average=20"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.burst=40"
-      - "traefik.http.middlewares.secure-headers.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.middlewares.secure-headers.headers.frameDeny=true"
       - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
       - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=no-referrer"
+      - "traefik.http.middlewares.public-frame-headers.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.middlewares.public-frame-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.public-frame-headers.headers.referrerPolicy=no-referrer"
   n8n:
     image: ghcr.io/n8n-io/n8n:latest
     environment:
