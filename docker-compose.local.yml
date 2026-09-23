@@ -31,7 +31,7 @@ services:
       - "traefik.http.routers.app-public.middlewares=public-ratelimit,secure-headers"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.average=20"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.burst=40"
-      - "traefik.http.middlewares.secure-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.secure-headers.headers.customFrameOptionsValue=SAMEORIGIN"
       - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
       - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=no-referrer"
   n8n:
