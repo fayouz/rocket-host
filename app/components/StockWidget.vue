@@ -14,7 +14,9 @@
       </p>
       <ul class="space-y-2">
         <li v-for="r in rows" :key="r.id" class="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <NuxtLink :to="r.to" class="font-medium hover:underline">{{ r.name }}</NuxtLink>
+          <NuxtLink :to="r.to" class="flex items-center gap-1.5 font-medium hover:underline">
+            <span v-if="r.color" class="inline-block size-2 shrink-0 rounded-full" :style="{ backgroundColor: r.color }" /> {{ r.name }}
+          </NuxtLink>
           <span class="flex flex-wrap gap-1">
             <UBadge v-if="r.empty" color="error" variant="subtle" :label="`${r.empty} vide${r.empty > 1 ? 's' : ''}`" />
             <UBadge v-if="r.low" color="warning" variant="subtle" :label="`${r.low} bas`" />
@@ -39,7 +41,7 @@ const rows = computed(() => (data.value?.properties ?? []).map((p) => {
   const logement = lg.value?.logements.find(l => l.lodgifyPropertyId === p.id)
   return {
     id: p.id, name: p.name, total: levels.length, empty: levels.filter(l => l === 'empty').length, low: levels.filter(l => l === 'low').length,
-    to: logement ? `/logements/${logement.id}/stock` : '/settings/stock',
+    to: logement ? `/logements/${logement.id}/stock` : '/settings/stock', color: logementColorHex(logement?.color),
   }
 }))
 </script>

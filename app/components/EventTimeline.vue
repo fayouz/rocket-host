@@ -2,6 +2,7 @@
   <UTimeline v-if="events.length" :items="items" :model-value="lastPast" size="sm">
     <template #description="{ item }">
       <span class="inline-flex items-center gap-1.5">
+        <LogementDot :property-id="item.propertyId" />
         {{ item.description }}
         <UIcon v-if="item.platformIcon" :name="item.platformIcon.name" class="size-3.5 shrink-0" :style="{ color: item.platformIcon.color }" />
       </span>
@@ -14,7 +15,7 @@
 // Frise verticale : evenements passes remplis, a venir grises. `property` (optionnel) est ajoute devant la description.
 // `description` peut contenir la source Lodgify brute (AirbnbIntegration, BookingCom...) : on l'extrait pour
 // n'afficher que le logo de la plateforme (comme PlatformBadge), le texte reste pour les sources non reconnues.
-interface Ev { at: string; title: string; description: string; icon: string; property?: string }
+interface Ev { at: string; title: string; description: string; icon: string; property?: string; propertyId?: number }
 const props = defineProps<{ events: Ev[]; now: string }>()
 const when = (d: string) => new Date(d).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 function platformIcon(source: string) {
@@ -30,7 +31,7 @@ const items = computed(() => props.events.map((e, i) => {
   const rest = [e.property, ...parts.filter((_, idx) => idx !== platformIdx)].filter(Boolean).join(' · ')
   return {
     value: i, date: when(e.at), title: e.title, icon: e.icon,
-    description: rest, platformIcon: icon,
+    description: rest, platformIcon: icon, propertyId: e.propertyId,
   }
 }))
 const lastPast = computed(() => props.events.filter(e => e.at <= props.now).length - 1)

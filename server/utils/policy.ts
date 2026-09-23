@@ -29,7 +29,7 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   // --- Logements
   ['GET', '/api/logements', 'AGCM', 'Liste des logements (filtree selon les logements autorises)', 'handler', 'Logements'],
   ['GET', '/api/logements/:id', 'AGCM', 'Fiche d\'un logement', 'logement', 'Logements'],
-  ['PUT', '/api/logements/:id', 'A', 'Renommer un logement', 'logement', 'Logements'],
+  ['PUT', '/api/logements/:id', 'A', 'Renommer un logement / changer sa couleur', 'logement', 'Logements'],
   ['POST', '/api/logements/:id/sync-name', 'A', 'Reprendre le nom court de Lodgify', 'logement', 'Logements'],
   ['GET', '/api/logements/:id/reservations', 'AG', 'Reservations du logement', 'logement', 'Logements'],
   ['GET', '/api/logements/:id/locks', 'AG', 'Serrures du logement', 'logement', 'Logements'],

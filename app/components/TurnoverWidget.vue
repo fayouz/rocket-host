@@ -12,7 +12,7 @@
       <ul class="space-y-3">
         <li v-for="t in data.turnovers" :key="t.property" class="text-sm">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="font-medium">{{ t.property }}</span>
+            <span class="flex items-center gap-1.5 font-medium"><LogementDot :property-id="t.out?.propertyId ?? t.in?.propertyId" /> {{ t.property }}</span>
             <UBadge :color="cleaningStatusColor(t.cleaning?.status)" variant="subtle" :label="t.cleaning?.status ?? 'Non assignée'" />
           </div>
           <p class="text-muted">Départ {{ t.out?.guest }} → arrivée {{ t.in?.guest }}</p>

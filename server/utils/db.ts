@@ -7,6 +7,8 @@ export async function initDb() {
   await db.exec('CREATE TABLE IF NOT EXISTS property_alias (property_id INTEGER PRIMARY KEY, alias TEXT NOT NULL)')
   // Logements : entite propre a l'appli, associee (ou non) a un logement Lodgify. Les autres tables restent indexees par l'id Lodgify.
   await db.exec('CREATE TABLE IF NOT EXISTS logement (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, lodgify_property_id INTEGER UNIQUE)')
+  // Couleur reperage (badges, calendriers...), choisie dans les infos du logement ; '' = pas de couleur assignee
+  await addColumn("ALTER TABLE logement ADD COLUMN color TEXT NOT NULL DEFAULT ''")
   await db.exec('CREATE TABLE IF NOT EXISTS lock_link (lock_id INTEGER PRIMARY KEY, property_id INTEGER NOT NULL)')
   await db.exec(`CREATE TABLE IF NOT EXISTS access_code (
     booking_id INTEGER PRIMARY KEY, lock_id INTEGER NOT NULL, code TEXT NOT NULL,

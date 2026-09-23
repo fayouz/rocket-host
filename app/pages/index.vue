@@ -85,7 +85,7 @@
           <ul v-else class="space-y-3">
             <li v-for="b in s.items" :key="b.id" class="text-sm">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <span class="font-medium">{{ b.property }}</span>
+                <span class="flex items-center gap-1.5 font-medium"><LogementDot :property-id="b.propertyId" /> {{ b.property }}</span>
                 <PlatformBadge :source="b.source" />
               </div>
               <p class="text-muted">{{ b.guest }} · {{ fr(b.arrival) }} → {{ fr(b.departure) }}</p>
@@ -146,7 +146,7 @@ const propertiesQuery = computed(() => selectedPropertyIds.value.length ? select
 
 const { data } = await useFetch('/api/today', { query: { properties: propertiesQuery } })
 const { data: tl } = await useFetch('/api/timeline', { query: { past: 1, future: 7, properties: propertiesQuery } })
-const events = computed(() => (tl.value?.properties ?? []).flatMap(p => p.events.map(e => ({ ...e, property: p.name }))).sort((a, b) => a.at.localeCompare(b.at)))
+const events = computed(() => (tl.value?.properties ?? []).flatMap(p => p.events.map(e => ({ ...e, property: p.name, propertyId: p.id }))).sort((a, b) => a.at.localeCompare(b.at)))
 // Colonne timeline : au chargement, fait defiler jusqu'au dernier evenement passe (le "maintenant")
 const tlBox = ref<HTMLElement | null>(null)
 onMounted(() => setTimeout(() => {
