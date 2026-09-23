@@ -80,19 +80,8 @@
     <template v-else>
       <p class="text-sm text-muted">Même lien que le livret, en plein écran, pensé pour être ouvert sur la TV du logement (grand texte, voyageur du jour affiché s'il y en a un). Voir <code>docs/ecran-tv-android.md</code> pour installer Fully Kiosk Browser dessus. Le fond, la mise en page et les widgets ci-dessous s'appliquent aussi au livret mobile (onglet Livret Accueil).</p>
 
-      <div class="grid gap-4 lg:grid-cols-[480px_1fr]">
-        <UCard :ui="{ body: 'p-0 sm:p-0' }">
-          <template #header><b>Aperçu</b></template>
-          <div class="tv-preview-frame overflow-hidden bg-black">
-            <iframe :src="tvLink" class="tv-preview-iframe" title="Aperçu de l'écran TV" />
-          </div>
-          <div class="flex flex-wrap gap-2 p-4">
-            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir l'aperçu" @click="tvPreviewKey++" />
-            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-expand" label="Ouvrir en plein écran" :to="tvLink" external target="_blank" />
-          </div>
-        </UCard>
-
-        <div class="space-y-4">
+      <div class="grid gap-4 lg:grid-cols-3">
+        <div class="space-y-4 lg:col-span-2">
           <UCard>
             <template #header><b>Lien de l'écran TV</b></template>
             <div class="flex items-center gap-2">
@@ -117,84 +106,97 @@
             </div>
             <p class="mt-2 text-xs text-muted">En mode « Onglets », le livret et l'écran TV affichent un carrousel avec une barre de menu pour naviguer entre les widgets.</p>
           </UCard>
+
+          <UCard>
+            <template #header><b>Image de fond</b></template>
+            <p class="text-sm text-muted">Affichée en fond du livret et de l'écran TV, avec les blocs en verre dépoli par-dessus.</p>
+
+            <div class="mt-2 rounded-lg border border-default p-3 text-sm">
+              <template v-if="data.background.mode === 'custom'">
+                <p>Fond propre à ce logement.
+                  <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
+                </p>
+              </template>
+              <template v-else-if="data.background.mode === 'none'">
+                <p>Aucun fond, forcé pour ce logement (même si un fond général existe).
+                  <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
+                </p>
+              </template>
+              <template v-else>
+                <p v-if="data.hasDefaultBackground">Utilise le fond général des réglages.
+                  <UButton size="xs" color="neutral" variant="link" label="Forcer aucun fond ici" @click="setMode('none')" />
+                </p>
+                <p v-else>Pas de fond général réglé, et rien de propre à ce logement : fond uni.</p>
+              </template>
+            </div>
+
+            <div v-if="data.background.hasFile || data.background.webUrl" class="mt-3 flex items-center gap-3">
+              <img :src="backgroundPreviewUrl" alt="Fond actuel" class="h-20 w-32 rounded object-cover ring ring-default">
+              <p v-if="data.background.attribution" class="text-xs text-muted">{{ data.background.attribution }}</p>
+            </div>
+
+            <UCheckbox class="mt-3" :model-value="data.background.animated" label="Fond animé (léger effet de zoom/travelling)" @update:model-value="setAnimated" />
+
+            <div class="mt-4 space-y-3">
+              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" label="Déposer une image" :loading="bgBusy" @click="fileInput?.click()" />
+              <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadBackground">
+              <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickWeb" />
+            </div>
+            <p v-if="bgError" class="mt-2 text-sm text-error">{{ bgError }}</p>
+          </UCard>
+
+          <UCard>
+            <template #header>
+              <div class="flex items-center justify-between gap-2">
+                <b>Pages</b>
+                <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-plus" label="Ajouter une page" @click="addPage" />
+              </div>
+            </template>
+            <p class="text-sm text-muted">Chaque page regroupe un ou plusieurs widgets : un onglet du carrousel (mode « Onglets »), ou une section (mode « Défilement »). Un widget coché dans aucune page n'est affiché nulle part.</p>
+            <p class="mt-1 text-xs text-muted">En mode « Onglets », chaque page peut avoir son propre fond (icône <UIcon name="i-lucide-image" class="align-middle" />) ; sans fond propre, elle garde le fond du logement.</p>
+
+            <div class="mt-3 space-y-3">
+              <div v-for="(page, pi) in data.pages" :key="page.id" class="rounded-lg border border-default p-3">
+                <div class="flex items-center gap-2">
+                  <UInput :model-value="page.label" class="flex-1" placeholder="Nom de la page" @change="renamePageLabel(page, ($event.target as HTMLInputElement).value)" />
+                  <UButton
+                    size="xs" color="neutral" :variant="hasPageBg(page) ? 'soft' : 'ghost'" icon="i-lucide-image"
+                    :title="hasPageBg(page) ? 'Fond personnalisé' : 'Définir un fond pour cette page'" @click="openPageBg(page)"
+                  />
+                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="pi === 0" @click="movePage(pi, -1)" />
+                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="pi === data.pages.length - 1" @click="movePage(pi, 1)" />
+                  <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :disabled="data.pages.length <= 1" title="Supprimer la page" @click="removePage(page)" />
+                </div>
+                <ul class="mt-2 divide-y divide-default">
+                  <li v-for="w in WIDGET_CATALOG" :key="w.id" class="flex items-center gap-2 py-1.5 text-sm">
+                    <UCheckbox :model-value="page.widgets.includes(w.id)" @update:model-value="assignWidget(w.id, page, $event)" />
+                    <UIcon :name="w.icon" class="size-4 text-muted" />
+                    <span class="flex-1" :class="{ 'text-muted': !page.widgets.includes(w.id) }">{{ w.label }}</span>
+                    <span v-if="widgetPageLabel(w.id) && widgetPageLabel(w.id) !== page.label" class="text-xs text-muted">déjà dans « {{ widgetPageLabel(w.id) }} »</span>
+                    <template v-if="page.widgets.includes(w.id)">
+                      <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="page.widgets[0] === w.id" @click="moveWidgetInPage(page, w.id, -1)" />
+                      <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="page.widgets[page.widgets.length - 1] === w.id" @click="moveWidgetInPage(page, w.id, 1)" />
+                    </template>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </UCard>
+        </div>
+
+        <div class="lg:col-span-1">
+          <UCard class="lg:sticky lg:top-4" :ui="{ body: 'p-0 sm:p-0' }">
+            <template #header><b>Aperçu</b></template>
+            <div class="tv-preview-frame overflow-hidden bg-black">
+              <iframe :src="tvLink" class="tv-preview-iframe" title="Aperçu de l'écran TV" />
+            </div>
+            <div class="flex flex-wrap gap-2 p-3">
+              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir" @click="tvPreviewKey++" />
+              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-expand" label="Plein écran" :to="tvLink" external target="_blank" />
+            </div>
+          </UCard>
         </div>
       </div>
-
-      <UCard>
-        <template #header><b>Image de fond</b></template>
-        <p class="text-sm text-muted">Affichée en fond du livret et de l'écran TV, avec les blocs en verre dépoli par-dessus.</p>
-
-        <div class="mt-2 rounded-lg border border-default p-3 text-sm">
-          <template v-if="data.background.mode === 'custom'">
-            <p>Fond propre à ce logement.
-              <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
-            </p>
-          </template>
-          <template v-else-if="data.background.mode === 'none'">
-            <p>Aucun fond, forcé pour ce logement (même si un fond général existe).
-              <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
-            </p>
-          </template>
-          <template v-else>
-            <p v-if="data.hasDefaultBackground">Utilise le fond général des réglages.
-              <UButton size="xs" color="neutral" variant="link" label="Forcer aucun fond ici" @click="setMode('none')" />
-            </p>
-            <p v-else>Pas de fond général réglé, et rien de propre à ce logement : fond uni.</p>
-          </template>
-        </div>
-
-        <div v-if="data.background.hasFile || data.background.webUrl" class="mt-3 flex items-center gap-3">
-          <img :src="backgroundPreviewUrl" alt="Fond actuel" class="h-20 w-32 rounded object-cover ring ring-default">
-          <p v-if="data.background.attribution" class="text-xs text-muted">{{ data.background.attribution }}</p>
-        </div>
-
-        <UCheckbox class="mt-3" :model-value="data.background.animated" label="Fond animé (léger effet de zoom/travelling)" @update:model-value="setAnimated" />
-
-        <div class="mt-4 space-y-3">
-          <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" label="Déposer une image" :loading="bgBusy" @click="fileInput?.click()" />
-          <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadBackground">
-          <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickWeb" />
-        </div>
-        <p v-if="bgError" class="mt-2 text-sm text-error">{{ bgError }}</p>
-      </UCard>
-
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between gap-2">
-            <b>Pages</b>
-            <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-plus" label="Ajouter une page" @click="addPage" />
-          </div>
-        </template>
-        <p class="text-sm text-muted">Chaque page regroupe un ou plusieurs widgets : un onglet du carrousel (mode « Onglets »), ou une section (mode « Défilement »). Un widget coché dans aucune page n'est affiché nulle part.</p>
-        <p class="mt-1 text-xs text-muted">En mode « Onglets », chaque page peut avoir son propre fond (icône <UIcon name="i-lucide-image" class="align-middle" />) ; sans fond propre, elle garde le fond du logement.</p>
-
-        <div class="mt-3 space-y-3">
-          <div v-for="(page, pi) in data.pages" :key="page.id" class="rounded-lg border border-default p-3">
-            <div class="flex items-center gap-2">
-              <UInput :model-value="page.label" class="flex-1" placeholder="Nom de la page" @change="renamePageLabel(page, ($event.target as HTMLInputElement).value)" />
-              <UButton
-                size="xs" color="neutral" :variant="hasPageBg(page) ? 'soft' : 'ghost'" icon="i-lucide-image"
-                :title="hasPageBg(page) ? 'Fond personnalisé' : 'Définir un fond pour cette page'" @click="openPageBg(page)"
-              />
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="pi === 0" @click="movePage(pi, -1)" />
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="pi === data.pages.length - 1" @click="movePage(pi, 1)" />
-              <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :disabled="data.pages.length <= 1" title="Supprimer la page" @click="removePage(page)" />
-            </div>
-            <ul class="mt-2 divide-y divide-default">
-              <li v-for="w in WIDGET_CATALOG" :key="w.id" class="flex items-center gap-2 py-1.5 text-sm">
-                <UCheckbox :model-value="page.widgets.includes(w.id)" @update:model-value="assignWidget(w.id, page, $event)" />
-                <UIcon :name="w.icon" class="size-4 text-muted" />
-                <span class="flex-1" :class="{ 'text-muted': !page.widgets.includes(w.id) }">{{ w.label }}</span>
-                <span v-if="widgetPageLabel(w.id) && widgetPageLabel(w.id) !== page.label" class="text-xs text-muted">déjà dans « {{ widgetPageLabel(w.id) }} »</span>
-                <template v-if="page.widgets.includes(w.id)">
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="page.widgets[0] === w.id" @click="moveWidgetInPage(page, w.id, -1)" />
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="page.widgets[page.widgets.length - 1] === w.id" @click="moveWidgetInPage(page, w.id, 1)" />
-                </template>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </UCard>
     </template>
   </div>
 
@@ -439,9 +441,9 @@ async function save() {
 <style scoped>
 /* Aperçu réduit de l'écran TV (1920x1080 mis à l'échelle) sans avoir à ouvrir un nouvel onglet */
 .tv-preview-frame {
-  width: 480px;
-  height: 270px;
-  max-width: 100%;
+  width: 100%;
+  aspect-ratio: 1920 / 1080;
+  max-width: 480px;
 }
 .tv-preview-iframe {
   width: 1920px;
