@@ -5,13 +5,15 @@ const DICT = {
     welcomeTo: 'Bienvenue au', hello: 'Bonjour', wifi: 'Wi-Fi', network: 'Réseau', password: 'Mot de passe',
     checkin: 'Arrivée', checkout: 'Départ', access: 'Accès', rules: 'Règlement intérieur', tips: 'Conseils du quartier',
     faq: 'Questions fréquentes', welcomeText: 'Mot de bienvenue', empty: 'Le livret de ce logement n\'a pas encore été rempli.',
-    invalid: 'Lien invalide.', weather: 'Météo',
+    invalid: 'Lien invalide.', weather: 'Météo', devices: 'Équipements du logement', deviceOffline: 'Hors ligne',
+    deviceOn: 'Allumé', deviceOff: 'Éteint',
   },
   en: {
     welcomeTo: 'Welcome to', hello: 'Hello', wifi: 'Wi-Fi', network: 'Network', password: 'Password',
     checkin: 'Check-in', checkout: 'Check-out', access: 'Access', rules: 'House rules', tips: 'Local tips',
     faq: 'FAQ', welcomeText: 'Welcome message', empty: 'This property\'s guide has not been filled in yet.',
-    invalid: 'Invalid link.', weather: 'Weather',
+    invalid: 'Invalid link.', weather: 'Weather', devices: 'Home devices', deviceOffline: 'Offline',
+    deviceOn: 'On', deviceOff: 'Off',
   },
 } as const
 export type GuestLang = keyof typeof DICT

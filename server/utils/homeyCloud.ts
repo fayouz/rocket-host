@@ -1,5 +1,5 @@
 // Homey en mode CLOUD (OAuth2 avec le compte Athom). Procedure officielle : autorisation -> code -> jeton d'acces (1 h) + jeton de renouvellement
-// -> jeton de delegation -> connexion au Homey (URL distante) -> jeton de session. Lecture seule pour l'instant.
+// -> jeton de delegation -> connexion au Homey (URL distante) -> jeton de session.
 // L'identifiant et le secret de l'application restent dans .env ; le jeton de renouvellement est dans .data/homey-oauth.json (droits 0600, hors git,
 // jamais envoye au navigateur). Aucun jeton ne figure dans les erreurs ni les journaux.
 import { randomBytes } from 'node:crypto'

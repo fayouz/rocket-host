@@ -1,7 +1,5 @@
 // Livret d'accueil par logement (V3, inspire de WelcomeScreen) : contenu edite par l'hote, page publique a lien secret (QR code).
 import { randomBytes } from 'node:crypto'
-import { mkdir, unlink, writeFile } from 'node:fs/promises'
-import { resolve, sep } from 'node:path'
 
 export const isGuestToken = (v: unknown): v is string => typeof v === 'string' && /^[a-f0-9]{32}$/.test(v)
 
@@ -61,50 +59,64 @@ export async function regenerateGuestToken(logementId: number) {
   await useDatabase().sql`UPDATE guestbook_token SET token = ${randomBytes(16).toString('hex')} WHERE logement_id = ${logementId}`
 }
 
-// Image de fond du livret et de l'ecran TV (un logement = un fichier, remplace a chaque envoi)
-const BG_TYPES: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' }
-const BG_MAX = 8 * 1024 * 1024 // 8 Mo
-const bgRoot = () => resolve(process.cwd(), '.data', 'backgrounds')
-function bgPath(logementId: number, ext: string) {
-  const abs = resolve(bgRoot(), `${logementId}.${ext}`)
-  if (!abs.startsWith(bgRoot() + sep)) throw createError({ statusCode: 400, statusMessage: 'Chemin invalide' })
-  return abs
-}
-const bgStartsWith = (buf: Buffer, bytes: number[]) => bytes.every((b, i) => buf[i] === b)
-function bgMagicOk(ext: string, buf: Buffer) {
-  if (ext === 'png') return bgStartsWith(buf, [0x89, 0x50, 0x4e, 0x47])
-  if (ext === 'jpg' || ext === 'jpeg') return bgStartsWith(buf, [0xff, 0xd8, 0xff])
-  if (ext === 'webp') return bgStartsWith(buf, [0x52, 0x49, 0x46, 0x46])
-  return false
-}
+// Fond du livret/ecran TV, par logement : 'inherit' reprend le fond general (reglages), 'none' force aucun fond,
+// 'custom' utilise le fichier depose (background_ext) ou l'image web choisie (background_web_url) pour ce logement.
+export interface BackgroundRow { mode: string; ext: string; webUrl: string; attribution: string; animated: boolean }
 
-export async function getBackgroundExt(logementId: number): Promise<string> {
-  const r = ((await useDatabase().sql`SELECT background_ext FROM guestbook WHERE logement_id = ${logementId}`).rows as any[])[0]
-  return String(r?.background_ext ?? '')
+export async function getBackgroundRow(logementId: number): Promise<BackgroundRow> {
+  const r = ((await useDatabase().sql`SELECT background_mode, background_ext, background_web_url, background_attribution, background_animated FROM guestbook WHERE logement_id = ${logementId}`).rows as any[])[0]
+  return {
+    mode: String(r?.background_mode || 'inherit'), ext: String(r?.background_ext || ''),
+    webUrl: String(r?.background_web_url || ''), attribution: String(r?.background_attribution || ''),
+    animated: !!r?.background_animated,
+  }
 }
 
 export async function saveBackground(logementId: number, filename: string, data: Buffer) {
   await ensureGuestbook(logementId)
-  const ext = (filename.split('.').pop() || '').toLowerCase()
-  if (!BG_TYPES[ext]) throw createError({ statusCode: 400, statusMessage: 'Image acceptée : PNG, JPG ou WebP' })
-  if (!data.length || data.length > BG_MAX) throw createError({ statusCode: 413, statusMessage: 'Image vide ou trop volumineuse (8 Mo maximum)' })
-  if (!bgMagicOk(ext, data)) throw createError({ statusCode: 400, statusMessage: `Le contenu ne correspond pas à une image .${ext}` })
-  const old = await getBackgroundExt(logementId)
-  await mkdir(bgRoot(), { recursive: true })
-  await writeFile(bgPath(logementId, ext), data)
-  if (old && old !== ext) await unlink(bgPath(logementId, old)).catch(() => {})
-  await useDatabase().sql`UPDATE guestbook SET background_ext = ${ext} WHERE logement_id = ${logementId}`
+  const row = await getBackgroundRow(logementId)
+  const ext = await saveBackgroundFile(`logement-${logementId}`, filename, data, row.ext)
+  await useDatabase().sql`UPDATE guestbook SET background_mode = 'custom', background_ext = ${ext}, background_web_url = '', background_attribution = '' WHERE logement_id = ${logementId}`
 }
 
-export async function removeBackground(logementId: number) {
-  const ext = await getBackgroundExt(logementId)
-  if (!ext) return
-  await unlink(bgPath(logementId, ext)).catch(() => {})
-  await useDatabase().sql`UPDATE guestbook SET background_ext = '' WHERE logement_id = ${logementId}`
+export async function saveBackgroundWeb(logementId: number, url: string, attribution: string) {
+  await ensureGuestbook(logementId)
+  const row = await getBackgroundRow(logementId)
+  await removeBackgroundFile(`logement-${logementId}`, row.ext)
+  await useDatabase().sql`UPDATE guestbook SET background_mode = 'custom', background_ext = '', background_web_url = ${url.slice(0, 500)}, background_attribution = ${attribution.slice(0, 300)} WHERE logement_id = ${logementId}`
 }
 
-export async function readBackground(logementId: number): Promise<{ path: string; mime: string } | null> {
-  const ext = await getBackgroundExt(logementId)
-  if (!ext) return null
-  return { path: bgPath(logementId, ext), mime: BG_TYPES[ext]! }
+// mode : 'inherit' (reprend le fond general) ou 'none' (force aucun fond) ; 'custom' se pose via saveBackground(Web) ci-dessus
+export async function setBackgroundMode(logementId: number, mode: 'inherit' | 'none') {
+  await ensureGuestbook(logementId)
+  const row = await getBackgroundRow(logementId)
+  await removeBackgroundFile(`logement-${logementId}`, row.ext)
+  await useDatabase().sql`UPDATE guestbook SET background_mode = ${mode}, background_ext = '', background_web_url = '', background_attribution = '' WHERE logement_id = ${logementId}`
+}
+
+export async function setBackgroundAnimated(logementId: number, animated: boolean) {
+  await ensureGuestbook(logementId)
+  await useDatabase().sql`UPDATE guestbook SET background_animated = ${animated ? 1 : 0} WHERE logement_id = ${logementId}`
+}
+
+export async function readBackgroundFile(logementId: number): Promise<{ path: string; mime: string } | null> {
+  const row = await getBackgroundRow(logementId)
+  if (!row.ext) return null
+  return { path: bgPath(`logement-${logementId}`, row.ext), mime: BG_TYPES[row.ext]! }
+}
+
+export interface ResolvedBackground { url: string; animated: boolean }
+
+// Fond effectivement affiche pour ce logement : son propre choix, ou par heritage le fond general des reglages.
+export async function resolveBackground(logementId: number, publicUrlForOwnFile: string): Promise<ResolvedBackground | null> {
+  const row = await getBackgroundRow(logementId)
+  if (row.mode === 'none') return null
+  if (row.mode === 'custom') {
+    if (row.ext) return { url: publicUrlForOwnFile, animated: row.animated }
+    if (row.webUrl) return { url: row.webUrl, animated: row.animated }
+    return null
+  }
+  const g = await getDefaultBackground()
+  if (!g) return null
+  return { url: g.url, animated: row.animated || g.animated }
 }

@@ -1,13 +1,10 @@
-// Image de fond propre au logement (lien secret, meme jeton). Pas de fond propre -> 404 (voir /api/bg-default pour l'heritage).
+// Fond par defaut des reglages generaux (public : les pages voyageur en heritent sans etre connectees).
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 
 export default defineEventHandler(async (event) => {
-  const token = getRouterParam(event, 'token')
-  if (!isGuestToken(token)) throw createError({ statusCode: 404, statusMessage: 'Lien invalide' })
-  const logementId = await logementByGuestToken(token)
-  const bg = await readBackgroundFile(logementId)
-  if (!bg) throw createError({ statusCode: 404, statusMessage: 'Pas de fond configuré' })
+  const bg = await readDefaultBackgroundFile()
+  if (!bg) throw createError({ statusCode: 404, statusMessage: 'Pas de fond par défaut configuré' })
   let size: number
   try { size = (await stat(bg.path)).size } catch { throw createError({ statusCode: 404, statusMessage: 'Image introuvable' }) }
   setHeader(event, 'content-type', bg.mime)

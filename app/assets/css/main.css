@@ -31,3 +31,13 @@
 @layer components {
   .section-title { @apply mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-muted; }
 }
+
+/* Fond anime du livret/ecran TV (V3) : leger zoom + travelling, en boucle, discret sur une longue duree (TV allumee des jours). */
+@keyframes kenburns {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.12) translate(-1.5%, -1.5%); }
+}
+.bg-kenburns { animation: kenburns 40s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .bg-kenburns { animation: none; }
+}

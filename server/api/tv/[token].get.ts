@@ -9,12 +9,24 @@ export default defineEventHandler(async (event) => {
   const content = await getGuestbook(logementId)
   const today = new Date().toISOString().slice(0, 10)
   let guest: { firstName: string; arrival: string; departure: string } | null = null
+  let reloadAt: string | null = null
   if (lg.lodgifyPropertyId !== null) {
     const { bookings } = await loadData()
-    const b = bookings.find(x => x.propertyId === lg.lodgifyPropertyId && isActiveBooking(x) && x.arrival <= today && x.departure > today)
+    const mine = bookings.filter(x => x.propertyId === lg.lodgifyPropertyId && isActiveBooking(x))
+    const b = mine.find(x => x.arrival <= today && x.departure > today)
     if (b) guest = { firstName: (b.guest.split(' ')[0] || b.guest).slice(0, 40), arrival: b.arrival, departure: b.departure }
+    // Prochaine arrivee a venir (hors sejour en cours) : sert a recharger l'ecran (pas juste les donnees) un peu avant,
+    // pour repartir sur un etat propre au prochain voyageur plutot que de compter sur le simple rafraichissement.
+    const next = mine.filter(x => x.arrival >= today && x.id !== b?.id).sort((x, y) => x.arrival.localeCompare(y.arrival))[0]
+    if (next) {
+      // parisToIso (server/utils/codes.ts) gere le fuseau (CET/CEST) correctement ; un new Date(...) direct sur une
+      // chaine sans fuseau se cale sur le fuseau du serveur, faux si celui-ci n'est pas Europe/Paris (ex. conteneur en UTC).
+      const at = new Date(parisToIso(next.arrival, next.checkIn || DEFAULT_CHECKIN))
+      at.setMinutes(at.getMinutes() - 30) // marge : ecran pret avant l'heure d'arrivee, pas apres
+      reloadAt = at.toISOString()
+    }
   }
   const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
-  const hasBackground = !!(await getBackgroundExt(logementId))
-  return { logement: lg.name, content, guest, weather, hasBackground }
+  const background = await resolveBackground(logementId, `/api/g/${token}/background`)
+  return { logement: lg.name, content, guest, weather, background, reloadAt }
 })
