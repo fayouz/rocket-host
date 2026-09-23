@@ -2,7 +2,7 @@
   <UCard v-if="due.length">
     <template #header>
       <div class="flex items-center justify-between gap-2">
-        <h3 class="font-semibold">À relancer</h3>
+        <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-contact" class="size-4 text-muted" /> À relancer</h3>
         <UButton size="xs" color="neutral" variant="link" to="/contacts" label="Contacts" trailing-icon="i-lucide-arrow-right" />
       </div>
     </template>

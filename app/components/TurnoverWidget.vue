@@ -2,7 +2,7 @@
   <UCard>
     <template #header>
       <div class="flex items-center justify-between gap-2">
-        <h3 class="font-semibold">Turnover</h3>
+        <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-refresh-cw" class="size-4 text-muted" /> Turnover</h3>
         <UBadge v-if="data?.turnovers.length" color="error" variant="subtle" :label="`${data.turnovers.length} aujourd'hui`" />
       </div>
     </template>

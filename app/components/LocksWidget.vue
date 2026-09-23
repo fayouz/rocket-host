@@ -2,7 +2,7 @@
   <UCard>
     <template #header>
       <div class="flex items-center justify-between gap-2">
-        <h3 class="font-semibold">Serrures</h3>
+        <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-lock" class="size-4 text-muted" /> Serrures</h3>
         <UBadge v-if="alerts" color="error" variant="subtle" :label="`${alerts} alerte${alerts > 1 ? 's' : ''}`" />
       </div>
     </template>
