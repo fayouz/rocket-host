@@ -7,6 +7,7 @@
         <UDropdownMenu v-if="user" :items="userMenu" :content="{ align: 'end' }">
           <UButton color="neutral" variant="ghost" icon="i-lucide-circle-user" :label="user.displayName" class="hidden sm:inline-flex" />
         </UDropdownMenu>
+        <ThemeColorPicker />
         <UColorModeButton />
       </template>
       <template #body>
