@@ -63,16 +63,13 @@
 
       <UCard>
         <template #header><b>Mise en page</b></template>
-        <p class="text-sm text-muted">Navigation et disposition du livret voyageur (page mobile) et de l'écran TV. L'écran TV reste toujours en défilement, jamais en onglets : aucune interaction tactile prévue là-bas.</p>
-        <div class="mt-3 grid gap-3 sm:grid-cols-3">
+        <p class="text-sm text-muted">Navigation et disposition du livret voyageur (page mobile). Les réglages propres à l'écran TV sont dans son propre onglet.</p>
+        <div class="mt-3 grid gap-3 sm:grid-cols-2">
           <UFormField label="Navigation (livret mobile)">
             <USelect :model-value="data.layout.navMode" :items="navItems" class="w-full" @update:model-value="setLayout($event, data.layout.gridColumns, data.layout.tvColumns)" />
           </UFormField>
           <UFormField label="Disposition (livret)">
             <USelect :model-value="data.layout.gridColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, $event, data.layout.tvColumns)" />
-          </UFormField>
-          <UFormField label="Disposition (écran TV)">
-            <USelect :model-value="data.layout.tvColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, data.layout.gridColumns, $event)" />
           </UFormField>
         </div>
       </UCard>
@@ -133,16 +130,37 @@
     <template v-else>
       <p class="text-sm text-muted">Même lien que le livret, en plein écran, pensé pour être ouvert sur la TV du logement (grand texte, voyageur du jour affiché s'il y en a un). Voir <code>docs/ecran-tv-android.md</code> pour installer Fully Kiosk Browser dessus.</p>
 
-      <UCard>
-        <template #header><b>Aperçu</b></template>
-        <div class="tv-preview-frame overflow-hidden rounded-lg bg-black">
-          <iframe :src="tvLink" class="tv-preview-iframe" title="Aperçu de l'écran TV" />
+      <div class="grid gap-4 lg:grid-cols-[480px_1fr]">
+        <UCard :ui="{ body: 'p-0 sm:p-0' }">
+          <template #header><b>Aperçu</b></template>
+          <div class="tv-preview-frame overflow-hidden bg-black">
+            <iframe :src="tvLink" class="tv-preview-iframe" title="Aperçu de l'écran TV" />
+          </div>
+          <div class="flex flex-wrap gap-2 p-4">
+            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir l'aperçu" @click="tvPreviewKey++" />
+            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-expand" label="Ouvrir en plein écran" :to="tvLink" external target="_blank" />
+          </div>
+        </UCard>
+
+        <div class="space-y-4">
+          <UCard>
+            <template #header><b>Lien de l'écran TV</b></template>
+            <div class="flex items-center gap-2">
+              <UInput :model-value="tvLinkBase" readonly class="w-full font-mono text-xs" @focus="($event.target as HTMLInputElement).select()" />
+              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" :label="tvCopied ? 'Copié' : 'Copier'" @click="copyTv" />
+            </div>
+            <p class="mt-2 text-xs text-muted">À coller dans l'URL de démarrage de Fully Kiosk Browser sur la TV. Change si le lien du livret est régénéré (onglet Livret Accueil).</p>
+          </UCard>
+
+          <UCard>
+            <template #header><b>Disposition</b></template>
+            <UFormField label="Colonnes des widgets">
+              <USelect :model-value="data.layout.tvColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, data.layout.gridColumns, $event)" />
+            </UFormField>
+            <p class="mt-2 text-xs text-muted">L'écran TV reste toujours en défilement, jamais en onglets : aucune interaction tactile prévue là-bas.</p>
+          </UCard>
         </div>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir l'aperçu" @click="tvPreviewKey++" />
-          <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-tv" label="Ouvrir en plein écran" :to="tvLink" external target="_blank" />
-        </div>
-      </UCard>
+      </div>
     </template>
   </div>
 </template>
@@ -183,6 +201,8 @@ const tvLink = computed(() => tvPreviewKey.value ? `${tvLinkBase.value}?v=${tvPr
 const qrUrl = computed(() => `/api/logements/${route.params.id}/livret/qr`)
 const copied = ref(false)
 async function copy() { try { await navigator.clipboard.writeText(link.value); copied.value = true; setTimeout(() => { copied.value = false }, 2000) } catch { /* copie manuelle possible */ } }
+const tvCopied = ref(false)
+async function copyTv() { try { await navigator.clipboard.writeText(tvLinkBase.value); tvCopied.value = true; setTimeout(() => { tvCopied.value = false }, 2000) } catch { /* copie manuelle possible */ } }
 async function regenerate() {
   if (!confirm('Régénérer le lien ? L\'ancien (et le QR déjà imprimé) cessera de fonctionner.')) return
   await $fetch(`/api/logements/${route.params.id}/livret/token`, { method: 'POST' })
