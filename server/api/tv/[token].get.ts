@@ -14,5 +14,6 @@ export default defineEventHandler(async (event) => {
     const b = bookings.find(x => x.propertyId === lg.lodgifyPropertyId && isActiveBooking(x) && x.arrival <= today && x.departure > today)
     if (b) guest = { firstName: (b.guest.split(' ')[0] || b.guest).slice(0, 40), arrival: b.arrival, departure: b.departure }
   }
-  return { logement: lg.name, content, guest }
+  const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
+  return { logement: lg.name, content, guest, weather }
 })

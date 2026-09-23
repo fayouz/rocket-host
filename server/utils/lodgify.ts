@@ -14,7 +14,13 @@ export const lodgifyCall = call
 async function fetchProperties(key: string): Promise<Property[]> {
   const r = await call('/properties', key)
   const list = Array.isArray(r) ? r : r.items || []
-  return list.map((p: any) => ({ id: p.id, name: p.name, internalName: (typeof p.internal_name === 'string' && p.internal_name.trim()) || undefined }))
+  return list.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    internalName: (typeof p.internal_name === 'string' && p.internal_name.trim()) || undefined,
+    latitude: typeof p.latitude === 'number' ? p.latitude : undefined,
+    longitude: typeof p.longitude === 'number' ? p.longitude : undefined,
+  }))
 }
 
 // "15:00:00" -> "15:00" (undefined si absent)

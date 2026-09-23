@@ -1,6 +1,6 @@
 // Logements de l'appli : chacun est associe a un logement Lodgify (lodgify_property_id). Crees automatiquement pour chaque
 // logement Lodgify encore sans logement ; renommables sans toucher a Lodgify.
-export interface Logement { id: number; name: string; lodgifyPropertyId: number | null; lodgifyName: string | null; lodgifyShortName: string | null }
+export interface Logement { id: number; name: string; lodgifyPropertyId: number | null; lodgifyName: string | null; lodgifyShortName: string | null; latitude: number | null; longitude: number | null }
 
 export async function ensureLogements(): Promise<Logement[]> {
   const db = useDatabase()
@@ -19,6 +19,8 @@ export async function ensureLogements(): Promise<Logement[]> {
     lodgifyName: properties.find(p => p.id === Number(r.lodgify_property_id))?.original ?? null,
     // Nom court saisi dans Lodgify (champ « nom interne »), ex. « Le ponant »
     lodgifyShortName: properties.find(p => p.id === Number(r.lodgify_property_id))?.internalName ?? null,
+    latitude: properties.find(p => p.id === Number(r.lodgify_property_id))?.latitude ?? null,
+    longitude: properties.find(p => p.id === Number(r.lodgify_property_id))?.longitude ?? null,
   }))
 }
 

@@ -60,7 +60,7 @@ Un vrai paiement en ligne, pas un simple formulaire : le voyageur choisit et pai
 
 ## À trancher avant de commencer
 
-- Une seule langue (français) ou plusieurs ?
+- ~~Une seule langue (français) ou plusieurs ?~~ Tranché le 2026-09-23 : l'interface du livret et de l'écran TV s'adapte à la langue du navigateur du voyageur (FR/EN, via `Accept-Language`) ; le texte libre saisi par l'hôte (mot de bienvenue, règlement, conseils...) reste dans la langue où il a été écrit, sans traduction automatique (coût/fiabilité). Météo du jour ajoutée en widget (Open-Meteo, gratuit, sans clé, à partir des coordonnées du logement dans Lodgify).
 - Le livret est-il par logement seulement, ou aussi par séjour (avec le code de porte) ? Le code d'accès dans une page web demande un lien secret par séjour, à durée limitée.
 - La monétisation (affiliation) est-elle voulue ? Elle suppose de s'inscrire à des programmes tiers et d'afficher de la publicité.
 - Matériel TV : boîtier Google TV / Chromecast déjà présent dans les logements ?

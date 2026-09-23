@@ -2,7 +2,10 @@
 import type { Booking, Property } from './types'
 
 const d = (n: number) => { const x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10) }
-export const demoProperties: Property[] = [{ id: 1, name: 'Gaston' }, { id: 2, name: 'Le ponant' }]
+export const demoProperties: Property[] = [
+  { id: 1, name: 'Gaston', latitude: 44.7743, longitude: -0.5838 },
+  { id: 2, name: 'Le ponant', latitude: 44.7858, longitude: -0.5643 },
+]
 export const demoBookings: Booking[] = [
   { id: 1, propertyId: 1, arrival: d(-3), departure: d(0), guest: 'Alex Martin', status: 'Booked', source: 'Airbnb', total: 210 },
   { id: 2, propertyId: 2, arrival: d(-1), departure: d(2), guest: 'Marc D.', status: 'Booked', source: 'Booking.com', total: 240 },

@@ -7,5 +7,6 @@ export default defineEventHandler(async (event) => {
   const lg = logements.find(l => l.id === logementId)
   if (!lg) throw createError({ statusCode: 404, statusMessage: 'Logement introuvable' })
   const content = await getGuestbook(logementId)
-  return { logement: lg.name, content }
+  const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
+  return { logement: lg.name, content, weather }
 })

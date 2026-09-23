@@ -1,4 +1,4 @@
-export interface Property { id: number; name: string; original?: string; internalName?: string }
+export interface Property { id: number; name: string; original?: string; internalName?: string; latitude?: number; longitude?: number }
 export interface Booking {
   id: number
   propertyId: number
