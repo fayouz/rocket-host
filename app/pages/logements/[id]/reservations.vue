@@ -43,7 +43,11 @@
 
 <script setup lang="ts">
 const route = useRoute()
-const { data } = await useFetch(() => `/api/logements/${route.params.id}/reservations`)
+const [{ data }, { data: livretData }] = await Promise.all([
+  useFetch(() => `/api/logements/${route.params.id}/reservations`),
+  // Aperçu du livret (welcomescreen), en encart : même token que l'onglet Livret Accueil.
+  useFetch(() => `/api/logements/${route.params.id}/livret`),
+])
 const demo = useState('demo')
 watchEffect(() => { demo.value = !!data.value?.demo })
 const today = new Date().toISOString().slice(0, 10)
@@ -52,9 +56,6 @@ const phase = (b: { active: boolean; arrival: string; departure: string }) =>
 const statusColor = (s: string) => /book/i.test(s) ? 'success' : /declin|cancel/i.test(s) ? 'error' : 'info'
 const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
 const eur = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €'
-
-// Aperçu du livret (welcomescreen), en encart : même token que l'onglet Livret Accueil.
-const { data: livretData } = await useFetch(() => `/api/logements/${route.params.id}/livret`)
 const origin = useRequestURL().origin
 const livretLink = computed(() => livretData.value?.token ? `${origin}/g/${livretData.value.token}` : '')
 const livretPreviewKey = ref(0)
