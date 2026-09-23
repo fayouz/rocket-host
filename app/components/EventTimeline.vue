@@ -25,9 +25,9 @@ function platformIcon(source: string) {
 }
 const items = computed(() => props.events.map((e, i) => {
   const parts = e.description.split(' · ')
-  const last = parts.at(-1) || ''
-  const icon = platformIcon(last)
-  const rest = [e.property, ...(icon ? parts.slice(0, -1) : parts)].filter(Boolean).join(' · ')
+  const platformIdx = parts.findIndex(p => platformIcon(p))
+  const icon = platformIdx >= 0 ? platformIcon(parts[platformIdx]!) : null
+  const rest = [e.property, ...parts.filter((_, idx) => idx !== platformIdx)].filter(Boolean).join(' · ')
   return {
     value: i, date: when(e.at), title: e.title, icon: e.icon,
     description: rest, platformIcon: icon,
