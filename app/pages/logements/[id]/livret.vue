@@ -212,6 +212,9 @@ const livretPreviewLink = computed(() => livretPreviewKey.value ? `${link.value}
 const tvLinkBase = computed(() => data.value ? `${origin}/tv/${data.value.token}` : '')
 const tvPreviewKey = ref(0)
 const tvLink = computed(() => tvPreviewKey.value ? `${tvLinkBase.value}?v=${tvPreviewKey.value}` : tvLinkBase.value)
+// Les deux aperçus (livret mobile, écran TV) doivent se recharger tout seuls après un enregistrement (contenu, fond,
+// mise en page, widgets) : sinon ils restent figés sur l'état d'avant tant qu'on ne clique pas "Rafraîchir" à la main.
+function bumpPreviews() { livretPreviewKey.value++; tvPreviewKey.value++ }
 const qrUrl = computed(() => `/api/logements/${route.params.id}/livret/qr`)
 const copied = ref(false)
 async function copy() { try { await navigator.clipboard.writeText(link.value); copied.value = true; setTimeout(() => { copied.value = false }, 2000) } catch { /* copie manuelle possible */ } }
@@ -244,6 +247,7 @@ async function uploadBackground(e: Event) {
   if (fileInput.value) fileInput.value.value = ''
   bgVersion.value++
   await refresh()
+  bumpPreviews()
 }
 async function pickWeb(r: { url: string; attribution: string }) {
   bgBusy.value = true; bgError.value = ''
@@ -252,6 +256,7 @@ async function pickWeb(r: { url: string; attribution: string }) {
   bgBusy.value = false
   bgVersion.value++
   await refresh()
+  bumpPreviews()
 }
 async function setMode(mode: 'inherit' | 'none') {
   bgBusy.value = true
@@ -259,10 +264,12 @@ async function setMode(mode: 'inherit' | 'none') {
   finally { bgBusy.value = false }
   bgVersion.value++
   await refresh()
+  bumpPreviews()
 }
 async function setAnimated(animated: boolean) {
   await $fetch(`/api/logements/${route.params.id}/livret/animated`, { method: 'PUT', body: { animated } })
   await refresh()
+  bumpPreviews()
 }
 
 const widgetOrder = ref<string[]>([])
@@ -279,6 +286,7 @@ const displayList = computed(() => {
 })
 async function saveWidgets() {
   await $fetch(`/api/logements/${route.params.id}/livret/widgets`, { method: 'PUT', body: { order: widgetOrder.value } })
+  bumpPreviews()
 }
 function toggleWidget(id: string, on: boolean) {
   widgetOrder.value = on ? [...widgetOrder.value, id] : widgetOrder.value.filter(w => w !== id)
@@ -299,6 +307,7 @@ const colItems = [{ label: '1 colonne', value: 1 }, { label: '2 colonnes', value
 async function setLayout(navMode: unknown, gridColumns: unknown, tvColumns: unknown) {
   await $fetch(`/api/logements/${route.params.id}/livret/layout`, { method: 'PUT', body: { navMode, gridColumns, tvColumns } })
   await refresh()
+  bumpPreviews()
 }
 
 const busy = ref(false)
@@ -313,6 +322,7 @@ async function save() {
   } catch (e: any) { error.value = e?.data?.statusMessage || 'Échec, réessaie.' }
   busy.value = false
   await refresh()
+  bumpPreviews()
 }
 </script>
 
