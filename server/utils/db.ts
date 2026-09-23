@@ -63,6 +63,19 @@ export async function initDb() {
   if (!guestbookCols.includes('background_web_url')) await addColumn("ALTER TABLE guestbook ADD COLUMN background_web_url TEXT NOT NULL DEFAULT ''")
   if (!guestbookCols.includes('background_attribution')) await addColumn("ALTER TABLE guestbook ADD COLUMN background_attribution TEXT NOT NULL DEFAULT ''")
   if (!guestbookCols.includes('background_animated')) await addColumn('ALTER TABLE guestbook ADD COLUMN background_animated INTEGER NOT NULL DEFAULT 0')
+  // Widgets affiches sur le livret/ecran TV : liste ordonnee (separee par des virgules) des identifiants visibles,
+  // parmi WIDGET_IDS (server/utils/guestbook.ts). Vide = ordre par defaut, tous visibles (comportement d'avant).
+  if (!guestbookCols.includes('widget_order')) await addColumn("ALTER TABLE guestbook ADD COLUMN widget_order TEXT NOT NULL DEFAULT ''")
+  // Mise en page (V3) : navigation du livret par defilement (defaut) ou par onglets ; colonnes separees pour le livret
+  // (defaut 1 : page etroite, pensee mobile) et l'ecran TV (defaut 2, comportement d'avant cette option). L'ecran TV
+  // reste toujours en defilement, jamais d'onglets : aucune interaction tactile prevue la-bas.
+  if (!guestbookCols.includes('nav_mode')) await addColumn("ALTER TABLE guestbook ADD COLUMN nav_mode TEXT NOT NULL DEFAULT 'scroll'")
+  if (!guestbookCols.includes('grid_columns')) await addColumn('ALTER TABLE guestbook ADD COLUMN grid_columns INTEGER NOT NULL DEFAULT 1')
+  if (!guestbookCols.includes('tv_columns')) await addColumn('ALTER TABLE guestbook ADD COLUMN tv_columns INTEGER NOT NULL DEFAULT 2')
+  // Visites du livret/ecran TV (V3, tableau de bord hote) : une ligne par ouverture de page, pour des statistiques simples.
+  await db.exec(`CREATE TABLE IF NOT EXISTS guest_visit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, page TEXT NOT NULL, at TEXT NOT NULL)`)
+  await db.exec('CREATE INDEX IF NOT EXISTS guest_visit_logement_at ON guest_visit (logement_id, at)')
   // Reglages generaux du livret/ecran TV : fond par defaut pour tous les logements (surchargeable par logement ci-dessus)
   await db.exec(`CREATE TABLE IF NOT EXISTS welcomescreen_settings (
     id INTEGER PRIMARY KEY CHECK (id = 1), background_ext TEXT NOT NULL DEFAULT '', background_web_url TEXT NOT NULL DEFAULT '',

@@ -135,6 +135,8 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['PUT', '/api/logements/:id/livret/background-mode', 'AG', 'Forcer aucun fond, ou revenir au fond general', 'logement', 'Livret d\'accueil', '{ mode: inherit|none }'],
   ['PUT', '/api/logements/:id/livret/animated', 'AG', 'Activer/desactiver l\'animation du fond pour ce logement', 'logement', 'Livret d\'accueil', '{ animated }'],
   ['GET', '/api/logements/:id/livret/search', 'AG', 'Rechercher des images de fond libres de droits (Openverse)', 'logement', 'Livret d\'accueil', '?q='],
+  ['PUT', '/api/logements/:id/livret/widgets', 'AG', 'Choisir les widgets affiches et leur ordre', 'logement', 'Livret d\'accueil', '{ order: string[] }'],
+  ['PUT', '/api/logements/:id/livret/layout', 'AG', 'Navigation (defilement/onglets) et nombre de colonnes', 'logement', 'Livret d\'accueil', '{ navMode, gridColumns }'],
   ['GET', '/api/g/:token/background', 'P', 'Image de fond propre au logement (lien secret)', '', 'Public (jeton)'],
   ['GET', '/api/g/:token/devices', 'P', 'Appareils domotiques mis a disposition du voyageur, etat en direct (lien secret)', '', 'Public (jeton)'],
   ['PUT', '/api/g/:token/devices/:deviceId', 'P', 'Commander un appareil mis a disposition (lien secret, bornes verifiees)', '', 'Public (jeton)', '{ capabilityId, value }'],
@@ -148,6 +150,7 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['DELETE', '/api/settings/welcomescreen/background', 'A', 'Retirer le fond par defaut', '', 'Reglages'],
   ['PUT', '/api/settings/welcomescreen/background-web', 'A', 'Choisir une image web (Openverse) comme fond par defaut', '', 'Reglages', '{ url, attribution }'],
   ['GET', '/api/settings/welcomescreen/search', 'A', 'Rechercher des images de fond libres de droits (Openverse)', '', 'Reglages', '?q='],
+  ['GET', '/api/settings/welcomescreen/stats', 'A', 'Tableau de bord : ouvertures du livret par logement', '', 'Reglages'],
   // --- Utilisateurs (administrateur)
   ['GET', '/api/users', 'A', 'Liste des comptes et de leurs logements', '', 'Utilisateurs'],
   ['POST', '/api/users', 'A', 'Creer un compte (sans mot de passe : il s\'active par invitation)', '', 'Utilisateurs', '{ username, displayName, email?, role, logements[] }'],

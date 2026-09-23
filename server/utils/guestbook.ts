@@ -59,6 +59,46 @@ export async function regenerateGuestToken(logementId: number) {
   await useDatabase().sql`UPDATE guestbook_token SET token = ${randomBytes(16).toString('hex')} WHERE logement_id = ${logementId}`
 }
 
+// Widgets du livret/ecran TV : liste ordonnee, source unique de verite (aussi utilisee pour les libelles cote client,
+// app/composables/useWidgetCatalog.ts, a garder alignee). Chaque widget ne s'affiche que s'il a du contenu (deja
+// gere par les pages), cette liste ne fait que choisir lesquels ET dans quel ordre, par logement.
+export const WIDGET_IDS = ['weather', 'wifi', 'checkin', 'checkout', 'access', 'rules', 'tips', 'faq', 'devices'] as const
+export type WidgetId = typeof WIDGET_IDS[number]
+
+export async function getWidgetOrder(logementId: number): Promise<WidgetId[]> {
+  const r = ((await useDatabase().sql`SELECT widget_order FROM guestbook WHERE logement_id = ${logementId}`).rows as any[])[0]
+  const raw = String(r?.widget_order || '').split(',').map(s => s.trim()).filter((s): s is WidgetId => (WIDGET_IDS as readonly string[]).includes(s))
+  return raw.length ? raw : [...WIDGET_IDS]
+}
+
+export async function saveWidgetOrder(logementId: number, order: unknown[]) {
+  await ensureGuestbook(logementId)
+  const clean = [...new Set(order.map(String))].filter((s): s is WidgetId => (WIDGET_IDS as readonly string[]).includes(s))
+  await useDatabase().sql`UPDATE guestbook SET widget_order = ${clean.join(',')} WHERE logement_id = ${logementId}`
+}
+
+// Mise en page (par logement) : navigation par defilement (toutes les cartes) ou par onglets (une a la fois, sur le
+// livret mobile du voyageur seulement — l'ecran TV reste toujours en defilement, aucune interaction tactile la-bas).
+// Colonnes separees : livret (defaut 1, page etroite pensee mobile) et ecran TV (defaut 2, comportement d'avant cette option).
+export interface LayoutSettings { navMode: 'scroll' | 'tabs'; gridColumns: 1 | 2; tvColumns: 1 | 2 }
+
+export async function getLayoutSettings(logementId: number): Promise<LayoutSettings> {
+  const r = ((await useDatabase().sql`SELECT nav_mode, grid_columns, tv_columns FROM guestbook WHERE logement_id = ${logementId}`).rows as any[])[0]
+  return {
+    navMode: r?.nav_mode === 'tabs' ? 'tabs' : 'scroll',
+    gridColumns: Number(r?.grid_columns) === 2 ? 2 : 1,
+    tvColumns: Number(r?.tv_columns) === 1 ? 1 : 2,
+  }
+}
+
+export async function saveLayoutSettings(logementId: number, navMode: unknown, gridColumns: unknown, tvColumns: unknown) {
+  await ensureGuestbook(logementId)
+  const mode = navMode === 'tabs' ? 'tabs' : 'scroll'
+  const cols = Number(gridColumns) === 2 ? 2 : 1
+  const tvCols = Number(tvColumns) === 1 ? 1 : 2
+  await useDatabase().sql`UPDATE guestbook SET nav_mode = ${mode}, grid_columns = ${cols}, tv_columns = ${tvCols} WHERE logement_id = ${logementId}`
+}
+
 // Fond du livret/ecran TV, par logement : 'inherit' reprend le fond general (reglages), 'none' force aucun fond,
 // 'custom' utilise le fichier depose (background_ext) ou l'image web choisie (background_web_url) pour ce logement.
 export interface BackgroundRow { mode: string; ext: string; webUrl: string; attribution: string; animated: boolean }

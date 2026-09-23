@@ -65,6 +65,38 @@
     </UCard>
 
     <UCard>
+      <template #header><b>Mise en page</b></template>
+      <p class="text-sm text-muted">Navigation et disposition du livret voyageur (page mobile) et de l'écran TV. L'écran TV reste toujours en défilement, jamais en onglets : aucune interaction tactile prévue là-bas.</p>
+      <div class="mt-3 grid gap-3 sm:grid-cols-3">
+        <UFormField label="Navigation (livret mobile)">
+          <USelect :model-value="data.layout.navMode" :items="navItems" class="w-full" @update:model-value="setLayout($event, data.layout.gridColumns, data.layout.tvColumns)" />
+        </UFormField>
+        <UFormField label="Disposition (livret)">
+          <USelect :model-value="data.layout.gridColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, $event, data.layout.tvColumns)" />
+        </UFormField>
+        <UFormField label="Disposition (écran TV)">
+          <USelect :model-value="data.layout.tvColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, data.layout.gridColumns, $event)" />
+        </UFormField>
+      </div>
+    </UCard>
+
+    <UCard>
+      <template #header><b>Widgets affichés</b></template>
+      <p class="text-sm text-muted">Choisir lesquels apparaissent sur le livret et l'écran TV, et dans quel ordre. Un widget désactivé ici ne s'affiche jamais, même s'il a du contenu ; un widget activé ne s'affiche que s'il a du contenu (ex. Wi-Fi vide reste masqué).</p>
+      <ul class="mt-3 divide-y divide-default">
+        <li v-for="w in displayList" :key="w.id" class="flex items-center gap-3 py-2">
+          <UCheckbox :model-value="w.enabled" @update:model-value="toggleWidget(w.id, $event)" />
+          <UIcon :name="w.icon" class="size-4 text-muted" />
+          <span class="flex-1 text-sm" :class="{ 'text-muted': !w.enabled }">{{ w.label }}</span>
+          <div v-if="w.enabled" class="flex gap-1">
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="w.isFirst" @click="move(w.id, -1)" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="w.isLast" @click="move(w.id, 1)" />
+          </div>
+        </li>
+      </ul>
+    </UCard>
+
+    <UCard>
       <template #header><b>Wi-Fi</b></template>
       <div class="grid gap-2 sm:grid-cols-2">
         <UFormField label="Nom du réseau (SSID)"><UInput v-model="form.wifiSsid" class="w-full" /></UFormField>
@@ -153,6 +185,42 @@ async function setMode(mode: 'inherit' | 'none') {
 }
 async function setAnimated(animated: boolean) {
   await $fetch(`/api/logements/${route.params.id}/livret/animated`, { method: 'PUT', body: { animated } })
+  await refresh()
+}
+
+const widgetOrder = ref<string[]>([])
+watch(() => data.value?.widgetOrder, (o) => { if (o) widgetOrder.value = [...o] }, { immediate: true })
+const displayList = computed(() => {
+  const enabled = widgetOrder.value
+  const disabled = WIDGET_CATALOG.filter(w => !enabled.includes(w.id)).map(w => w.id)
+  const ids = [...enabled, ...disabled]
+  return ids.map((id, i) => {
+    const w = WIDGET_CATALOG.find(c => c.id === id)!
+    const isEnabled = enabled.includes(id)
+    return { id, label: w.label, icon: w.icon, enabled: isEnabled, isFirst: i === 0, isLast: isEnabled && i === enabled.length - 1 }
+  })
+})
+async function saveWidgets() {
+  await $fetch(`/api/logements/${route.params.id}/livret/widgets`, { method: 'PUT', body: { order: widgetOrder.value } })
+}
+function toggleWidget(id: string, on: boolean) {
+  widgetOrder.value = on ? [...widgetOrder.value, id] : widgetOrder.value.filter(w => w !== id)
+  saveWidgets()
+}
+function move(id: string, dir: -1 | 1) {
+  const i = widgetOrder.value.indexOf(id)
+  const j = i + dir
+  if (i < 0 || j < 0 || j >= widgetOrder.value.length) return
+  const next = [...widgetOrder.value]
+  ;[next[i], next[j]] = [next[j]!, next[i]!]
+  widgetOrder.value = next
+  saveWidgets()
+}
+
+const navItems = [{ label: 'Défilement (toutes les cartes)', value: 'scroll' }, { label: 'Onglets (une à la fois)', value: 'tabs' }]
+const colItems = [{ label: '1 colonne', value: 1 }, { label: '2 colonnes', value: 2 }]
+async function setLayout(navMode: unknown, gridColumns: unknown, tvColumns: unknown) {
+  await $fetch(`/api/logements/${route.params.id}/livret/layout`, { method: 'PUT', body: { navMode, gridColumns, tvColumns } })
   await refresh()
 }
 

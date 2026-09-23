@@ -3,6 +3,27 @@
     <h2 class="section-title !mt-0">Livret & écran TV</h2>
     <p class="text-sm text-muted">Fond par défaut pour le livret d'accueil et l'écran TV de tous les logements. Chaque logement peut le garder, le remplacer par son propre fond, ou forcer l'absence de fond (page de son livret).</p>
 
+    <UCard v-if="stats">
+      <template #header><b>Tableau de bord</b></template>
+      <p class="text-xs text-muted">Ouvertures du livret voyageur (page mobile) par logement. L'écran TV n'est pas compté : il s'auto-rafraîchit toutes les 10 minutes, ce qui fausserait le nombre de visites.</p>
+
+      <div v-if="stats.totalByLogement.length" class="mt-3 space-y-2">
+        <div v-for="l in stats.totalByLogement" :key="l.logementId" class="flex items-center justify-between gap-3">
+          <span class="text-sm font-medium">{{ l.name }}</span>
+          <span class="text-sm text-muted">{{ l.g }} ouverture{{ l.g > 1 ? 's' : '' }}</span>
+        </div>
+      </div>
+      <p v-else class="mt-3 text-sm text-muted">Aucune ouverture enregistrée pour l'instant.</p>
+
+      <p class="mt-4 mb-1 text-xs font-medium text-muted">14 derniers jours</p>
+      <div class="flex h-20 items-end gap-1">
+        <div v-for="d in stats.dailyLast14" :key="d.day" class="group relative flex-1">
+          <div class="rounded-t bg-primary/70" :style="{ height: `${barHeight(d.g)}%` }" />
+          <span class="pointer-events-none absolute -top-5 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-1.5 py-0.5 text-xs text-white group-hover:block">{{ d.day.slice(5) }} · {{ d.g }}</span>
+        </div>
+      </div>
+    </UCard>
+
     <UCard>
       <template #header><b>Fond par défaut</b></template>
       <div v-if="data.hasBackground" class="mb-3 flex items-center gap-3">
@@ -29,6 +50,11 @@
 
 <script setup lang="ts">
 const { data, refresh } = await useFetch('/api/settings/welcomescreen', { key: 'welcomescreen-settings' })
+const { data: stats } = await useFetch('/api/settings/welcomescreen/stats', { key: 'welcomescreen-stats' })
+const barHeight = (n: number) => {
+  const max = Math.max(1, ...(stats.value?.dailyLast14.map(d => d.g) ?? [1]))
+  return Math.max(4, Math.round((n / max) * 100))
+}
 const animated = ref(false)
 watch(() => data.value?.animated, (v) => { if (v !== undefined) animated.value = v }, { immediate: true })
 
