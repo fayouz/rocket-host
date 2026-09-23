@@ -1,7 +1,9 @@
 <template>
   <div v-if="data" class="tv-bg relative flex min-h-screen flex-col justify-between overflow-hidden px-16 py-12 text-white">
-    <div v-if="data.background" class="absolute inset-0 bg-cover bg-center" :class="{ 'bg-kenburns': data.background.animated }" :style="{ backgroundImage: `url(${data.background.url})` }" />
-    <div v-if="data.background" class="absolute inset-0 bg-black/40" />
+    <Transition name="bg-fade">
+      <div v-if="activeBackground" :key="activeBackground.url" class="absolute inset-0 bg-cover bg-center" :class="{ 'bg-kenburns': activeBackground.animated }" :style="{ backgroundImage: `url(${activeBackground.url})` }" />
+    </Transition>
+    <div v-if="activeBackground" class="absolute inset-0 bg-black/40" />
     <div class="relative flex items-start justify-between">
       <div>
         <p class="text-3xl text-white/70">{{ t.welcomeTo }}</p>
@@ -158,6 +160,15 @@ watch(tvSlides, () => { activeIndex.value = 0; carouselRef.value?.emblaApi?.scro
 function onSelect(i: number) { activeIndex.value = i }
 function goTo(i: number) { carouselRef.value?.emblaApi?.scrollTo(i) }
 
+// Fond de la slide active en mode carrousel (surcharge par widget si definie, sinon fond du logement) ; le pseudo-
+// widget "welcome" (mot de bienvenue) n'a pas de fond propre. En mode defilement, un seul fond pour toute la page.
+const activeBackground = computed(() => {
+  if (!data.value) return null
+  if (data.value.layout?.navMode !== 'tabs') return data.value.background
+  const id = tvSlides.value[activeIndex.value]
+  return (id && data.value.widgetBackgrounds?.[id]) || data.value.background
+})
+
 // Reste affiche des jours d'affilee sur une TV : on rafraichit les donnees regulierement (meteo, contenu modifie),
 // et on recharge la PAGE ENTIERE (pas juste les donnees) un peu avant l'arrivee du prochain voyageur (data.reloadAt,
 // calcule cote serveur) pour repartir sur un etat propre, sans dependre d'un reseau local ni d'une app tierce (Fully Kiosk).
@@ -175,4 +186,7 @@ if (import.meta.client) {
 .tv-bg {
   background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
 }
+.bg-fade-enter-active, .bg-fade-leave-active { transition: opacity 0.4s ease; }
+.bg-fade-enter-from, .bg-fade-leave-to { opacity: 0; }
+.bg-fade-leave-active { position: absolute; inset: 0; }
 </style>

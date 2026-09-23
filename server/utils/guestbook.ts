@@ -177,3 +177,61 @@ export async function resolveBackground(logementId: number, publicUrlForOwnFile:
   if (!g) return null
   return { url: g.url, animated: row.animated || g.animated }
 }
+
+// Fond par widget (carrousel) : surcharge le fond du logement pour ce seul widget, uniquement en mode "Onglets".
+// Pas de mode 'none'/'inherit' comme pour le fond du logement : soit le widget a une image a lui (ext ou webUrl),
+// soit il n'en a pas et herite simplement du fond du logement (comportement affiche a l'hote comme "par defaut").
+export interface WidgetBackgroundRow { ext: string; webUrl: string; attribution: string }
+
+function widgetBgKey(logementId: number, widgetId: string) { return `logement-${logementId}-widget-${widgetId}` }
+
+export async function getWidgetBackgroundRow(logementId: number, widgetId: string): Promise<WidgetBackgroundRow> {
+  const r = ((await useDatabase().sql`SELECT ext, web_url, attribution FROM widget_background WHERE logement_id = ${logementId} AND widget_id = ${widgetId}`).rows as any[])[0]
+  return { ext: String(r?.ext || ''), webUrl: String(r?.web_url || ''), attribution: String(r?.attribution || '') }
+}
+
+export async function getWidgetBackgrounds(logementId: number): Promise<Record<string, WidgetBackgroundRow>> {
+  const rows = (await useDatabase().sql`SELECT widget_id, ext, web_url, attribution FROM widget_background WHERE logement_id = ${logementId}`).rows as any[]
+  return Object.fromEntries(rows.map(r => [String(r.widget_id), { ext: String(r.ext || ''), webUrl: String(r.web_url || ''), attribution: String(r.attribution || '') }]))
+}
+
+export async function saveWidgetBackground(logementId: number, widgetId: string, filename: string, data: Buffer) {
+  const row = await getWidgetBackgroundRow(logementId, widgetId)
+  const ext = await saveBackgroundFile(widgetBgKey(logementId, widgetId), filename, data, row.ext)
+  const now = new Date().toISOString()
+  await useDatabase().sql`INSERT INTO widget_background (logement_id, widget_id, ext, web_url, attribution, updated_at) VALUES (${logementId}, ${widgetId}, ${ext}, '', '', ${now})
+    ON CONFLICT (logement_id, widget_id) DO UPDATE SET ext = ${ext}, web_url = '', attribution = '', updated_at = ${now}`
+}
+
+export async function saveWidgetBackgroundWeb(logementId: number, widgetId: string, url: string, attribution: string) {
+  const row = await getWidgetBackgroundRow(logementId, widgetId)
+  await removeBackgroundFile(widgetBgKey(logementId, widgetId), row.ext)
+  const now = new Date().toISOString()
+  const u = url.slice(0, 500); const a = attribution.slice(0, 300)
+  await useDatabase().sql`INSERT INTO widget_background (logement_id, widget_id, ext, web_url, attribution, updated_at) VALUES (${logementId}, ${widgetId}, '', ${u}, ${a}, ${now})
+    ON CONFLICT (logement_id, widget_id) DO UPDATE SET ext = '', web_url = ${u}, attribution = ${a}, updated_at = ${now}`
+}
+
+export async function removeWidgetBackground(logementId: number, widgetId: string) {
+  const row = await getWidgetBackgroundRow(logementId, widgetId)
+  await removeBackgroundFile(widgetBgKey(logementId, widgetId), row.ext)
+  await useDatabase().sql`DELETE FROM widget_background WHERE logement_id = ${logementId} AND widget_id = ${widgetId}`
+}
+
+export async function readWidgetBackgroundFile(logementId: number, widgetId: string): Promise<{ path: string; mime: string } | null> {
+  const row = await getWidgetBackgroundRow(logementId, widgetId)
+  if (!row.ext) return null
+  return { path: bgPath(widgetBgKey(logementId, widgetId), row.ext), mime: BG_TYPES[row.ext]! }
+}
+
+// Fonds resolus pour tous les widgets d'un logement qui ont une surcharge (les autres heritent du fond du logement,
+// pas besoin de les lister). publicUrlForOwnFile(widgetId) construit l'URL publique du fichier depose pour ce widget.
+export async function resolveWidgetBackgrounds(logementId: number, publicUrlForOwnFile: (widgetId: string) => string): Promise<Record<string, ResolvedBackground>> {
+  const rows = await getWidgetBackgrounds(logementId)
+  const out: Record<string, ResolvedBackground> = {}
+  for (const [widgetId, row] of Object.entries(rows)) {
+    if (row.ext) out[widgetId] = { url: publicUrlForOwnFile(widgetId), animated: false }
+    else if (row.webUrl) out[widgetId] = { url: row.webUrl, animated: false }
+  }
+  return out
+}

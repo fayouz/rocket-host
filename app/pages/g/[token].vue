@@ -1,21 +1,23 @@
 <template>
   <div v-if="data" class="relative min-h-screen overflow-hidden">
-    <div v-if="data.background" class="absolute inset-0 bg-cover bg-center" :class="{ 'bg-kenburns': data.background.animated }" :style="{ backgroundImage: `url(${data.background.url})` }" />
-    <div v-if="data.background" class="absolute inset-0 bg-black/40" />
-    <div class="relative mx-auto max-w-lg space-y-4 px-4 py-6" :class="{ 'text-white': data.background }">
+    <Transition name="bg-fade">
+      <div v-if="activeBackground" :key="activeBackground.url" class="absolute inset-0 bg-cover bg-center" :class="{ 'bg-kenburns': activeBackground.animated }" :style="{ backgroundImage: `url(${activeBackground.url})` }" />
+    </Transition>
+    <div v-if="activeBackground" class="absolute inset-0 bg-black/40" />
+    <div class="relative mx-auto max-w-lg space-y-4 px-4 py-6" :class="{ 'text-white': activeBackground }">
       <div class="text-center">
         <h1 class="text-2xl font-semibold">{{ t.welcomeTo }} {{ data.logement }}</h1>
-        <p v-if="c.welcomeText" class="mt-2 whitespace-pre-line" :class="data.background ? 'text-white/80' : 'text-muted'">{{ c.welcomeText }}</p>
+        <p v-if="c.welcomeText" class="mt-2 whitespace-pre-line" :class="activeBackground ? 'text-white/80' : 'text-muted'">{{ c.welcomeText }}</p>
       </div>
 
       <template v-if="data.layout.navMode === 'tabs'">
         <UCarousel
           v-if="visibleWidgets.length" ref="carouselRef" :items="visibleWidgets" dots
-          :ui="{ item: 'basis-full', dots: 'mt-3', dot: data.background ? 'bg-white/30 data-[state=active]:bg-white' : undefined }"
+          :ui="{ item: 'basis-full', dots: 'mt-3', dot: activeBackground ? 'bg-white/30 data-[state=active]:bg-white' : undefined }"
           class="pb-20" @select="onSelect"
         >
           <template #default="{ item }">
-            <GuestWidgetCard :id="item" :content="c" :weather="data.weather" :devices="devices" :card-ui="cardUi" :busy="busy" :dark="!!data.background" @send="send" />
+            <GuestWidgetCard :id="item" :content="c" :weather="data.weather" :devices="devices" :card-ui="activeBackground ? CARD_UI_DARK : {}" :busy="busy" :dark="!!activeBackground" @send="send" />
           </template>
         </UCarousel>
 
@@ -40,7 +42,7 @@
         <GuestWidgetCard v-for="id in data.widgetOrder" :id="id" :key="id" :content="c" :weather="data.weather" :devices="devices" :card-ui="cardUi" :busy="busy" :dark="!!data.background" @send="send" />
       </div>
 
-      <p v-if="empty" class="py-12 text-center text-sm" :class="data.background ? 'text-white/70' : 'text-muted'">{{ t.empty }}</p>
+      <p v-if="empty" class="py-12 text-center text-sm" :class="activeBackground ? 'text-white/70' : 'text-muted'">{{ t.empty }}</p>
     </div>
   </div>
   <div v-else class="pt-12 text-center text-muted">{{ t.invalid }}</div>
@@ -53,7 +55,8 @@ const { data } = await useFetch(`/api/g/${route.params.token}`)
 if (import.meta.server && !data.value) setResponseStatus(useRequestEvent()!, 404)
 const c = computed(() => data.value?.content ?? {} as Record<string, string>)
 const { lang, t } = useGuestLang()
-const cardUi = computed(() => data.value?.background ? { root: 'bg-white/10 backdrop-blur-xl ring-white/20 text-white' } : {})
+const CARD_UI_DARK = { root: 'bg-white/10 backdrop-blur-xl ring-white/20 text-white' }
+const cardUi = computed(() => data.value?.background ? CARD_UI_DARK : {})
 
 // --- Domotique mise à disposition (V3) ---
 interface DeviceCtrl { capabilityId: string; kind: 'onoff' | 'dim' | 'target_temperature'; value: unknown; min?: number; max?: number; units: string | null }
@@ -86,5 +89,20 @@ const carouselRef = ref<{ emblaApi?: { scrollTo: (i: number) => void } } | null>
 const activeIndex = ref(0)
 watch(visibleWidgets, () => { activeIndex.value = 0; carouselRef.value?.emblaApi?.scrollTo(0) }) // nouvelle liste (widget ajoute/retire) : repart au debut
 function onSelect(i: number) { activeIndex.value = i }
+
+// Fond de la slide active en mode carrousel (surcharge par widget si defini, sinon fond du logement) ; en mode
+// defilement, un seul fond pour toute la page (pas de notion de "slide active").
+const activeBackground = computed(() => {
+  if (!data.value) return null
+  if (data.value.layout.navMode !== 'tabs') return data.value.background
+  const id = visibleWidgets.value[activeIndex.value]
+  return (id && data.value.widgetBackgrounds?.[id]) || data.value.background
+})
 function goTo(i: number) { carouselRef.value?.emblaApi?.scrollTo(i) }
 </script>
+
+<style scoped>
+.bg-fade-enter-active, .bg-fade-leave-active { transition: opacity 0.4s ease; }
+.bg-fade-enter-from, .bg-fade-leave-to { opacity: 0; }
+.bg-fade-leave-active { position: absolute; inset: 0; }
+</style>

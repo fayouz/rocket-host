@@ -7,5 +7,7 @@ export default defineEventHandler(async (event) => {
   const defaultBackground = await getDefaultBackground()
   const widgetOrder = await getWidgetOrder(lg.id)
   const layout = await getLayoutSettings(lg.id)
-  return { logement: { id: lg.id, name: lg.name }, content, token, background: { ...background, hasFile: !!background.ext }, hasDefaultBackground: !!defaultBackground, widgetOrder, layout }
+  const widgetBgRows = await getWidgetBackgrounds(lg.id)
+  const widgetBackgrounds = Object.fromEntries(Object.entries(widgetBgRows).map(([id, r]) => [id, { hasFile: !!r.ext, webUrl: r.webUrl, attribution: r.attribution }]))
+  return { logement: { id: lg.id, name: lg.name }, content, token, background: { ...background, hasFile: !!background.ext }, hasDefaultBackground: !!defaultBackground, widgetOrder, layout, widgetBackgrounds }
 })

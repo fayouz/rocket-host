@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
   const background = await resolveBackground(logementId, `/api/g/${token}/background`)
   const widgetOrder = await getWidgetOrder(logementId)
   const layout = await getLayoutSettings(logementId)
+  const widgetBackgrounds = await resolveWidgetBackgrounds(logementId, wid => `/api/g/${token}/widgets/${wid}/background`)
   await logGuestVisit(logementId, 'g')
-  return { logement: lg.name, content, weather, background, widgetOrder, layout }
+  return { logement: lg.name, content, weather, background, widgetOrder, layout, widgetBackgrounds }
 })
