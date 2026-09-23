@@ -91,6 +91,17 @@
       </UCard>
     </aside>
     </div>
+
+    <UCard v-if="occupancyByMonth.length">
+      <template #header>
+        <p class="text-xs font-medium uppercase tracking-wide text-muted">Taux d'occupation des 6 derniers mois</p>
+        <p class="mt-1 text-2xl font-bold">{{ occupancyThisMonth }} % <span class="text-sm font-normal text-muted">ce mois-ci</span></p>
+      </template>
+      <AreaChart
+        :series="[{ label: 'Occupation', color: 'var(--ui-secondary)', data: occupancyByMonth.map(m => m.value), fill: true }]"
+        :labels="occupancyByMonth.map(m => m.label)" :height="160"
+      />
+    </UCard>
   </div>
 </template>
 
@@ -155,6 +166,7 @@ const revenueVsCharges = computed(() => {
     { label: 'Charges', color: 'var(--ui-error)', data: last6.map(m => m.charges) },
   ]
 })
+const occupancyByMonth = computed(() => months.value.slice(-6).map(m => ({ label: monthLabel(m.month), value: monthTotal(m).occupancy })))
 
 // Cartes KPI : les 2 premieres toujours visibles (role AG), les suivantes seulement si les donnees admin ont pu
 // etre chargees (profit/stock nuls pour un role sans acces, voir le commentaire au-dessus des deux useFetch).
