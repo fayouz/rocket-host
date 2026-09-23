@@ -105,7 +105,7 @@
           <UCard>
             <template #header><b>Mise en page</b></template>
             <div class="grid gap-3 sm:grid-cols-2">
-              <UFormField label="Navigation (livret mobile)">
+              <UFormField label="Navigation (livret + écran TV)">
                 <USelect :model-value="data.layout.navMode" :items="navItems" class="w-full" @update:model-value="setLayout($event, data.layout.gridColumns, data.layout.tvColumns)" />
               </UFormField>
               <UFormField label="Disposition (livret)">
@@ -115,7 +115,7 @@
                 <USelect :model-value="data.layout.tvColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, data.layout.gridColumns, $event)" />
               </UFormField>
             </div>
-            <p class="mt-2 text-xs text-muted">L'écran TV reste toujours en défilement, jamais en onglets : aucune interaction tactile prévue là-bas.</p>
+            <p class="mt-2 text-xs text-muted">En mode « Onglets », le livret et l'écran TV affichent un carrousel avec une barre de menu pour naviguer entre les widgets.</p>
           </UCard>
         </div>
       </div>
