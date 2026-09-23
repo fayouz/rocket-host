@@ -170,7 +170,9 @@ const sections = [
 ] as const
 
 const form = reactive({ wifiSsid: '', wifiPassword: '', welcomeText: '', checkinInfo: '', checkoutInfo: '', accessDirections: '', localTips: '', faq: '', houseRules: '' })
-watch(() => data.value?.content, (c) => { if (c) Object.assign(form, c) }, { immediate: true })
+// once: true — sinon un refresh() declenche par une action sans rapport (fond, mise en page, widgets, sur l'autre
+// onglet) reecrase silencieusement une saisie texte pas encore enregistree (ex. reglement interieur en cours de frappe).
+watch(() => data.value?.content, (c) => { if (c) Object.assign(form, c) }, { immediate: true, once: true })
 const rentalRulesTag = '{{RentalRules}}'
 
 const origin = useRequestURL().origin
