@@ -26,10 +26,11 @@
               v-for="(id, i) in visibleWidgets" :key="id" type="button"
               class="flex shrink-0 flex-col items-center gap-0.5 rounded-full px-3 py-1.5 text-[11px] transition-colors"
               :class="i === activeIndex ? 'bg-white text-gray-900' : 'text-white/70 hover:text-white'"
+              :aria-current="i === activeIndex || undefined"
               @click="goTo(i)"
             >
               <UIcon :name="WIDGET_CATALOG.find(w => w.id === id)?.icon ?? 'i-lucide-circle'" class="size-4" />
-              {{ widgetLabel(id) }}
+              <span class="whitespace-nowrap">{{ widgetLabel(id) }}</span>
             </button>
           </div>
         </div>
@@ -83,7 +84,7 @@ const empty = computed(() => !!data.value && !c.value.welcomeText && !visibleWid
 // --- Navigation par carrousel (option, livret mobile seulement) : balayage tactile + barre de navigation fixe ---
 const carouselRef = ref<{ emblaApi?: { scrollTo: (i: number) => void } } | null>(null)
 const activeIndex = ref(0)
-watch(visibleWidgets, () => { activeIndex.value = 0 }) // nouvelle liste (widget ajoute/retire) : repart au debut
+watch(visibleWidgets, () => { activeIndex.value = 0; carouselRef.value?.emblaApi?.scrollTo(0) }) // nouvelle liste (widget ajoute/retire) : repart au debut
 function onSelect(i: number) { activeIndex.value = i }
 function goTo(i: number) { carouselRef.value?.emblaApi?.scrollTo(i) }
 </script>
