@@ -21,7 +21,7 @@
       <p class="text-2xl text-white/80">{{ formatGuestDate(data.guest.arrival, lang) }} → {{ formatGuestDate(data.guest.departure, lang) }}</p>
     </div>
 
-    <div class="relative grid grid-cols-2 gap-10">
+    <div class="relative grid gap-10" :class="(data.layout?.tvColumns ?? 2) === 1 ? 'grid-cols-1' : 'grid-cols-2'">
       <div v-if="c.welcomeText" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
         <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-heart" class="size-8" /> {{ t.welcomeText }}</p>
         <p class="mt-3 whitespace-pre-line text-2xl">{{ c.welcomeText }}</p>

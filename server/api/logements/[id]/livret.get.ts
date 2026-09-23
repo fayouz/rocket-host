@@ -6,5 +6,6 @@ export default defineEventHandler(async (event) => {
   const background = await getBackgroundRow(lg.id)
   const defaultBackground = await getDefaultBackground()
   const widgetOrder = await getWidgetOrder(lg.id)
-  return { logement: { id: lg.id, name: lg.name }, content, token, background: { ...background, hasFile: !!background.ext }, hasDefaultBackground: !!defaultBackground, widgetOrder }
+  const layout = await getLayoutSettings(lg.id)
+  return { logement: { id: lg.id, name: lg.name }, content, token, background: { ...background, hasFile: !!background.ext }, hasDefaultBackground: !!defaultBackground, widgetOrder, layout }
 })

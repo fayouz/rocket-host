@@ -65,6 +65,22 @@
     </UCard>
 
     <UCard>
+      <template #header><b>Mise en page</b></template>
+      <p class="text-sm text-muted">Navigation et disposition du livret voyageur (page mobile) et de l'écran TV. L'écran TV reste toujours en défilement, jamais en onglets : aucune interaction tactile prévue là-bas.</p>
+      <div class="mt-3 grid gap-3 sm:grid-cols-3">
+        <UFormField label="Navigation (livret mobile)">
+          <USelect :model-value="data.layout.navMode" :items="navItems" class="w-full" @update:model-value="setLayout($event, data.layout.gridColumns, data.layout.tvColumns)" />
+        </UFormField>
+        <UFormField label="Disposition (livret)">
+          <USelect :model-value="data.layout.gridColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, $event, data.layout.tvColumns)" />
+        </UFormField>
+        <UFormField label="Disposition (écran TV)">
+          <USelect :model-value="data.layout.tvColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, data.layout.gridColumns, $event)" />
+        </UFormField>
+      </div>
+    </UCard>
+
+    <UCard>
       <template #header><b>Widgets affichés</b></template>
       <p class="text-sm text-muted">Choisir lesquels apparaissent sur le livret et l'écran TV, et dans quel ordre. Un widget désactivé ici ne s'affiche jamais, même s'il a du contenu ; un widget activé ne s'affiche que s'il a du contenu (ex. Wi-Fi vide reste masqué).</p>
       <ul class="mt-3 divide-y divide-default">
@@ -199,6 +215,13 @@ function move(id: string, dir: -1 | 1) {
   ;[next[i], next[j]] = [next[j]!, next[i]!]
   widgetOrder.value = next
   saveWidgets()
+}
+
+const navItems = [{ label: 'Défilement (toutes les cartes)', value: 'scroll' }, { label: 'Onglets (une à la fois)', value: 'tabs' }]
+const colItems = [{ label: '1 colonne', value: 1 }, { label: '2 colonnes', value: 2 }]
+async function setLayout(navMode: unknown, gridColumns: unknown, tvColumns: unknown) {
+  await $fetch(`/api/logements/${route.params.id}/livret/layout`, { method: 'PUT', body: { navMode, gridColumns, tvColumns } })
+  await refresh()
 }
 
 const busy = ref(false)
