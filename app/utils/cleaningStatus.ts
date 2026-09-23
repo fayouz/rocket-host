@@ -1,5 +1,6 @@
 // Couleur de badge pour un statut de menage (texte libre, synchronise depuis Lodgify PM Modules via n8n — voir
-// server/api/cleaning-tasks.post.ts). Mutualise entre la carte Turnover enrichie et TurnoverWidget.
+// server/api/cleaning-tasks.post.ts). Extrait ici (plutot que garde dans TurnoverWidget.vue) pour rester
+// reutilisable si un futur affichage du menage en a de nouveau besoin ailleurs.
 export function cleaningStatusColor(status?: string | null) {
   const s = (status ?? '').toLowerCase()
   if (/terminé|fait|complet|done/.test(s)) return 'success' as const
