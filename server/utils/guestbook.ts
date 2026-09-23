@@ -76,23 +76,11 @@ export async function regenerateGuestToken(logementId: number) {
   await useDatabase().sql`UPDATE guestbook_token SET token = ${randomBytes(16).toString('hex')} WHERE logement_id = ${logementId}`
 }
 
-// Widgets du livret/ecran TV : liste ordonnee, source unique de verite (aussi utilisee pour les libelles cote client,
-// app/composables/useWidgetCatalog.ts, a garder alignee). Chaque widget ne s'affiche que s'il a du contenu (deja
-// gere par les pages), cette liste ne fait que choisir lesquels ET dans quel ordre, par logement.
+// Widgets du livret/ecran TV : catalogue fixe (aussi utilise pour les libelles cote client, app/composables/useWidgetCatalog.ts,
+// a garder alignee). Chaque widget ne s'affiche que s'il a du contenu ; lequel affiche, dans quel ordre, et regroupe dans
+// quelle page, c'est le role des pages ci-dessous (un widget sans page n'est affiche nulle part).
 export const WIDGET_IDS = ['weather', 'wifi', 'checkin', 'checkout', 'access', 'rules', 'tips', 'faq', 'devices'] as const
 export type WidgetId = typeof WIDGET_IDS[number]
-
-export async function getWidgetOrder(logementId: number): Promise<WidgetId[]> {
-  const r = ((await useDatabase().sql`SELECT widget_order FROM guestbook WHERE logement_id = ${logementId}`).rows as any[])[0]
-  const raw = String(r?.widget_order || '').split(',').map(s => s.trim()).filter((s): s is WidgetId => (WIDGET_IDS as readonly string[]).includes(s))
-  return raw.length ? raw : [...WIDGET_IDS]
-}
-
-export async function saveWidgetOrder(logementId: number, order: unknown[]) {
-  await ensureGuestbook(logementId)
-  const clean = [...new Set(order.map(String))].filter((s): s is WidgetId => (WIDGET_IDS as readonly string[]).includes(s))
-  await useDatabase().sql`UPDATE guestbook SET widget_order = ${clean.join(',')} WHERE logement_id = ${logementId}`
-}
 
 // Mise en page (par logement) : navigation par defilement (toutes les cartes) ou par onglets (une a la fois, sur le
 // livret mobile du voyageur seulement — l'ecran TV reste toujours en defilement, aucune interaction tactile la-bas).
@@ -178,60 +166,137 @@ export async function resolveBackground(logementId: number, publicUrlForOwnFile:
   return { url: g.url, animated: row.animated || g.animated }
 }
 
-// Fond par widget (carrousel) : surcharge le fond du logement pour ce seul widget, uniquement en mode "Onglets".
-// Pas de mode 'none'/'inherit' comme pour le fond du logement : soit le widget a une image a lui (ext ou webUrl),
-// soit il n'en a pas et herite simplement du fond du logement (comportement affiche a l'hote comme "par defaut").
-export interface WidgetBackgroundRow { ext: string; webUrl: string; attribution: string }
+// Pages du livret/ecran TV : l'hote regroupe librement ses widgets dans des pages nommees (un onglet du carrousel en
+// mode "Onglets", une section en mode "Defilement"). Chaque page peut avoir son propre fond, qui surcharge le fond
+// du logement pour cette page seulement (pas de mode 'none'/'inherit' comme pour le fond du logement : soit la page
+// a une image a elle, soit elle n'en a pas et herite simplement du fond du logement).
+export interface GuestPage { id: number; label: string; icon: string; widgets: WidgetId[]; hasFile: boolean; webUrl: string; attribution: string }
 
-function widgetBgKey(logementId: number, widgetId: string) { return `logement-${logementId}-widget-${widgetId}` }
+function pageBgKey(pageId: number) { return `page-${pageId}` }
 
-export async function getWidgetBackgroundRow(logementId: number, widgetId: string): Promise<WidgetBackgroundRow> {
-  const r = ((await useDatabase().sql`SELECT ext, web_url, attribution FROM widget_background WHERE logement_id = ${logementId} AND widget_id = ${widgetId}`).rows as any[])[0]
-  return { ext: String(r?.ext || ''), webUrl: String(r?.web_url || ''), attribution: String(r?.attribution || '') }
-}
-
-export async function getWidgetBackgrounds(logementId: number): Promise<Record<string, WidgetBackgroundRow>> {
-  const rows = (await useDatabase().sql`SELECT widget_id, ext, web_url, attribution FROM widget_background WHERE logement_id = ${logementId}`).rows as any[]
-  return Object.fromEntries(rows.map(r => [String(r.widget_id), { ext: String(r.ext || ''), webUrl: String(r.web_url || ''), attribution: String(r.attribution || '') }]))
-}
-
-export async function saveWidgetBackground(logementId: number, widgetId: string, filename: string, data: Buffer) {
-  const row = await getWidgetBackgroundRow(logementId, widgetId)
-  const ext = await saveBackgroundFile(widgetBgKey(logementId, widgetId), filename, data, row.ext)
+// Cree une page par defaut au premier acces d'un logement jamais configure, a partir de l'ancien reglage widget_order
+// s'il existe (migration douce des logements deja en place), sinon tous les widgets dans l'ordre par defaut.
+export async function ensurePages(logementId: number) {
+  const db = useDatabase()
+  const count = Number(((await db.sql`SELECT COUNT(*) AS n FROM guestbook_page WHERE logement_id = ${logementId}`).rows as any[])[0]?.n ?? 0)
+  if (count) return
+  const legacy = ((await db.sql`SELECT widget_order FROM guestbook WHERE logement_id = ${logementId}`).rows as any[])[0]
+  const raw = String(legacy?.widget_order || '').split(',').map((s: string) => s.trim()).filter((s: string): s is WidgetId => (WIDGET_IDS as readonly string[]).includes(s))
+  const widgets = raw.length ? raw : [...WIDGET_IDS]
   const now = new Date().toISOString()
-  await useDatabase().sql`INSERT INTO widget_background (logement_id, widget_id, ext, web_url, attribution, updated_at) VALUES (${logementId}, ${widgetId}, ${ext}, '', '', ${now})
-    ON CONFLICT (logement_id, widget_id) DO UPDATE SET ext = ${ext}, web_url = '', attribution = '', updated_at = ${now}`
+  await db.sql`INSERT INTO guestbook_page (logement_id, label, icon, position, updated_at) VALUES (${logementId}, 'Accueil', 'i-lucide-home', 0, ${now})`
+  const pageId = Number(((await db.sql`SELECT MAX(id) AS id FROM guestbook_page WHERE logement_id = ${logementId}`).rows as any[])[0].id)
+  for (const [i, w] of widgets.entries()) await db.sql`INSERT INTO page_widget (page_id, widget_id, position) VALUES (${pageId}, ${w}, ${i})`
 }
 
-export async function saveWidgetBackgroundWeb(logementId: number, widgetId: string, url: string, attribution: string) {
-  const row = await getWidgetBackgroundRow(logementId, widgetId)
-  await removeBackgroundFile(widgetBgKey(logementId, widgetId), row.ext)
+export async function getPages(logementId: number): Promise<GuestPage[]> {
+  await ensurePages(logementId)
+  const db = useDatabase()
+  const pages = (await db.sql`SELECT id, label, icon, bg_ext, bg_web_url, bg_attribution FROM guestbook_page WHERE logement_id = ${logementId} ORDER BY position`).rows as any[]
+  const widgetRows = (await db.sql`SELECT page_id, widget_id FROM page_widget WHERE page_id IN (SELECT id FROM guestbook_page WHERE logement_id = ${logementId}) ORDER BY position`).rows as any[]
+  const widgetsByPage = new Map<number, WidgetId[]>()
+  for (const r of widgetRows) {
+    const pid = Number(r.page_id)
+    if (!widgetsByPage.has(pid)) widgetsByPage.set(pid, [])
+    widgetsByPage.get(pid)!.push(String(r.widget_id) as WidgetId)
+  }
+  return pages.map(p => ({
+    id: Number(p.id), label: String(p.label), icon: String(p.icon || 'i-lucide-file'), widgets: widgetsByPage.get(Number(p.id)) ?? [],
+    hasFile: !!p.bg_ext, webUrl: String(p.bg_web_url || ''), attribution: String(p.bg_attribution || ''),
+  }))
+}
+
+async function getPage(pageId: number): Promise<{ logementId: number; ext: string } | null> {
+  const r = ((await useDatabase().sql`SELECT logement_id, bg_ext FROM guestbook_page WHERE id = ${pageId}`).rows as any[])[0]
+  return r ? { logementId: Number(r.logement_id), ext: String(r.bg_ext || '') } : null
+}
+
+// Verifie que la page appartient bien a ce logement (les id de page sont globaux, pas prefixes par logement) avant
+// toute lecture/ecriture depuis une route admin ou publique.
+export async function getPageForLogement(pageId: number, logementId: number) {
+  const p = await getPage(pageId)
+  if (!p || p.logementId !== logementId) throw createError({ statusCode: 404, statusMessage: 'Page introuvable' })
+  return p
+}
+
+export async function createPage(logementId: number, label: string, icon: string) {
+  const db = useDatabase()
+  const pos = Number(((await db.sql`SELECT COALESCE(MAX(position), -1) AS m FROM guestbook_page WHERE logement_id = ${logementId}`).rows as any[])[0]?.m ?? -1) + 1
   const now = new Date().toISOString()
+  await db.sql`INSERT INTO guestbook_page (logement_id, label, icon, position, updated_at) VALUES (${logementId}, ${label.slice(0, 60) || 'Page'}, ${icon || 'i-lucide-file'}, ${pos}, ${now})`
+  return Number(((await db.sql`SELECT MAX(id) AS id FROM guestbook_page WHERE logement_id = ${logementId}`).rows as any[])[0].id)
+}
+
+export async function renamePage(pageId: number, label: string, icon: string) {
+  await useDatabase().sql`UPDATE guestbook_page SET label = ${label.slice(0, 60) || 'Page'}, icon = ${icon || 'i-lucide-file'} WHERE id = ${pageId}`
+}
+
+export async function reorderPages(logementId: number, order: number[]) {
+  const db = useDatabase()
+  const existing = new Set(((await db.sql`SELECT id FROM guestbook_page WHERE logement_id = ${logementId}`).rows as any[]).map(r => Number(r.id)))
+  const clean = order.map(Number).filter(id => existing.has(id))
+  for (const [i, id] of clean.entries()) await db.sql`UPDATE guestbook_page SET position = ${i} WHERE id = ${id}`
+}
+
+export async function deletePage(pageId: number) {
+  const p = await getPage(pageId)
+  if (p?.ext) await removeBackgroundFile(pageBgKey(pageId), p.ext)
+  const db = useDatabase()
+  await db.sql`DELETE FROM page_widget WHERE page_id = ${pageId}`
+  await db.sql`DELETE FROM guestbook_page WHERE id = ${pageId}`
+}
+
+// Assigne un widget a une page (l'enleve de toute autre page du meme logement au passage), ou le desassigne (pageId
+// null) : un widget sans page n'est affiche nulle part, comme un widget desactive avant.
+export async function assignWidgetToPage(logementId: number, widgetId: WidgetId, pageId: number | null) {
+  const db = useDatabase()
+  const pageIds = ((await db.sql`SELECT id FROM guestbook_page WHERE logement_id = ${logementId}`).rows as any[]).map(r => Number(r.id))
+  for (const pid of pageIds) await db.sql`DELETE FROM page_widget WHERE page_id = ${pid} AND widget_id = ${widgetId}`
+  if (pageId === null) return
+  const pos = Number(((await db.sql`SELECT COALESCE(MAX(position), -1) AS m FROM page_widget WHERE page_id = ${pageId}`).rows as any[])[0]?.m ?? -1) + 1
+  await db.sql`INSERT INTO page_widget (page_id, widget_id, position) VALUES (${pageId}, ${widgetId}, ${pos})`
+}
+
+export async function reorderPageWidgets(pageId: number, order: string[]) {
+  const db = useDatabase()
+  const existing = new Set(((await db.sql`SELECT widget_id FROM page_widget WHERE page_id = ${pageId}`).rows as any[]).map(r => String(r.widget_id)))
+  const clean = order.map(String).filter(w => existing.has(w))
+  for (const [i, w] of clean.entries()) await db.sql`UPDATE page_widget SET position = ${i} WHERE page_id = ${pageId} AND widget_id = ${w}`
+}
+
+export async function savePageBackground(pageId: number, filename: string, data: Buffer) {
+  const p = await getPage(pageId)
+  const ext = await saveBackgroundFile(pageBgKey(pageId), filename, data, p?.ext || '')
+  await useDatabase().sql`UPDATE guestbook_page SET bg_ext = ${ext}, bg_web_url = '', bg_attribution = '', updated_at = ${new Date().toISOString()} WHERE id = ${pageId}`
+}
+
+export async function savePageBackgroundWeb(pageId: number, url: string, attribution: string) {
+  const p = await getPage(pageId)
+  if (p?.ext) await removeBackgroundFile(pageBgKey(pageId), p.ext)
   const u = url.slice(0, 500); const a = attribution.slice(0, 300)
-  await useDatabase().sql`INSERT INTO widget_background (logement_id, widget_id, ext, web_url, attribution, updated_at) VALUES (${logementId}, ${widgetId}, '', ${u}, ${a}, ${now})
-    ON CONFLICT (logement_id, widget_id) DO UPDATE SET ext = '', web_url = ${u}, attribution = ${a}, updated_at = ${now}`
+  await useDatabase().sql`UPDATE guestbook_page SET bg_ext = '', bg_web_url = ${u}, bg_attribution = ${a}, updated_at = ${new Date().toISOString()} WHERE id = ${pageId}`
 }
 
-export async function removeWidgetBackground(logementId: number, widgetId: string) {
-  const row = await getWidgetBackgroundRow(logementId, widgetId)
-  await removeBackgroundFile(widgetBgKey(logementId, widgetId), row.ext)
-  await useDatabase().sql`DELETE FROM widget_background WHERE logement_id = ${logementId} AND widget_id = ${widgetId}`
+export async function removePageBackground(pageId: number) {
+  const p = await getPage(pageId)
+  if (p?.ext) await removeBackgroundFile(pageBgKey(pageId), p.ext)
+  await useDatabase().sql`UPDATE guestbook_page SET bg_ext = '', bg_web_url = '', bg_attribution = '' WHERE id = ${pageId}`
 }
 
-export async function readWidgetBackgroundFile(logementId: number, widgetId: string): Promise<{ path: string; mime: string } | null> {
-  const row = await getWidgetBackgroundRow(logementId, widgetId)
-  if (!row.ext) return null
-  return { path: bgPath(widgetBgKey(logementId, widgetId), row.ext), mime: BG_TYPES[row.ext]! }
+export async function readPageBackgroundFile(pageId: number): Promise<{ path: string; mime: string } | null> {
+  const p = await getPage(pageId)
+  if (!p?.ext) return null
+  return { path: bgPath(pageBgKey(pageId), p.ext), mime: BG_TYPES[p.ext]! }
 }
 
-// Fonds resolus pour tous les widgets d'un logement qui ont une surcharge (les autres heritent du fond du logement,
-// pas besoin de les lister). publicUrlForOwnFile(widgetId) construit l'URL publique du fichier depose pour ce widget.
-export async function resolveWidgetBackgrounds(logementId: number, publicUrlForOwnFile: (widgetId: string) => string): Promise<Record<string, ResolvedBackground>> {
-  const rows = await getWidgetBackgrounds(logementId)
-  const out: Record<string, ResolvedBackground> = {}
-  for (const [widgetId, row] of Object.entries(rows)) {
-    if (row.ext) out[widgetId] = { url: publicUrlForOwnFile(widgetId), animated: false }
-    else if (row.webUrl) out[widgetId] = { url: row.webUrl, animated: false }
+// Fonds effectivement affiches par page (celles qui en ont un propre ; les autres heritent du fond du logement, pas
+// besoin de les lister). publicUrlForPage(pageId) construit l'URL publique du fichier depose pour cette page.
+export async function resolvePageBackgrounds(logementId: number, publicUrlForPage: (pageId: number) => string): Promise<Record<number, ResolvedBackground>> {
+  const pages = await getPages(logementId)
+  const out: Record<number, ResolvedBackground> = {}
+  for (const p of pages) {
+    if (p.hasFile) out[p.id] = { url: publicUrlForPage(p.id), animated: false }
+    else if (p.webUrl) out[p.id] = { url: p.webUrl, animated: false }
   }
   return out
 }

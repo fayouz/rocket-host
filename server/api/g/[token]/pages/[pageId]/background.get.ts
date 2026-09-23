@@ -1,16 +1,15 @@
-// Image de fond propre a un widget (carrousel), lien secret (meme jeton que le livret/ecran TV).
-// Pas de fond propre a ce widget -> 404 (le client retombe alors sur le fond du logement).
+// Image de fond propre a une page (carrousel/section), lien secret (meme jeton que le livret/ecran TV).
+// Pas de fond propre a cette page -> 404 (le client retombe alors sur le fond du logement).
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
-import { WIDGET_IDS } from '../../../../../utils/guestbook'
 
 export default defineEventHandler(async (event) => {
   const token = getRouterParam(event, 'token')
   if (!isGuestToken(token)) throw createError({ statusCode: 404, statusMessage: 'Lien invalide' })
-  const widgetId = getRouterParam(event, 'widgetId') || ''
-  if (!(WIDGET_IDS as readonly string[]).includes(widgetId)) throw createError({ statusCode: 404, statusMessage: 'Widget inconnu' })
+  const pageId = Number(getRouterParam(event, 'pageId'))
   const logementId = await logementByGuestToken(token)
-  const bg = await readWidgetBackgroundFile(logementId, widgetId)
+  await getPageForLogement(pageId, logementId)
+  const bg = await readPageBackgroundFile(pageId)
   if (!bg) throw createError({ statusCode: 404, statusMessage: 'Pas de fond configuré' })
   let size: number
   try { size = (await stat(bg.path)).size } catch { throw createError({ statusCode: 404, statusMessage: 'Image introuvable' }) }

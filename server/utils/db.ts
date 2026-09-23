@@ -76,11 +76,19 @@ export async function initDb() {
   await db.exec(`CREATE TABLE IF NOT EXISTS guest_visit (
     id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, page TEXT NOT NULL, at TEXT NOT NULL)`)
   await db.exec('CREATE INDEX IF NOT EXISTS guest_visit_logement_at ON guest_visit (logement_id, at)')
-  // Fond par widget (carrousel du livret/ecran TV, V3) : surcharge le fond du logement pour ce seul widget/slide.
-  // Absent = herite du fond du logement (comportement inchange si l'hote n'en definit aucun).
-  await db.exec(`CREATE TABLE IF NOT EXISTS widget_background (
-    logement_id INTEGER NOT NULL, widget_id TEXT NOT NULL, ext TEXT NOT NULL DEFAULT '', web_url TEXT NOT NULL DEFAULT '',
-    attribution TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '', PRIMARY KEY (logement_id, widget_id))`)
+  // Remplace par guestbook_page/page_widget ci-dessous (fond par page plutot que par widget) : jamais publie, sans donnees a migrer.
+  await db.exec('DROP TABLE IF EXISTS widget_background')
+  // Pages du livret/ecran TV (V3) : l'hote regroupe librement ses widgets dans des pages nommees (une page = un onglet du
+  // carrousel, ou une section en mode Defilement). Chaque page peut avoir son propre fond (surcharge le fond du logement).
+  await db.exec(`CREATE TABLE IF NOT EXISTS guestbook_page (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, label TEXT NOT NULL, icon TEXT NOT NULL DEFAULT 'i-lucide-file',
+    position INTEGER NOT NULL DEFAULT 0, bg_ext TEXT NOT NULL DEFAULT '', bg_web_url TEXT NOT NULL DEFAULT '',
+    bg_attribution TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '')`)
+  await db.exec('CREATE INDEX IF NOT EXISTS guestbook_page_logement ON guestbook_page (logement_id, position)')
+  // Un widget appartient a au plus une page (l'assigner a une page l'enleve de toute autre). Un widget sans ligne ici
+  // n'est affiche nulle part (equivalent de l'ancien widget desactive).
+  await db.exec(`CREATE TABLE IF NOT EXISTS page_widget (
+    page_id INTEGER NOT NULL, widget_id TEXT NOT NULL, position INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (page_id, widget_id))`)
   // Reglages generaux du livret/ecran TV : fond par defaut pour tous les logements (surchargeable par logement ci-dessus)
   await db.exec(`CREATE TABLE IF NOT EXISTS welcomescreen_settings (
     id INTEGER PRIMARY KEY CHECK (id = 1), background_ext TEXT NOT NULL DEFAULT '', background_web_url TEXT NOT NULL DEFAULT '',

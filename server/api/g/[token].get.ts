@@ -10,9 +10,9 @@ export default defineEventHandler(async (event) => {
   if (content.welcomeText) content.welcomeText = applyGuestPlaceholder(content.welcomeText, await getCurrentGuestFirstName(lg))
   const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
   const background = await resolveBackground(logementId, `/api/g/${token}/background`)
-  const widgetOrder = await getWidgetOrder(logementId)
   const layout = await getLayoutSettings(logementId)
-  const widgetBackgrounds = await resolveWidgetBackgrounds(logementId, wid => `/api/g/${token}/widgets/${wid}/background`)
+  const pages = await getPages(logementId)
+  const pageBackgrounds = await resolvePageBackgrounds(logementId, pid => `/api/g/${token}/pages/${pid}/background`)
   await logGuestVisit(logementId, 'g')
-  return { logement: lg.name, content, weather, background, widgetOrder, layout, widgetBackgrounds }
+  return { logement: lg.name, content, weather, background, layout, pages, pageBackgrounds }
 })
