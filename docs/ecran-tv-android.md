@@ -71,23 +71,27 @@ adb shell dpm set-device-owner com.ksmpartners.fullykiosk/.AdminReceiver
 
 4. Dans Fully Kiosk, activer le Kiosk Mode complet une fois Device Owner actif.
 
-## Étape 6 — Administration à distance (optionnel)
+## Étape 6 — Rechargement automatique avant chaque nouvelle réservation (fait, 2026-09-23)
 
-Fully Kiosk expose une **API REST locale** (HTTP, protégée par mot de passe, sur le réseau local uniquement) :
+Fully Kiosk expose bien une **API REST locale** (HTTP, protégée par mot de passe) — `loadUrl`, `restartApp`,
+`reboot`, `getDeviceInfo`, `screenshot`. Mais elle n'est joignable que depuis le **même réseau local** que la TV, et
+le serveur LoussaHousing (Mac mini) n'est pas forcément sur ce réseau : Gaston est à Villenave-d'Ornon, Le ponant à
+Bègles — deux réseaux différents, sans VPN/UniFi entre eux à ce jour. Appeler cette API depuis le serveur n'est donc
+**pas possible en l'état**.
 
-- `loadUrl` — changer l'URL affichée à distance (utile après régénération du lien du livret)
-- `restartApp` / `reboot` / `screenOn` / `screenOff`
-- `getDeviceInfo` — état, batterie, IP, version
-- `screenshot` — capture d'écran à distance
+Solution retenue à la place, sans dépendance réseau : la page `/tv/<jeton>` **se recharge elle-même**
+(rechargement complet de la page, pas juste une mise à jour des données) 30 minutes avant l'heure d'arrivée de la
+prochaine réservation. Le serveur calcule cette heure (`reloadAt`, à partir de l'heure de check-in Lodgify si
+connue, sinon 15h par défaut) et l'écran TV vérifie toutes les 10 minutes s'il doit se recharger. Ça couvre à la
+fois le changement de voyageur affiché ET repart sur un état propre (utile si l'app tourne depuis plusieurs jours).
+Implémenté dans `server/api/tv/[token].get.ts` et `app/pages/tv/[token].vue`.
 
-Piste future (pas construite) : un bouton « Recharger l'écran TV » dans l'éditeur du livret, qui appellerait cette
-API en HTTP direct depuis le serveur Nuxt vers l'IP locale de la TV (serveur et TV sont sur le même réseau local à
-Béglès, donc faisable). Utile surtout si le lien est régénéré : évite de devoir retaper l'URL à la main sur chaque
-TV.
+Si un jour le réseau le permet (VPN/UniFi entre le serveur et les logements), l'API locale de Fully Kiosk resterait
+utile pour d'autres actions (redémarrage matériel complet, capture d'écran à distance pour vérifier que tout va
+bien) — mais plus nécessaire pour le rechargement lui-même.
 
 Pour gérer plusieurs TV depuis un tableau de bord unique (captures d'écran, redémarrage, changement d'URL à
-distance, sans se déplacer) : **Fully Cloud**, payant à l'appareil. Intéressant seulement à partir de 5+ logements ;
-pour Gaston et Le ponant, l'API locale (gratuite) suffit si le bouton ci-dessus est construit un jour.
+distance) : **Fully Cloud**, payant à l'appareil. Intéressant seulement à partir de 5+ logements.
 
 ## Étape 7 — Dupliquer sur le second logement
 

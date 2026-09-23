@@ -82,9 +82,15 @@ function summary(d: DeviceView) {
   return parts.join(' · ') || '—'
 }
 
-// Reste affiche des jours d'affilee sur une TV : on rafraichit tout seul (nouveau voyageur, contenu modifie).
+// Reste affiche des jours d'affilee sur une TV : on rafraichit les donnees regulierement (meteo, contenu modifie),
+// et on recharge la PAGE ENTIERE (pas juste les donnees) un peu avant l'arrivee du prochain voyageur (data.reloadAt,
+// calcule cote serveur) pour repartir sur un etat propre, sans dependre d'un reseau local ni d'une app tierce (Fully Kiosk).
+// Verification periodique plutot qu'un setTimeout unique : un setTimeout de plusieurs jours peut deborder en JS.
 if (import.meta.client) {
-  const id = setInterval(() => refresh(), 10 * 60 * 1000)
+  const id = setInterval(async () => {
+    if (data.value?.reloadAt && Date.now() >= new Date(data.value.reloadAt).getTime()) { window.location.reload(); return }
+    await refresh()
+  }, 10 * 60 * 1000)
   onUnmounted(() => clearInterval(id))
 }
 </script>
