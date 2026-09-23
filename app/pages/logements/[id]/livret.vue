@@ -48,7 +48,7 @@
         </div>
 
         <div class="lg:col-span-1">
-          <UCard class="sticky top-4" :ui="{ body: 'p-0 sm:p-0' }">
+          <UCard class="lg:sticky lg:top-4" :ui="{ body: 'p-0 sm:p-0' }">
             <template #header><b>Aperçu</b></template>
             <div class="livret-preview-frame overflow-hidden bg-black">
               <iframe :src="livretPreviewLink" class="livret-preview-iframe" title="Aperçu du livret" />
