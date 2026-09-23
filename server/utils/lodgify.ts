@@ -54,6 +54,10 @@ async function fetchBookings(key: string): Promise<Booking[]> {
 
 let cache: { at: number; data: { properties: Property[]; bookings: Booking[] } | null } = { at: 0, data: null }
 
+// Horodatage de la derniere synchronisation Lodgify (cache de loadData ci-dessous, 5 min), pour l'afficher a l'hote
+// sur le tableau de bord plutot que de fabriquer une valeur.
+export function lastSyncAt(): string | null { return cache.at ? new Date(cache.at).toISOString() : null }
+
 export async function loadData() {
   const cfg = useRuntimeConfig()
   const demo = cfg.demo === '1' || !cfg.lodgifyApiKey

@@ -9,14 +9,29 @@
       </template>
 
       <template #default="{ collapsed }">
-        <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
-        <UNavigationMenu :collapsed="collapsed" :items="links" orientation="vertical" tooltip popover />
+        <div v-for="group in groups" :key="group.label" class="mb-1">
+          <p v-if="!collapsed && group.label" class="px-2.5 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-dimmed">{{ group.label }}</p>
+          <UNavigationMenu :collapsed="collapsed" :items="group.items" orientation="vertical" tooltip popover />
+        </div>
       </template>
 
       <template #footer="{ collapsed }">
-        <UDropdownMenu v-if="user" :items="userMenu" :content="{ align: 'start' }" class="w-full">
-          <UButton color="neutral" variant="ghost" block :square="collapsed" :label="collapsed ? undefined : user.displayName" icon="i-lucide-circle-user" />
+        <UDropdownMenu v-if="user && collapsed" :items="userMenu" :content="{ align: 'start' }" class="w-full">
+          <UButton color="neutral" variant="ghost" block square icon="i-lucide-circle-user" />
         </UDropdownMenu>
+        <div v-else-if="user" class="w-full space-y-2 px-1 pb-1">
+          <NuxtLink to="/mon-compte" class="flex min-w-0 items-center gap-2 rounded-md p-1 hover:bg-elevated">
+            <UAvatar :text="userInitials" size="sm" class="shrink-0" />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium">{{ user.displayName || user.username }}</p>
+              <p v-if="user.email" class="truncate text-xs text-muted">{{ user.email }}</p>
+            </div>
+          </NuxtLink>
+          <div class="flex items-center justify-between px-1 text-xs">
+            <span class="flex items-center gap-1.5 text-success"><span class="size-1.5 rounded-full bg-success" /> Connecté</span>
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-log-out" label="Déconnexion" @click="logout" />
+          </div>
+        </div>
       </template>
     </UDashboardSidebar>
 
@@ -26,8 +41,15 @@
       <template #header>
         <UDashboardNavbar class="print:hidden" :ui="{ right: 'gap-2' }">
           <template #leading><UDashboardSidebarCollapse /></template>
+          <template #left>
+            <UDashboardSearchButton class="w-full max-w-sm bg-transparent ring-default" />
+          </template>
           <template #right>
             <UBadge v-if="demo" color="warning" variant="subtle" label="Mode démo" />
+            <!-- Cloche preparee pour un futur systeme de notifications (rien a afficher pour l'instant : desactivee) -->
+            <UTooltip text="Notifications (bientôt disponible)">
+              <UButton color="neutral" variant="ghost" square icon="i-lucide-bell" disabled />
+            </UTooltip>
             <ThemeColorPicker v-if="can('A')" />
             <UColorModeSelect />
           </template>
@@ -50,42 +72,57 @@ await refresh()
 useTheme()
 
 const mobileOpen = ref(false)
+const userInitials = computed(() => (user.value?.displayName || user.value?.username || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?')
 const userMenu = computed(() => [[{ label: user.value?.username ?? '', type: 'label' as const }], [
   { label: 'Mon compte', icon: 'i-lucide-user-cog', to: '/mon-compte' },
   { label: 'Se déconnecter', icon: 'i-lucide-log-out', onSelect: logout },
 ]])
 
 interface NavItem { label: string; icon?: string; to?: string; type?: 'trigger'; defaultOpen?: boolean; children?: NavItem[] }
-const links = computed(() => [
-  can('AG') && { label: 'Aujourd\'hui', icon: 'i-lucide-layout-dashboard', to: '/' },
+// Groupes de la sidebar : un intitule en majuscules par groupe (vide pour le premier, comme Aujourd'hui seul en tete)
+const groups = computed(() => ([
+  { label: '', items: [can('AG') && { label: 'Aujourd\'hui', icon: 'i-lucide-layout-dashboard', to: '/' }].filter(Boolean) },
   {
-    label: 'Logements', icon: 'i-lucide-building-2', to: '/logements',
-    children: (lg.value?.logements ?? []).map(l => ({ label: l.name, to: `/logements/${l.id}` })),
+    label: 'Logements',
+    items: [{
+      label: 'Logements', icon: 'i-lucide-building-2', to: '/logements',
+      children: (lg.value?.logements ?? []).map(l => ({ label: l.name, to: `/logements/${l.id}` })),
+    }],
   },
-  can('AGC') && { label: 'Documents', icon: 'i-lucide-folder', to: '/documents' },
-  can('A') && { label: 'E-mails', icon: 'i-lucide-mail', to: '/mail' },
-  can('A') && { label: 'Contacts', icon: 'i-lucide-contact', to: '/contacts' },
-  can('A') && { label: 'Rentabilité', icon: 'i-lucide-line-chart', to: '/profit' },
-  can('A') && {
-    label: 'Réglages', icon: 'i-lucide-settings', to: '/settings', type: 'trigger' as const, defaultOpen: false,
-    children: [
-      { label: 'Logements et serrures', to: '/settings' },
-      { label: 'Utilisateurs', to: '/settings/utilisateurs' },
-      { label: 'Stock', to: '/settings/stock' },
-      { label: 'Livret & écran TV', to: '/settings/welcomescreen' },
-      { label: 'Imports', to: '/settings/imports' },
-      { label: 'E-mail (IMAP)', to: '/settings/imap' },
-      { label: 'API (Swagger)', to: '/docs-api' },
-      { label: 'Nouveautés', icon: 'i-lucide-sparkles', to: '/changelog' },
-      { label: 'Manuel', icon: 'i-lucide-book-marked', to: '/docs' },
-    ],
+  {
+    label: 'Gestion',
+    items: [
+      can('AGC') && { label: 'Documents', icon: 'i-lucide-folder', to: '/documents' },
+      can('A') && { label: 'E-mails', icon: 'i-lucide-mail', to: '/mail' },
+      can('A') && { label: 'Contacts', icon: 'i-lucide-contact', to: '/contacts' },
+      can('A') && { label: 'Rentabilité', icon: 'i-lucide-line-chart', to: '/profit' },
+    ].filter(Boolean),
   },
-].filter(Boolean) as NavItem[])
+  {
+    label: 'Administration',
+    items: [
+      can('A') && {
+        label: 'Réglages', icon: 'i-lucide-settings', to: '/settings', type: 'trigger' as const, defaultOpen: false,
+        children: [
+          { label: 'Logements et serrures', to: '/settings' },
+          { label: 'Utilisateurs', to: '/settings/utilisateurs' },
+          { label: 'Stock', to: '/settings/stock' },
+          { label: 'Livret & écran TV', to: '/settings/welcomescreen' },
+          { label: 'Imports', to: '/settings/imports' },
+          { label: 'E-mail (IMAP)', to: '/settings/imap' },
+          { label: 'API (Swagger)', to: '/docs-api' },
+          { label: 'Nouveautés', icon: 'i-lucide-sparkles', to: '/changelog' },
+          { label: 'Manuel', icon: 'i-lucide-book-marked', to: '/docs' },
+        ],
+      },
+    ].filter(Boolean),
+  },
+] as { label: string; items: NavItem[] }[]).filter(g => g.items.length))
 
 // Recherche (⌘K) : jusqu'aux logements et aux sous-pages Réglages, pas de contenu (juste sauter d'une page à l'autre)
 const searchGroups = computed(() => [{
   id: 'links',
   label: 'Aller à',
-  items: links.value.flatMap(l => (l.children?.length ? l.children : [l])).filter(l => l.to).map(l => ({ label: l.label, icon: l.icon, to: l.to })),
+  items: groups.value.flatMap(g => g.items).flatMap(l => (l.children?.length ? l.children : [l])).filter(l => l.to).map(l => ({ label: l.label, icon: l.icon, to: l.to })),
 }])
 </script>

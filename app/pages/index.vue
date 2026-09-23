@@ -1,5 +1,23 @@
 <template>
   <div v-if="data" class="space-y-6">
+    <!-- En-tete : salutation + statut + actions rapides -->
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold">Bonjour{{ user?.displayName ? `, ${user.displayName.split(' ')[0]}` : '' }} 👋</h1>
+        <p class="text-muted">Voici l'état de tes logements aujourd'hui.</p>
+        <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-success" /> Système opérationnel</span>
+          <span class="hidden sm:inline">·</span>
+          <span>Dernière synchro {{ timeAgo(data.syncedAt) }}</span>
+          <span class="hidden sm:inline">·</span>
+          <span class="capitalize">{{ nowLabel }}</span>
+        </div>
+      </div>
+      <UDropdownMenu :items="quickActions" :content="{ align: 'end' }">
+        <UButton color="neutral" variant="outline" icon="i-lucide-zap" label="Actions rapides" trailing-icon="i-lucide-chevron-down" />
+      </UDropdownMenu>
+    </div>
+
     <!-- KPI du jour -->
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
       <div class="grid grid-cols-2 divide-y divide-default sm:grid-cols-3 sm:divide-x sm:divide-y-0 lg:grid-cols-5">
@@ -38,44 +56,14 @@
     </div>
 
     <div class="grid gap-6 lg:grid-cols-3">
-    <!-- Colonne gauche (2/3) : la journee -->
+    <!-- Colonne gauche (2/3) : vue d'ensemble puis la journee -->
     <div class="min-w-0 space-y-2 lg:col-span-2">
-      <h2 class="section-title !mt-0">Turnovers du jour</h2>
-      <UCard v-for="t in data.turnovers" :key="t.property" class="overflow-hidden" :ui="{ body: 'p-0 sm:p-0' }">
-        <div class="flex items-center justify-between gap-2 border-b border-default bg-error/10 px-4 py-2.5">
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-sparkles" class="size-4 text-error" />
-            <b>{{ t.property }}</b>
-          </div>
-          <UBadge color="error" variant="subtle" size="sm" label="Ménage aujourd'hui" class="rounded-full" />
-        </div>
-
-        <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 p-4">
-          <div class="flex min-w-0 items-center gap-2">
-            <UAvatar :text="initials(t.out?.guest)" size="sm" class="shrink-0" />
-            <div class="min-w-0">
-              <p class="truncate text-sm font-medium">{{ t.out?.guest }}</p>
-              <PlatformBadge v-if="t.out" :source="t.out.source" class="truncate text-xs" />
-              <p class="text-xs text-muted">Départ{{ t.out?.checkOut ? ` ${t.out.checkOut}` : '' }}</p>
-            </div>
-          </div>
-          <UIcon name="i-lucide-arrow-right" class="size-5 shrink-0 text-muted" />
-          <div class="flex min-w-0 items-center justify-end gap-2 text-right">
-            <div class="min-w-0">
-              <p class="truncate text-sm font-medium">{{ t.in?.guest }}</p>
-              <PlatformBadge v-if="t.in" :source="t.in.source" class="w-full min-w-0 justify-end truncate text-xs" />
-              <p class="text-xs text-muted">Arrivée{{ t.in?.checkIn ? ` ${t.in.checkIn}` : '' }}</p>
-            </div>
-            <UAvatar :text="initials(t.in?.guest)" size="sm" class="shrink-0" />
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between gap-2 border-t border-default bg-elevated/50 px-4 py-2 text-xs">
-          <span class="flex items-center gap-1.5 text-muted"><UIcon name="i-lucide-spray-can" class="size-3.5" /> {{ t.cleaning?.assignee ?? 'Ménage' }}</span>
-          <UBadge :color="cleaningColor(t.cleaning?.status)" variant="subtle" size="sm" :label="t.cleaning?.status ?? 'Assignation inconnue'" class="rounded-full" />
-        </div>
-      </UCard>
-      <UCard v-if="!data.turnovers.length"><p class="text-sm text-muted">Aucun turnover aujourd'hui</p></UCard>
+      <h2 class="section-title !mt-0">Vue d'ensemble</h2>
+      <div class="grid gap-4 sm:grid-cols-3">
+        <TurnoverWidget />
+        <StockWidget />
+        <LocksWidget />
+      </div>
 
       <template v-for="s in sections" :key="s.title">
         <h2 class="section-title">{{ s.title }}</h2>
@@ -87,11 +75,9 @@
       </template>
     </div>
 
-    <!-- Colonne droite (1/3) : 3 widgets, stock, serrures et timeline de tous les logements -->
+    <!-- Colonne droite (1/3) : contacts et timeline de tous les logements (stock/serrures/turnover : voir la vue d'ensemble a gauche) -->
     <aside class="min-w-0 space-y-4 lg:col-span-1">
       <ContactsWidget />
-      <StockWidget />
-      <LocksWidget />
       <UCard v-if="tl">
         <template #header>
           <div>
@@ -109,6 +95,14 @@
 </template>
 
 <script setup lang="ts">
+const { user, can } = useAuth()
+const nowLabel = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+const quickActions = computed(() => [[
+  can('A') && { label: 'Nouvel utilisateur', icon: 'i-lucide-user-plus', to: '/settings/utilisateurs' },
+  can('AGC') && { label: 'Nouveau document', icon: 'i-lucide-file-plus', to: '/documents' },
+  can('A') && { label: 'Nouveau contact', icon: 'i-lucide-contact', to: '/contacts' },
+].filter(Boolean)])
+
 const { data } = await useFetch('/api/today')
 const { data: tl } = await useFetch('/api/timeline', { query: { past: 1, future: 7 } })
 const events = computed(() => (tl.value?.properties ?? []).flatMap(p => p.events.map(e => ({ ...e, property: p.name }))).sort((a, b) => a.at.localeCompare(b.at)))
@@ -125,14 +119,6 @@ onMounted(() => setTimeout(() => {
 const demo = useState('demo')
 watchEffect(() => { demo.value = !!data.value?.demo })
 const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
-const initials = (name?: string) => (name ?? '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
-function cleaningColor(status?: string) {
-  const s = (status ?? '').toLowerCase()
-  if (/terminé|fait|complet|done/.test(s)) return 'success' as const
-  if (/problème|annulé|erreur/.test(s)) return 'error' as const
-  if (!status || /inconnue|non assignée|à compléter/.test(s)) return 'warning' as const
-  return 'neutral' as const
-}
 const sections = computed(() => data.value ? [
   { title: 'Arrivées', items: data.value.arrivals },
   { title: 'Départs', items: data.value.departures },
