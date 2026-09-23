@@ -15,25 +15,44 @@ const COLORS = [
   { name: 'teal', label: 'Sarcelle' },
 ] as const
 
+// Thème pré-rempli avec les couleurs relevées sur le livret d'accueil Canva (Gaston) : terracotta + bleu nuit.
+const PRESET = { primary: 'terracotta', neutral: 'navy', label: 'Marque LoussaHousing' }
+
 const appConfig = useAppConfig()
 const STORAGE_KEY = 'lh-theme-primary'
+const STORAGE_KEY_NEUTRAL = 'lh-theme-neutral'
 
 onMounted(() => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved && COLORS.some(c => c.name === saved)) appConfig.ui.colors.primary = saved
-  } catch { /* stockage indisponible : couleur par défaut */ }
+    const savedPrimary = localStorage.getItem(STORAGE_KEY)
+    const savedNeutral = localStorage.getItem(STORAGE_KEY_NEUTRAL)
+    if (savedPrimary) appConfig.ui.colors.primary = savedPrimary
+    if (savedNeutral) appConfig.ui.colors.neutral = savedNeutral
+  } catch { /* stockage indisponible : couleurs par défaut */ }
 })
 
-function choose(name: string) {
-  appConfig.ui.colors.primary = name
-  try { localStorage.setItem(STORAGE_KEY, name) } catch { /* stockage indisponible : choix non mémorisé */ }
+function choose(primary: string, neutral?: string) {
+  appConfig.ui.colors.primary = primary
+  appConfig.ui.colors.neutral = neutral ?? 'slate'
+  try {
+    localStorage.setItem(STORAGE_KEY, primary)
+    localStorage.setItem(STORAGE_KEY_NEUTRAL, neutral ?? 'slate')
+  } catch { /* stockage indisponible : choix non mémorisé */ }
 }
 
-const items = computed(() => [COLORS.map(c => ({
-  label: c.label,
-  checked: appConfig.ui.colors.primary === c.name,
-  type: 'checkbox' as const,
-  onSelect: () => choose(c.name),
-}))])
+const items = computed(() => [
+  [{
+    label: PRESET.label,
+    icon: 'i-lucide-sparkles' as const,
+    checked: appConfig.ui.colors.primary === PRESET.primary && appConfig.ui.colors.neutral === PRESET.neutral,
+    type: 'checkbox' as const,
+    onSelect: () => choose(PRESET.primary, PRESET.neutral),
+  }],
+  COLORS.map(c => ({
+    label: c.label,
+    checked: appConfig.ui.colors.primary === c.name && appConfig.ui.colors.neutral === 'slate',
+    type: 'checkbox' as const,
+    onSelect: () => choose(c.name),
+  })),
+])
 </script>

@@ -1,6 +1,33 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* Couleurs de la marque (livret d'accueil Canva, relevées le 2026-09-23) : terracotta #c07a5f, bleu nuit #2c3e50. */
+@theme static {
+  --color-terracotta-50: #fbf6f4;
+  --color-terracotta-100: #f5eae6;
+  --color-terracotta-200: #e9d2c9;
+  --color-terracotta-300: #dab4a4;
+  --color-terracotta-400: #cb9680;
+  --color-terracotta-500: #c07a5f;
+  --color-terracotta-600: #aa6246;
+  --color-terracotta-700: #8d513a;
+  --color-terracotta-800: #70412e;
+  --color-terracotta-900: #5b3425;
+  --color-terracotta-950: #361f16;
+
+  --color-navy-50: #f5f7fa;
+  --color-navy-100: #e8edf2;
+  --color-navy-200: #ced9e4;
+  --color-navy-300: #adbfd2;
+  --color-navy-400: #7b99b7;
+  --color-navy-500: #517394;
+  --color-navy-600: #415c76;
+  --color-navy-700: #364d63;
+  --color-navy-800: #2c3e50;
+  --color-navy-900: #212e3b;
+  --color-navy-950: #141c24;
+}
+
 @layer components {
   .section-title { @apply mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-muted; }
 }
