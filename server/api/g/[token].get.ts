@@ -8,6 +8,6 @@ export default defineEventHandler(async (event) => {
   if (!lg) throw createError({ statusCode: 404, statusMessage: 'Logement introuvable' })
   const content = await getGuestbook(logementId)
   const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
-  const hasBackground = !!(await getBackgroundExt(logementId))
-  return { logement: lg.name, content, weather, hasBackground }
+  const background = await resolveBackground(logementId, `/api/g/${token}/background`)
+  return { logement: lg.name, content, weather, background }
 })

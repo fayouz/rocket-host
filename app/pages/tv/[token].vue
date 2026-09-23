@@ -1,6 +1,7 @@
 <template>
-  <div v-if="data" class="tv-bg relative flex min-h-screen flex-col justify-between overflow-hidden px-16 py-12 text-white" :style="bgStyle">
-    <div v-if="data.hasBackground" class="absolute inset-0 bg-black/40" />
+  <div v-if="data" class="tv-bg relative flex min-h-screen flex-col justify-between overflow-hidden px-16 py-12 text-white">
+    <div v-if="data.background" class="absolute inset-0 bg-cover bg-center" :class="{ 'bg-kenburns': data.background.animated }" :style="{ backgroundImage: `url(${data.background.url})` }" />
+    <div v-if="data.background" class="absolute inset-0 bg-black/40" />
     <div class="relative flex items-start justify-between">
       <div>
         <p class="text-3xl text-white/70">{{ t.welcomeTo }}</p>
@@ -56,9 +57,6 @@ if (import.meta.server && !data.value) setResponseStatus(useRequestEvent()!, 404
 const c = computed(() => data.value?.content ?? {} as Record<string, string>)
 const { lang, t } = useGuestLang()
 const empty = computed(() => !!data.value && !data.value.guest && !c.value.wifiSsid && !c.value.welcomeText && !c.value.localTips && !c.value.checkoutInfo)
-const bgStyle = computed(() => data.value?.hasBackground
-  ? { backgroundImage: `url(/api/g/${route.params.token}/background)`, backgroundSize: 'cover', backgroundPosition: 'center' }
-  : {})
 
 // Reste affiche des jours d'affilee sur une TV : on rafraichit tout seul (nouveau voyageur, contenu modifie).
 if (import.meta.client) {

@@ -28,14 +28,38 @@
 
     <UCard>
       <template #header><b>Image de fond</b></template>
-      <p class="text-sm text-muted">Affichée en fond du livret et de l'écran TV, avec les blocs en verre dépoli par-dessus. PNG, JPG ou WebP, 8 Mo maximum.</p>
-      <div class="mt-2 flex flex-wrap items-center gap-3">
-        <img v-if="data.hasBackground" :src="backgroundPreviewUrl" alt="Fond actuel" class="h-20 w-32 rounded object-cover ring ring-default">
-        <div class="flex gap-2">
-          <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" :label="data.hasBackground ? 'Remplacer' : 'Choisir une image'" :loading="bgBusy" @click="fileInput?.click()" />
-          <UButton v-if="data.hasBackground" size="sm" color="error" variant="ghost" icon="i-lucide-trash-2" label="Retirer" :loading="bgBusy" @click="removeBackground" />
-        </div>
+      <p class="text-sm text-muted">Affichée en fond du livret et de l'écran TV, avec les blocs en verre dépoli par-dessus.</p>
+
+      <div class="mt-2 rounded-lg border border-default p-3 text-sm">
+        <template v-if="data.background.mode === 'custom'">
+          <p>Fond propre à ce logement.
+            <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
+          </p>
+        </template>
+        <template v-else-if="data.background.mode === 'none'">
+          <p>Aucun fond, forcé pour ce logement (même si un fond général existe).
+            <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
+          </p>
+        </template>
+        <template v-else>
+          <p v-if="data.hasDefaultBackground">Utilise le fond général des réglages.
+            <UButton size="xs" color="neutral" variant="link" label="Forcer aucun fond ici" @click="setMode('none')" />
+          </p>
+          <p v-else>Pas de fond général réglé, et rien de propre à ce logement : fond uni.</p>
+        </template>
+      </div>
+
+      <div v-if="data.background.hasFile || data.background.webUrl" class="mt-3 flex items-center gap-3">
+        <img :src="backgroundPreviewUrl" alt="Fond actuel" class="h-20 w-32 rounded object-cover ring ring-default">
+        <p v-if="data.background.attribution" class="text-xs text-muted">{{ data.background.attribution }}</p>
+      </div>
+
+      <UCheckbox class="mt-3" :model-value="data.background.animated" label="Fond animé (léger effet de zoom/travelling)" @update:model-value="setAnimated" />
+
+      <div class="mt-4 space-y-3">
+        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" label="Déposer une image" :loading="bgBusy" @click="fileInput?.click()" />
         <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadBackground">
+        <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickWeb" />
       </div>
       <p v-if="bgError" class="mt-2 text-sm text-error">{{ bgError }}</p>
     </UCard>
@@ -91,8 +115,12 @@ async function regenerate() {
 }
 
 const fileInput = ref<HTMLInputElement>()
-const backgroundPreviewUrl = computed(() => data.value?.token ? `/api/g/${data.value.token}/background?v=${bgVersion.value}` : '')
 const bgVersion = ref(0)
+const backgroundPreviewUrl = computed(() => {
+  if (!data.value) return ''
+  if (data.value.background.hasFile) return `/api/g/${data.value.token}/background?v=${bgVersion.value}`
+  return data.value.background.webUrl
+})
 const bgBusy = ref(false)
 const bgError = ref('')
 async function uploadBackground(e: Event) {
@@ -108,12 +136,23 @@ async function uploadBackground(e: Event) {
   bgVersion.value++
   await refresh()
 }
-async function removeBackground() {
-  if (!confirm('Retirer l\'image de fond ?')) return
+async function pickWeb(r: { url: string; attribution: string }) {
+  bgBusy.value = true; bgError.value = ''
+  try { await $fetch(`/api/logements/${route.params.id}/livret/background-web`, { method: 'PUT', body: { url: r.url, attribution: r.attribution } }) }
+  catch (err: any) { bgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  bgBusy.value = false
+  bgVersion.value++
+  await refresh()
+}
+async function setMode(mode: 'inherit' | 'none') {
   bgBusy.value = true
-  try { await $fetch(`/api/logements/${route.params.id}/livret/background`, { method: 'DELETE' }) }
+  try { await $fetch(`/api/logements/${route.params.id}/livret/background-mode`, { method: 'PUT', body: { mode } }) }
   finally { bgBusy.value = false }
   bgVersion.value++
+  await refresh()
+}
+async function setAnimated(animated: boolean) {
+  await $fetch(`/api/logements/${route.params.id}/livret/animated`, { method: 'PUT', body: { animated } })
   await refresh()
 }
 

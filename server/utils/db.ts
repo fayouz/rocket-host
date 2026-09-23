@@ -58,6 +58,16 @@ export async function initDb() {
     faq TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '')`)
   const guestbookCols = ((await db.prepare('PRAGMA table_info(guestbook)').all()) as any[]).map(c => String(c.name))
   if (!guestbookCols.includes('background_ext')) await addColumn("ALTER TABLE guestbook ADD COLUMN background_ext TEXT NOT NULL DEFAULT ''")
+  // Fond du livret/ecran TV (V3) : mode 'inherit' (reprend le fond general), 'none' (force aucun fond), 'custom' (fichier ou image web a soi)
+  if (!guestbookCols.includes('background_mode')) await addColumn("ALTER TABLE guestbook ADD COLUMN background_mode TEXT NOT NULL DEFAULT 'inherit'")
+  if (!guestbookCols.includes('background_web_url')) await addColumn("ALTER TABLE guestbook ADD COLUMN background_web_url TEXT NOT NULL DEFAULT ''")
+  if (!guestbookCols.includes('background_attribution')) await addColumn("ALTER TABLE guestbook ADD COLUMN background_attribution TEXT NOT NULL DEFAULT ''")
+  if (!guestbookCols.includes('background_animated')) await addColumn('ALTER TABLE guestbook ADD COLUMN background_animated INTEGER NOT NULL DEFAULT 0')
+  // Reglages generaux du livret/ecran TV : fond par defaut pour tous les logements (surchargeable par logement ci-dessus)
+  await db.exec(`CREATE TABLE IF NOT EXISTS welcomescreen_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1), background_ext TEXT NOT NULL DEFAULT '', background_web_url TEXT NOT NULL DEFAULT '',
+    background_attribution TEXT NOT NULL DEFAULT '', animated INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL DEFAULT '')`)
+  await db.exec('INSERT OR IGNORE INTO welcomescreen_settings (id) VALUES (1)')
   // Lien secret separe de celui du stock (droits differents : lecture seule pour le voyageur, jamais d'ecriture)
   await db.exec('CREATE TABLE IF NOT EXISTS guestbook_token (logement_id INTEGER PRIMARY KEY, token TEXT NOT NULL UNIQUE)')
   // Couleurs de l'appli (accent + neutre), partagees par toute l'equipe. Le mode clair/sombre/systeme reste un choix

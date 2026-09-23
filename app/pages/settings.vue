@@ -15,6 +15,7 @@ const menu = [
   { label: 'Logements et serrures', icon: 'i-lucide-house', to: '/settings', exact: true },
   { label: 'Utilisateurs', icon: 'i-lucide-users', to: '/settings/utilisateurs' },
   { label: 'Stock', icon: 'i-lucide-package', to: '/settings/stock' },
+  { label: 'Livret & écran TV', icon: 'i-lucide-image', to: '/settings/welcomescreen' },
   { label: 'Imports', icon: 'i-lucide-inbox', to: '/settings/imports' },
   { label: 'E-mail (IMAP)', icon: 'i-lucide-mail', to: '/settings/imap' },
   { label: 'API (Swagger)', icon: 'i-lucide-book-open', to: '/docs-api' },

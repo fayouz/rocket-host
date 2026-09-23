@@ -1,10 +1,11 @@
 <template>
-  <div v-if="data" class="relative min-h-screen" :style="bgStyle">
-    <div v-if="data.hasBackground" class="absolute inset-0 bg-black/40" />
-    <div class="relative mx-auto max-w-lg space-y-4 px-4 py-6" :class="{ 'text-white': data.hasBackground }">
+  <div v-if="data" class="relative min-h-screen overflow-hidden">
+    <div v-if="data.background" class="absolute inset-0 bg-cover bg-center" :class="{ 'bg-kenburns': data.background.animated }" :style="{ backgroundImage: `url(${data.background.url})` }" />
+    <div v-if="data.background" class="absolute inset-0 bg-black/40" />
+    <div class="relative mx-auto max-w-lg space-y-4 px-4 py-6" :class="{ 'text-white': data.background }">
       <div class="text-center">
         <h1 class="text-2xl font-semibold">{{ t.welcomeTo }} {{ data.logement }}</h1>
-        <p v-if="c.welcomeText" class="mt-2 whitespace-pre-line" :class="data.hasBackground ? 'text-white/80' : 'text-muted'">{{ c.welcomeText }}</p>
+        <p v-if="c.welcomeText" class="mt-2 whitespace-pre-line" :class="data.background ? 'text-white/80' : 'text-muted'">{{ c.welcomeText }}</p>
       </div>
 
       <UCard v-if="data.weather" :ui="cardUi">
@@ -23,7 +24,7 @@
         <p class="whitespace-pre-line text-sm">{{ c[s.key] }}</p>
       </UCard>
 
-      <p v-if="empty" class="py-12 text-center text-sm" :class="data.hasBackground ? 'text-white/70' : 'text-muted'">{{ t.empty }}</p>
+      <p v-if="empty" class="py-12 text-center text-sm" :class="data.background ? 'text-white/70' : 'text-muted'">{{ t.empty }}</p>
     </div>
   </div>
   <div v-else class="pt-12 text-center text-muted">{{ t.invalid }}</div>
@@ -45,9 +46,6 @@ const sections = computed(() => [
   { key: 'faq', label: t.faq, icon: 'i-lucide-circle-help' },
 ] as const)
 const empty = computed(() => !!data.value && !c.value.wifiSsid && !c.value.welcomeText && sections.value.every(s => !c.value[s.key]))
-const bgStyle = computed(() => data.value?.hasBackground
-  ? { backgroundImage: `url(/api/g/${route.params.token}/background)`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
-  : {})
 // Widgets en verre dépoli quand un fond est configuré (sinon cartes Nuxt UI normales, sur fond uni)
-const cardUi = computed(() => data.value?.hasBackground ? { root: 'bg-white/10 backdrop-blur-xl ring-white/20 text-white' } : {})
+const cardUi = computed(() => data.value?.background ? { root: 'bg-white/10 backdrop-blur-xl ring-white/20 text-white' } : {})
 </script>

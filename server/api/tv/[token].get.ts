@@ -15,6 +15,6 @@ export default defineEventHandler(async (event) => {
     if (b) guest = { firstName: (b.guest.split(' ')[0] || b.guest).slice(0, 40), arrival: b.arrival, departure: b.departure }
   }
   const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
-  const hasBackground = !!(await getBackgroundExt(logementId))
-  return { logement: lg.name, content, guest, weather, hasBackground }
+  const background = await resolveBackground(logementId, `/api/g/${token}/background`)
+  return { logement: lg.name, content, guest, weather, background }
 })
