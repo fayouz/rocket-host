@@ -41,9 +41,39 @@
     <!-- Colonne gauche (2/3) : la journee -->
     <div class="min-w-0 space-y-2 lg:col-span-2">
       <h2 class="section-title !mt-0">Turnovers du jour</h2>
-      <UCard v-for="t in data.turnovers" :key="t.property" class="border-l-4 border-l-error">
-        <b>{{ t.property }}</b> — ménage à faire aujourd'hui
-        <p class="text-sm text-muted">Départ {{ t.out?.guest }} → arrivée {{ t.in?.guest }}</p>
+      <UCard v-for="t in data.turnovers" :key="t.property" class="overflow-hidden" :ui="{ body: 'p-0 sm:p-0' }">
+        <div class="flex items-center justify-between gap-2 border-b border-default bg-error/10 px-4 py-2.5">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-sparkles" class="size-4 text-error" />
+            <b>{{ t.property }}</b>
+          </div>
+          <UBadge color="error" variant="subtle" size="sm" label="Ménage aujourd'hui" class="rounded-full" />
+        </div>
+
+        <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 p-4">
+          <div class="flex min-w-0 items-center gap-2">
+            <UAvatar :text="initials(t.out?.guest)" size="sm" class="shrink-0" />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium">{{ t.out?.guest }}</p>
+              <PlatformBadge v-if="t.out" :source="t.out.source" class="truncate text-xs" />
+              <p class="text-xs text-muted">Départ{{ t.out?.checkOut ? ` ${t.out.checkOut}` : '' }}</p>
+            </div>
+          </div>
+          <UIcon name="i-lucide-arrow-right" class="size-5 shrink-0 text-muted" />
+          <div class="flex min-w-0 items-center justify-end gap-2 text-right">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium">{{ t.in?.guest }}</p>
+              <PlatformBadge v-if="t.in" :source="t.in.source" class="w-full min-w-0 justify-end truncate text-xs" />
+              <p class="text-xs text-muted">Arrivée{{ t.in?.checkIn ? ` ${t.in.checkIn}` : '' }}</p>
+            </div>
+            <UAvatar :text="initials(t.in?.guest)" size="sm" class="shrink-0" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 border-t border-default bg-elevated/50 px-4 py-2 text-xs">
+          <span class="flex items-center gap-1.5 text-muted"><UIcon name="i-lucide-spray-can" class="size-3.5" /> {{ t.cleaning?.assignee ?? 'Ménage' }}</span>
+          <UBadge :color="cleaningColor(t.cleaning?.status)" variant="subtle" size="sm" :label="t.cleaning?.status ?? 'Assignation inconnue'" class="rounded-full" />
+        </div>
       </UCard>
       <UCard v-if="!data.turnovers.length"><p class="text-sm text-muted">Aucun turnover aujourd'hui</p></UCard>
 
@@ -95,6 +125,14 @@ onMounted(() => setTimeout(() => {
 const demo = useState('demo')
 watchEffect(() => { demo.value = !!data.value?.demo })
 const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+const initials = (name?: string) => (name ?? '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
+function cleaningColor(status?: string) {
+  const s = (status ?? '').toLowerCase()
+  if (/terminé|fait|complet|done/.test(s)) return 'success' as const
+  if (/problème|annulé|erreur/.test(s)) return 'error' as const
+  if (!status || /inconnue|non assignée|à compléter/.test(s)) return 'warning' as const
+  return 'neutral' as const
+}
 const sections = computed(() => data.value ? [
   { title: 'Arrivées', items: data.value.arrivals },
   { title: 'Départs', items: data.value.departures },
