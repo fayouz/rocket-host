@@ -6,22 +6,119 @@
     <!-- ONGLET LIVRET ACCUEIL -->
     <template v-if="tab === 'accueil'">
       <p class="text-sm text-muted">Une page pour le voyageur, sans compte à créer, accessible par lien ou QR code. Infos du logement seulement : pour personnaliser par séjour (code de porte, dates), voir plus tard.</p>
+      <p class="text-sm text-muted">Fond, mise en page et widgets affichés se règlent dans l'onglet <b>Écran TV</b> (communs au livret et à l'écran TV).</p>
 
-      <UCard>
-        <template #header><b>Lien du livret</b></template>
-        <div class="flex flex-wrap items-center gap-3">
-          <img :src="qrUrl" alt="QR code du livret" class="size-32 rounded bg-white p-1">
-          <div class="min-w-0 flex-1 space-y-2">
-            <UInput :model-value="link" readonly class="w-full font-mono text-xs" @focus="($event.target as HTMLInputElement).select()" />
-            <div class="flex flex-wrap gap-2">
-              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" :label="copied ? 'Copié' : 'Copier le lien'" @click="copy" />
-              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-eye" label="Aperçu" :to="link" external target="_blank" />
-              <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-refresh-cw" label="Régénérer le lien" @click="regenerate" />
+      <div class="grid gap-4 lg:grid-cols-3">
+        <div class="space-y-3 lg:col-span-2">
+          <UCard>
+            <template #header><b>Lien du livret</b></template>
+            <div class="flex flex-wrap items-center gap-3">
+              <img :src="qrUrl" alt="QR code du livret" class="size-32 rounded bg-white p-1">
+              <div class="min-w-0 flex-1 space-y-2">
+                <UInput :model-value="link" readonly class="w-full font-mono text-xs" @focus="($event.target as HTMLInputElement).select()" />
+                <div class="flex flex-wrap gap-2">
+                  <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" :label="copied ? 'Copié' : 'Copier le lien'" @click="copy" />
+                  <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-eye" label="Aperçu" :to="link" external target="_blank" />
+                  <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-refresh-cw" label="Régénérer le lien" @click="regenerate" />
+                </div>
+                <p class="text-xs text-muted">Régénérer invalide l'ancien lien immédiatement (utile si le QR affiché quelque part doit être remplacé) : le lien de l'écran TV change aussi.</p>
+              </div>
             </div>
-            <p class="text-xs text-muted">Régénérer invalide l'ancien lien immédiatement (utile si le QR affiché quelque part doit être remplacé) : le lien de l'écran TV change aussi.</p>
+          </UCard>
+
+          <UCard>
+            <template #header><b>Wi-Fi</b></template>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <UFormField label="Nom du réseau (SSID)"><UInput v-model="form.wifiSsid" class="w-full" /></UFormField>
+              <UFormField label="Mot de passe"><UInput v-model="form.wifiPassword" class="w-full" /></UFormField>
+            </div>
+          </UCard>
+
+          <UCard v-for="s in sections" :key="s.key">
+            <template #header><b>{{ s.label }}</b></template>
+            <p class="mb-2 text-xs text-muted">{{ s.hint }}</p>
+            <UTextarea v-model="(form as any)[s.key]" :rows="s.rows" class="w-full" :placeholder="s.placeholder" />
+          </UCard>
+
+          <div class="sticky bottom-4 flex items-center gap-2">
+            <UButton icon="i-lucide-save" label="Enregistrer" :loading="busy" @click="save" />
+            <span v-if="saved" class="text-sm text-success"><UIcon name="i-lucide-check" class="align-middle" /> Enregistré</span>
+            <span v-if="error" class="text-sm text-error">{{ error }}</span>
           </div>
         </div>
+
+        <div class="lg:col-span-1">
+          <UCard class="sticky top-4" :ui="{ body: 'p-0 sm:p-0' }">
+            <template #header><b>Aperçu</b></template>
+            <div class="livret-preview-frame overflow-hidden bg-black">
+              <iframe :src="livretPreviewLink" class="livret-preview-iframe" title="Aperçu du livret" />
+            </div>
+            <div class="flex flex-wrap gap-2 p-3">
+              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir" @click="livretPreviewKey++" />
+            </div>
+          </UCard>
+        </div>
+      </div>
+    </template>
+
+    <!-- ONGLET RÈGLEMENT INTÉRIEUR -->
+    <template v-else-if="tab === 'reglement'">
+      <p class="text-sm text-muted">Affiché automatiquement dans le livret d'accueil du logement. Pas de synchronisation possible avec Lodgify (son API ne donne accès ni en lecture ni en écriture au champ équivalent, {{ rentalRulesTag }}) : si vous voulez qu'il apparaisse aussi dans vos messages automatiques Lodgify, recopiez-le à la main dans Rentals &gt; Messaging placeholders.</p>
+
+      <UCard>
+        <UTextarea v-model="form.houseRules" :rows="10" class="w-full" placeholder="Non fumeur, pas de fête, horaires de calme…" />
       </UCard>
+
+      <div class="flex items-center gap-2">
+        <UButton icon="i-lucide-save" label="Enregistrer" :loading="busy" @click="save" />
+        <span v-if="saved" class="text-sm text-success"><UIcon name="i-lucide-check" class="align-middle" /> Enregistré</span>
+        <span v-if="error" class="text-sm text-error">{{ error }}</span>
+      </div>
+    </template>
+
+    <!-- ONGLET ÉCRAN TV -->
+    <template v-else>
+      <p class="text-sm text-muted">Même lien que le livret, en plein écran, pensé pour être ouvert sur la TV du logement (grand texte, voyageur du jour affiché s'il y en a un). Voir <code>docs/ecran-tv-android.md</code> pour installer Fully Kiosk Browser dessus. Le fond, la mise en page et les widgets ci-dessous s'appliquent aussi au livret mobile (onglet Livret Accueil).</p>
+
+      <div class="grid gap-4 lg:grid-cols-[480px_1fr]">
+        <UCard :ui="{ body: 'p-0 sm:p-0' }">
+          <template #header><b>Aperçu</b></template>
+          <div class="tv-preview-frame overflow-hidden bg-black">
+            <iframe :src="tvLink" class="tv-preview-iframe" title="Aperçu de l'écran TV" />
+          </div>
+          <div class="flex flex-wrap gap-2 p-4">
+            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir l'aperçu" @click="tvPreviewKey++" />
+            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-expand" label="Ouvrir en plein écran" :to="tvLink" external target="_blank" />
+          </div>
+        </UCard>
+
+        <div class="space-y-4">
+          <UCard>
+            <template #header><b>Lien de l'écran TV</b></template>
+            <div class="flex items-center gap-2">
+              <UInput :model-value="tvLinkBase" readonly class="w-full font-mono text-xs" @focus="($event.target as HTMLInputElement).select()" />
+              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" :label="tvCopied ? 'Copié' : 'Copier'" @click="copyTv" />
+            </div>
+            <p class="mt-2 text-xs text-muted">À coller dans l'URL de démarrage de Fully Kiosk Browser sur la TV. Change si le lien du livret est régénéré (onglet Livret Accueil).</p>
+          </UCard>
+
+          <UCard>
+            <template #header><b>Mise en page</b></template>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <UFormField label="Navigation (livret mobile)">
+                <USelect :model-value="data.layout.navMode" :items="navItems" class="w-full" @update:model-value="setLayout($event, data.layout.gridColumns, data.layout.tvColumns)" />
+              </UFormField>
+              <UFormField label="Disposition (livret)">
+                <USelect :model-value="data.layout.gridColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, $event, data.layout.tvColumns)" />
+              </UFormField>
+              <UFormField label="Disposition (écran TV)">
+                <USelect :model-value="data.layout.tvColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, data.layout.gridColumns, $event)" />
+              </UFormField>
+            </div>
+            <p class="mt-2 text-xs text-muted">L'écran TV reste toujours en défilement, jamais en onglets : aucune interaction tactile prévue là-bas.</p>
+          </UCard>
+        </div>
+      </div>
 
       <UCard>
         <template #header><b>Image de fond</b></template>
@@ -62,19 +159,6 @@
       </UCard>
 
       <UCard>
-        <template #header><b>Mise en page</b></template>
-        <p class="text-sm text-muted">Navigation et disposition du livret voyageur (page mobile). Les réglages propres à l'écran TV sont dans son propre onglet.</p>
-        <div class="mt-3 grid gap-3 sm:grid-cols-2">
-          <UFormField label="Navigation (livret mobile)">
-            <USelect :model-value="data.layout.navMode" :items="navItems" class="w-full" @update:model-value="setLayout($event, data.layout.gridColumns, data.layout.tvColumns)" />
-          </UFormField>
-          <UFormField label="Disposition (livret)">
-            <USelect :model-value="data.layout.gridColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, $event, data.layout.tvColumns)" />
-          </UFormField>
-        </div>
-      </UCard>
-
-      <UCard>
         <template #header><b>Widgets affichés</b></template>
         <p class="text-sm text-muted">Choisir lesquels apparaissent sur le livret et l'écran TV, et dans quel ordre. Un widget désactivé ici ne s'affiche jamais, même s'il a du contenu ; un widget activé ne s'affiche que s'il a du contenu (ex. Wi-Fi vide reste masqué).</p>
         <ul class="mt-3 divide-y divide-default">
@@ -89,78 +173,6 @@
           </li>
         </ul>
       </UCard>
-
-      <UCard>
-        <template #header><b>Wi-Fi</b></template>
-        <div class="grid gap-2 sm:grid-cols-2">
-          <UFormField label="Nom du réseau (SSID)"><UInput v-model="form.wifiSsid" class="w-full" /></UFormField>
-          <UFormField label="Mot de passe"><UInput v-model="form.wifiPassword" class="w-full" /></UFormField>
-        </div>
-      </UCard>
-
-      <UCard v-for="s in sections" :key="s.key">
-        <template #header><b>{{ s.label }}</b></template>
-        <p class="mb-2 text-xs text-muted">{{ s.hint }}</p>
-        <UTextarea v-model="(form as any)[s.key]" :rows="s.rows" class="w-full" :placeholder="s.placeholder" />
-      </UCard>
-
-      <div class="sticky bottom-4 flex items-center gap-2">
-        <UButton icon="i-lucide-save" label="Enregistrer" :loading="busy" @click="save" />
-        <span v-if="saved" class="text-sm text-success"><UIcon name="i-lucide-check" class="align-middle" /> Enregistré</span>
-        <span v-if="error" class="text-sm text-error">{{ error }}</span>
-      </div>
-    </template>
-
-    <!-- ONGLET RÈGLEMENT INTÉRIEUR -->
-    <template v-else-if="tab === 'reglement'">
-      <p class="text-sm text-muted">Affiché automatiquement dans le livret d'accueil du logement. Pas de synchronisation possible avec Lodgify (son API ne donne accès ni en lecture ni en écriture au champ équivalent, {{ rentalRulesTag }}) : si vous voulez qu'il apparaisse aussi dans vos messages automatiques Lodgify, recopiez-le à la main dans Rentals &gt; Messaging placeholders.</p>
-
-      <UCard>
-        <UTextarea v-model="form.houseRules" :rows="10" class="w-full" placeholder="Non fumeur, pas de fête, horaires de calme…" />
-      </UCard>
-
-      <div class="flex items-center gap-2">
-        <UButton icon="i-lucide-save" label="Enregistrer" :loading="busy" @click="save" />
-        <span v-if="saved" class="text-sm text-success"><UIcon name="i-lucide-check" class="align-middle" /> Enregistré</span>
-        <span v-if="error" class="text-sm text-error">{{ error }}</span>
-      </div>
-    </template>
-
-    <!-- ONGLET ÉCRAN TV -->
-    <template v-else>
-      <p class="text-sm text-muted">Même lien que le livret, en plein écran, pensé pour être ouvert sur la TV du logement (grand texte, voyageur du jour affiché s'il y en a un). Voir <code>docs/ecran-tv-android.md</code> pour installer Fully Kiosk Browser dessus.</p>
-
-      <div class="grid gap-4 lg:grid-cols-[480px_1fr]">
-        <UCard :ui="{ body: 'p-0 sm:p-0' }">
-          <template #header><b>Aperçu</b></template>
-          <div class="tv-preview-frame overflow-hidden bg-black">
-            <iframe :src="tvLink" class="tv-preview-iframe" title="Aperçu de l'écran TV" />
-          </div>
-          <div class="flex flex-wrap gap-2 p-4">
-            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir l'aperçu" @click="tvPreviewKey++" />
-            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-expand" label="Ouvrir en plein écran" :to="tvLink" external target="_blank" />
-          </div>
-        </UCard>
-
-        <div class="space-y-4">
-          <UCard>
-            <template #header><b>Lien de l'écran TV</b></template>
-            <div class="flex items-center gap-2">
-              <UInput :model-value="tvLinkBase" readonly class="w-full font-mono text-xs" @focus="($event.target as HTMLInputElement).select()" />
-              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" :label="tvCopied ? 'Copié' : 'Copier'" @click="copyTv" />
-            </div>
-            <p class="mt-2 text-xs text-muted">À coller dans l'URL de démarrage de Fully Kiosk Browser sur la TV. Change si le lien du livret est régénéré (onglet Livret Accueil).</p>
-          </UCard>
-
-          <UCard>
-            <template #header><b>Disposition</b></template>
-            <UFormField label="Colonnes des widgets">
-              <USelect :model-value="data.layout.tvColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, data.layout.gridColumns, $event)" />
-            </UFormField>
-            <p class="mt-2 text-xs text-muted">L'écran TV reste toujours en défilement, jamais en onglets : aucune interaction tactile prévue là-bas.</p>
-          </UCard>
-        </div>
-      </div>
     </template>
   </div>
 </template>
@@ -195,6 +207,8 @@ const rentalRulesTag = '{{RentalRules}}'
 
 const origin = useRequestURL().origin
 const link = computed(() => data.value ? `${origin}/g/${data.value.token}` : '')
+const livretPreviewKey = ref(0)
+const livretPreviewLink = computed(() => livretPreviewKey.value ? `${link.value}?v=${livretPreviewKey.value}` : link.value)
 const tvLinkBase = computed(() => data.value ? `${origin}/tv/${data.value.token}` : '')
 const tvPreviewKey = ref(0)
 const tvLink = computed(() => tvPreviewKey.value ? `${tvLinkBase.value}?v=${tvPreviewKey.value}` : tvLinkBase.value)
@@ -314,6 +328,21 @@ async function save() {
   height: 1080px;
   border: 0;
   transform: scale(0.25);
+  transform-origin: top left;
+}
+
+/* Aperçu réduit du livret mobile (format téléphone, 375x660 mis à l'échelle) */
+.livret-preview-frame {
+  width: 100%;
+  aspect-ratio: 260 / 460;
+  max-width: 260px;
+  margin: 0 auto;
+}
+.livret-preview-iframe {
+  width: 375px;
+  height: 660px;
+  border: 0;
+  transform: scale(0.6933);
   transform-origin: top left;
 }
 </style>
