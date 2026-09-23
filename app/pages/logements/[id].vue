@@ -4,11 +4,9 @@
       <h1 class="text-xl font-semibold">{{ logement.name }}</h1>
       <p class="text-sm text-muted">{{ logement.lodgifyName ? `Lodgify : ${logement.lodgifyName}` : 'Non associé à Lodgify' }}</p>
     </div>
-    <div class="grid gap-6 md:grid-cols-[13rem_1fr]">
-      <UNavigationMenu orientation="vertical" :items="menu" class="self-start print:hidden" />
-      <div class="min-w-0">
-        <NuxtPage />
-      </div>
+    <UNavigationMenu orientation="horizontal" highlight :items="menu" class="mb-6 print:hidden" />
+    <div class="min-w-0">
+      <NuxtPage />
     </div>
   </div>
 </template>
