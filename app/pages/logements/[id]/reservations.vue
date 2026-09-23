@@ -18,46 +18,44 @@
       <p v-if="!data.items.length" class="text-sm text-muted">Aucune réservation sur cette période.</p>
     </div>
 
-    <!-- Colonne droite : detail de la reservation selectionnee, comme le contenu d'un e-mail -->
-    <div class="min-w-0 flex-1 space-y-4 overflow-y-auto">
-      <template v-if="current">
-        <UCard>
-          <div class="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h3 class="text-lg font-semibold">{{ current.guest }}</h3>
-              <p class="text-sm text-muted">
-                {{ fr(current.arrival) }}{{ current.checkIn ? ` à ${current.checkIn}` : '' }} → {{ fr(current.departure) }}{{ current.checkOut ? ` à ${current.checkOut}` : '' }}
-                · {{ current.nights }} nuit{{ current.nights > 1 ? 's' : '' }}<template v-if="current.total"> · {{ eur(current.total) }}</template>
-              </p>
-            </div>
-            <div class="flex flex-wrap justify-end gap-1">
-              <UBadge v-if="phase(current) === 'now'" color="success" label="En cours" />
-              <UBadge v-else-if="phase(current) === 'next'" color="info" variant="subtle" label="À venir" />
-              <UBadge :color="statusColor(current.status)" variant="subtle" :label="current.status" />
-              <PlatformBadge :source="current.source" />
-            </div>
+    <!-- Colonne droite : detail de la reservation selectionnee (2/3), comme le contenu d'un e-mail, + apercu du livret (1/3) -->
+    <div v-if="current" class="grid min-w-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-3">
+      <UCard class="lg:col-span-2">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h3 class="text-lg font-semibold">{{ current.guest }}</h3>
+            <p class="text-sm text-muted">
+              {{ fr(current.arrival) }}{{ current.checkIn ? ` à ${current.checkIn}` : '' }} → {{ fr(current.departure) }}{{ current.checkOut ? ` à ${current.checkOut}` : '' }}
+              · {{ current.nights }} nuit{{ current.nights > 1 ? 's' : '' }}<template v-if="current.total"> · {{ eur(current.total) }}</template>
+            </p>
           </div>
-          <div class="mt-4 flex flex-wrap gap-2">
-            <UBadge v-if="current.code" :color="current.code === 'created' ? 'success' : current.code === 'error' ? 'error' : 'neutral'" variant="subtle"
-                    :label="current.code === 'created' ? 'Code créé sur Nuki' : current.code === 'error' ? 'Erreur de création du code' : 'Code prévu'" />
-            <UButton v-if="current.mails" size="xs" color="neutral" variant="soft" icon="i-lucide-mail" :label="`${current.mails} e-mail${current.mails > 1 ? 's' : ''}`" :to="`/mail?booking=${current.id}`" title="E-mails rattachés à cette réservation" />
+          <div class="flex flex-wrap justify-end gap-1">
+            <UBadge v-if="phase(current) === 'now'" color="success" label="En cours" />
+            <UBadge v-else-if="phase(current) === 'next'" color="info" variant="subtle" label="À venir" />
+            <UBadge :color="statusColor(current.status)" variant="subtle" :label="current.status" />
+            <PlatformBadge :source="current.source" />
           </div>
-        </UCard>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <UBadge v-if="current.code" :color="current.code === 'created' ? 'success' : current.code === 'error' ? 'error' : 'neutral'" variant="subtle"
+                  :label="current.code === 'created' ? 'Code créé sur Nuki' : current.code === 'error' ? 'Erreur de création du code' : 'Code prévu'" />
+          <UButton v-if="current.mails" size="xs" color="neutral" variant="soft" icon="i-lucide-mail" :label="`${current.mails} e-mail${current.mails > 1 ? 's' : ''}`" :to="`/mail?booking=${current.id}`" title="E-mails rattachés à cette réservation" />
+        </div>
+      </UCard>
 
-        <UCard :ui="{ body: 'p-0 sm:p-0' }">
-          <template #header><b>Aperçu du livret</b></template>
-          <div v-if="livretLink" class="livret-preview-frame overflow-hidden bg-black">
-            <iframe :src="livretPreviewLink" class="livret-preview-iframe" title="Aperçu du livret" />
-          </div>
-          <p v-else class="p-4 text-sm text-muted">Livret pas encore configuré pour ce logement.</p>
-          <div v-if="livretLink" class="flex flex-wrap gap-2 p-3">
-            <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir" @click="livretPreviewKey++" />
-            <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-eye" label="Ouvrir" :to="livretLink" external target="_blank" />
-          </div>
-        </UCard>
-      </template>
-      <UCard v-else><p class="text-sm text-muted">Sélectionne une réservation dans la liste.</p></UCard>
+      <UCard class="lg:col-span-1" :ui="{ body: 'p-0 sm:p-0' }">
+        <template #header><b>Aperçu du livret</b></template>
+        <div v-if="livretLink" class="livret-preview-frame overflow-hidden bg-black">
+          <iframe :src="livretPreviewLink" class="livret-preview-iframe" title="Aperçu du livret" />
+        </div>
+        <p v-else class="p-4 text-sm text-muted">Livret pas encore configuré pour ce logement.</p>
+        <div v-if="livretLink" class="flex flex-wrap gap-2 p-3">
+          <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir" @click="livretPreviewKey++" />
+          <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-eye" label="Ouvrir" :to="livretLink" external target="_blank" />
+        </div>
+      </UCard>
     </div>
+    <UCard v-else class="min-w-0 flex-1"><p class="text-sm text-muted">Sélectionne une réservation dans la liste.</p></UCard>
   </div>
 </template>
 
