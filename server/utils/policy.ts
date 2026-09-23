@@ -189,7 +189,7 @@ export const PAGES: [string, string][] = [
   ['/logements/:id/domotique', 'AG'],
   ['/logements/:id/reglement', 'AG'], ['/logements/:id/livret', 'AG'], ['/logements/:id/mails', 'A'], ['/logements/:id/contacts', 'A'],
   ['/documents', 'AGC'], ['/contacts', 'A'], ['/mail', 'A'], ['/profit', 'A'],
-  ['/settings', 'A'], ['/settings/utilisateurs', 'A'], ['/settings/imap', 'A'], ['/settings/imports', 'A'], ['/settings/stock', 'A'], ['/settings/welcomescreen', 'A'], ['/docs-api', 'A'],
+  ['/settings', 'A'], ['/settings/utilisateurs', 'A'], ['/settings/imap', 'A'], ['/settings/imports', 'A'], ['/settings/stock', 'A'], ['/settings/welcomescreen', 'A'], ['/docs-api', 'A'], ['/changelog', 'A'],
   ['/mon-compte', 'AGCM'],
 ]
 const PAGE_RULES = PAGES.map(([path, roles]) => ({ path, roles, ...compile(path) }))
