@@ -19,7 +19,9 @@ export default defineEventHandler(async (event) => {
     // pour repartir sur un etat propre au prochain voyageur plutot que de compter sur le simple rafraichissement.
     const next = mine.filter(x => x.arrival >= today && x.id !== b?.id).sort((x, y) => x.arrival.localeCompare(y.arrival))[0]
     if (next) {
-      const at = new Date(`${next.arrival}T${next.checkIn || '15:00'}:00`)
+      // parisToIso (server/utils/codes.ts) gere le fuseau (CET/CEST) correctement ; un new Date(...) direct sur une
+      // chaine sans fuseau se cale sur le fuseau du serveur, faux si celui-ci n'est pas Europe/Paris (ex. conteneur en UTC).
+      const at = new Date(parisToIso(next.arrival, next.checkIn || DEFAULT_CHECKIN))
       at.setMinutes(at.getMinutes() - 30) // marge : ecran pret avant l'heure d'arrivee, pas apres
       reloadAt = at.toISOString()
     }

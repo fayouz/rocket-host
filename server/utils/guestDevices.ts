@@ -35,6 +35,14 @@ export function clampGuestTemp(v: number): number {
   return Math.min(LIMITS_GUEST_TEMP[1], Math.max(LIMITS_GUEST_TEMP[0], v))
 }
 
+// Les erreurs Homey (server/utils/homey.ts, toujours 502) peuvent mentionner la cle d'API, le mode cloud/local ou le
+// reseau : jamais a montrer a un voyageur anonyme (jusqu'ici ces messages n'etaient vus que par l'hote connecte).
+export function guestSafeMessage(e: unknown): string {
+  const err = e as { statusCode?: number; statusMessage?: string }
+  if (err?.statusCode === 502) return 'Appareil temporairement indisponible, réessaie plus tard.'
+  return err?.statusMessage || 'Une erreur est survenue.'
+}
+
 export interface GuestDeviceView {
   id: string; name: string; class: string; available: boolean
   controls: { capabilityId: string; kind: 'onoff' | 'dim' | 'target_temperature'; value: unknown; min?: number; max?: number; units: string | null }[]
