@@ -191,7 +191,7 @@ const tab = ref<string>(typeof route.query.onglet === 'string' && tabs.some(t =>
 watch(tab, (t) => { router.replace({ query: { ...route.query, onglet: t } }) })
 
 const sections = [
-  { key: 'welcomeText', label: 'Mot de bienvenue', hint: 'Affiché en haut de la page.', rows: 3, placeholder: 'Bienvenue chez nous !' },
+  { key: 'welcomeText', label: 'Mot de bienvenue', hint: 'Affiché en haut de la page. Astuce : {{guest}} est remplacé par le prénom du voyageur en cours de séjour.', rows: 3, placeholder: 'Bienvenue chez nous {{guest}} !' },
   { key: 'checkinInfo', label: 'Arrivée', hint: 'Horaire habituel, comment entrer (au-delà du code, déjà géré ailleurs).', rows: 4, placeholder: 'Arrivée à partir de 15h. …' },
   { key: 'checkoutInfo', label: 'Départ', hint: 'Horaire limite, consignes (clés, poubelles…).', rows: 4, placeholder: 'Départ avant 11h. …' },
   { key: 'accessDirections', label: 'Accès', hint: 'Adresse, parking, digicode, étage…', rows: 4, placeholder: '' },

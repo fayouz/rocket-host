@@ -175,6 +175,13 @@ export const DOC_PAGES: DocPage[] = [
         ],
       },
       {
+        id: 'placeholder-guest',
+        title: 'Personnaliser avec le prénom du voyageur',
+        paragraphs: [
+          'Dans le mot de bienvenue, écrire `{{guest}}` est remplacé automatiquement par le prénom du voyageur en cours de séjour (ex. « Bienvenue {{guest}} ! » devient « Bienvenue Mélissa ! »). Sans séjour en cours (aperçu, logement non synchronisé), un mot générique est utilisé à la place.',
+        ],
+      },
+      {
         id: 'navigation',
         title: 'Défilement ou onglets',
         paragraphs: [

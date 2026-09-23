@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
   const lg = logements.find(l => l.id === logementId)
   if (!lg) throw createError({ statusCode: 404, statusMessage: 'Logement introuvable' })
   const content = await getGuestbook(logementId)
+  if (content.welcomeText) content.welcomeText = applyGuestPlaceholder(content.welcomeText, await getCurrentGuestFirstName(lg))
   const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
   const background = await resolveBackground(logementId, `/api/g/${token}/background`)
   const widgetOrder = await getWidgetOrder(logementId)
