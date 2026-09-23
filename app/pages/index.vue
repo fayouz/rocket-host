@@ -1,5 +1,44 @@
 <template>
-  <div v-if="data" class="grid gap-6 lg:grid-cols-3">
+  <div v-if="data" class="space-y-6">
+    <!-- KPI du jour -->
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <UCard :ui="{ body: 'p-3 sm:p-4' }">
+        <p class="text-xs text-muted">Ménages aujourd'hui</p>
+        <p class="mt-1 text-2xl font-bold">{{ data.turnovers.length }}</p>
+      </UCard>
+      <UCard :ui="{ body: 'p-3 sm:p-4' }">
+        <p class="text-xs text-muted">Arrivées (7 j)</p>
+        <p class="mt-1 text-2xl font-bold">{{ data.arrivalsNext7 }}</p>
+      </UCard>
+      <UCard v-if="profit" :ui="{ body: 'p-3 sm:p-4' }">
+        <p class="text-xs text-muted">Revenus ce mois</p>
+        <p class="mt-1 text-2xl font-bold">{{ eur(revenueThisMonth) }}</p>
+        <p v-if="revenueTrend !== null" class="mt-0.5 text-xs" :class="revenueTrend >= 0 ? 'text-success' : 'text-error'">
+          <UIcon :name="revenueTrend >= 0 ? 'i-lucide-trending-up' : 'i-lucide-trending-down'" class="align-middle" /> {{ Math.abs(revenueTrend) }} % vs mois dernier
+        </p>
+      </UCard>
+      <UCard v-if="profit" :ui="{ body: 'p-3 sm:p-4' }">
+        <p class="text-xs text-muted">Occupation ce mois</p>
+        <p class="mt-1 text-2xl font-bold">{{ occupancyThisMonth }} %</p>
+      </UCard>
+      <UCard v-if="stock" :ui="{ body: 'p-3 sm:p-4' }">
+        <p class="text-xs text-muted">À racheter</p>
+        <p class="mt-1 text-2xl font-bold">{{ stock.shopping.length }}</p>
+      </UCard>
+    </div>
+
+    <div v-if="revenueByMonth.length" class="grid gap-6 lg:grid-cols-2">
+      <UCard>
+        <template #header><b>Revenus des 6 derniers mois</b></template>
+        <BarChart :data="revenueByMonth" :height="180" :format="euroShort" />
+      </UCard>
+      <UCard>
+        <template #header><b>Revenus vs charges</b></template>
+        <LineChart :series="revenueVsCharges" :labels="revenueByMonth.map(m => m.label)" :height="180" />
+      </UCard>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-3">
     <!-- Colonne gauche (2/3) : la journee -->
     <div class="min-w-0 space-y-2 lg:col-span-2">
       <h2 class="section-title !mt-0">Turnovers du jour</h2>
@@ -36,6 +75,7 @@
         </div>
       </UCard>
     </aside>
+    </div>
   </div>
 </template>
 
@@ -61,4 +101,37 @@ const sections = computed(() => data.value ? [
   { title: 'Départs', items: data.value.departures },
   { title: 'Prochaines arrivées', items: data.value.upcoming },
 ] : [])
+
+// KPI et graphe (revenus/occupation) : reservés au role admin cote serveur (/api/profit, /api/stock) — la requete
+// echoue silencieusement pour les autres roles (comme StockWidget), les cartes correspondantes restent simplement
+// masquees (v-if="profit"/"stock" dans le template) plutot que d'afficher une erreur genante sur le tableau de bord.
+const { data: profit } = await useFetch('/api/profit')
+const { data: stock } = await useFetch('/api/stock')
+const eur = (n: number) => Math.round(n).toLocaleString('fr-FR') + ' €'
+const euroShort = (n: number) => (n >= 1000 ? `${Math.round(n / 100) / 10}k €` : `${Math.round(n)} €`)
+const months = computed(() => profit.value?.months ?? [])
+function monthTotal(m: { byProperty: { revenue: number; nights: number; occupancy: number }[] } | undefined) {
+  if (!m) return { revenue: 0, occupancy: 0 }
+  const revenue = m.byProperty.reduce((s, p) => s + p.revenue, 0)
+  const occupancy = m.byProperty.length ? Math.round(m.byProperty.reduce((s, p) => s + p.occupancy, 0) / m.byProperty.length) : 0
+  return { revenue, occupancy }
+}
+const revenueThisMonth = computed(() => monthTotal(months.value.at(-1)).revenue)
+const occupancyThisMonth = computed(() => monthTotal(months.value.at(-1)).occupancy)
+const revenueTrend = computed(() => {
+  const prev = monthTotal(months.value.at(-2)).revenue
+  if (!prev) return null
+  return Math.round(100 * (revenueThisMonth.value - prev) / prev)
+})
+const monthLabel = (m: string) => new Date(`${m}-01`).toLocaleDateString('fr-FR', { month: 'short' })
+const revenueByMonth = computed(() => months.value.slice(-6).map((m, i, arr) => ({
+  label: monthLabel(m.month), value: monthTotal(m).revenue, highlight: i === arr.length - 1,
+})))
+const revenueVsCharges = computed(() => {
+  const last6 = months.value.slice(-6)
+  return [
+    { label: 'Revenus', color: 'var(--ui-primary)', data: last6.map(m => monthTotal(m).revenue) },
+    { label: 'Charges', color: 'var(--ui-error)', data: last6.map(m => m.charges) },
+  ]
+})
 </script>

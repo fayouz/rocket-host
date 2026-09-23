@@ -86,7 +86,9 @@ export function buildToday({ properties, bookings, demo }: Awaited<ReturnType<ty
     .map(p => ({ property: p.name, out: departures.find(b => b.propertyId === p.id), in: arrivals.find(b => b.propertyId === p.id) }))
     .filter(x => x.out && x.in)
   const upcoming = ok.filter(b => b.arrival > t).sort((a, b) => a.arrival.localeCompare(b.arrival)).slice(0, 8).map(withName)
-  return { date: t, demo, arrivals, departures, turnovers, upcoming }
+  const in7 = iso(new Date(Date.now() + 7 * 864e5))
+  const arrivalsNext7 = ok.filter(b => b.arrival > t && b.arrival <= in7).length
+  return { date: t, demo, arrivals, departures, turnovers, upcoming, arrivalsNext7 }
 }
 
 export function buildProfit({ properties, bookings, demo }: Awaited<ReturnType<typeof loadData>>) {
