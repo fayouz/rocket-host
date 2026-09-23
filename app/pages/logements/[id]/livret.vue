@@ -161,12 +161,17 @@
       <UCard>
         <template #header><b>Widgets affichés</b></template>
         <p class="text-sm text-muted">Choisir lesquels apparaissent sur le livret et l'écran TV, et dans quel ordre. Un widget désactivé ici ne s'affiche jamais, même s'il a du contenu ; un widget activé ne s'affiche que s'il a du contenu (ex. Wi-Fi vide reste masqué).</p>
+        <p class="mt-1 text-xs text-muted">En mode « Onglets », chaque widget peut avoir son propre fond (icône <UIcon name="i-lucide-image" class="align-middle" />) ; sans fond propre, il garde le fond du logement.</p>
         <ul class="mt-3 divide-y divide-default">
           <li v-for="w in displayList" :key="w.id" class="flex items-center gap-3 py-2">
             <UCheckbox :model-value="w.enabled" @update:model-value="toggleWidget(w.id, $event)" />
             <UIcon :name="w.icon" class="size-4 text-muted" />
             <span class="flex-1 text-sm" :class="{ 'text-muted': !w.enabled }">{{ w.label }}</span>
-            <div v-if="w.enabled" class="flex gap-1">
+            <div v-if="w.enabled" class="flex items-center gap-1">
+              <UButton
+                size="xs" color="neutral" :variant="hasWidgetBg(w.id) ? 'soft' : 'ghost'" icon="i-lucide-image"
+                :title="hasWidgetBg(w.id) ? 'Fond personnalisé' : 'Définir un fond pour ce widget'" @click="openWidgetBg(w.id)"
+              />
               <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="w.isFirst" @click="move(w.id, -1)" />
               <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="w.isLast" @click="move(w.id, 1)" />
             </div>
@@ -175,6 +180,22 @@
       </UCard>
     </template>
   </div>
+
+  <UModal v-model:open="widgetBgOpen" :title="`Fond — ${widgetBgLabel}`">
+    <template #body>
+      <div class="space-y-3">
+        <p class="text-xs text-muted">Remplace le fond du logement uniquement pour ce widget (mode « Onglets »). Sans fond propre, ce widget garde le fond du logement.</p>
+        <div v-if="widgetBgPreviewUrl" class="flex items-center gap-3">
+          <img :src="widgetBgPreviewUrl" alt="Fond du widget" class="h-20 w-32 rounded object-cover ring ring-default">
+          <UButton size="xs" color="error" variant="soft" icon="i-lucide-trash-2" label="Retirer" :loading="widgetBgBusy" @click="removeWidgetBg" />
+        </div>
+        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-upload" label="Déposer une image" :loading="widgetBgBusy" @click="widgetBgFileInput?.click()" />
+        <input ref="widgetBgFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadWidgetBg">
+        <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickWidgetBgWeb" />
+        <p v-if="widgetBgError" class="text-sm text-error">{{ widgetBgError }}</p>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -300,6 +321,62 @@ function move(id: string, dir: -1 | 1) {
   ;[next[i], next[j]] = [next[j]!, next[i]!]
   widgetOrder.value = next
   saveWidgets()
+}
+
+// Fond par widget (carrousel) : un seul jeu de champs/modale reutilise pour le widget en cours d'edition (widgetBgId).
+const widgetBgId = ref<string | null>(null)
+const widgetBgOpen = ref(false)
+const widgetBgBusy = ref(false)
+const widgetBgError = ref('')
+const widgetBgFileInput = ref<HTMLInputElement>()
+const widgetBgVersion = ref(0)
+function hasWidgetBg(id: string) {
+  const r = data.value?.widgetBackgrounds?.[id]
+  return !!(r && (r.hasFile || r.webUrl))
+}
+const widgetBgLabel = computed(() => WIDGET_CATALOG.find(w => w.id === widgetBgId.value)?.label ?? '')
+const widgetBgPreviewUrl = computed(() => {
+  if (!data.value || !widgetBgId.value) return ''
+  const r = data.value.widgetBackgrounds?.[widgetBgId.value]
+  if (!r) return ''
+  if (r.hasFile) return `/api/g/${data.value.token}/widgets/${widgetBgId.value}/background?v=${widgetBgVersion.value}`
+  return r.webUrl
+})
+function openWidgetBg(id: string) {
+  widgetBgId.value = id
+  widgetBgError.value = ''
+  widgetBgOpen.value = true
+}
+async function uploadWidgetBg(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file || !widgetBgId.value) return
+  widgetBgBusy.value = true; widgetBgError.value = ''
+  try {
+    const body = new FormData(); body.append('file', file)
+    await $fetch(`/api/logements/${route.params.id}/livret/widgets/${widgetBgId.value}/background`, { method: 'POST', body })
+  } catch (err: any) { widgetBgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  widgetBgBusy.value = false
+  if (widgetBgFileInput.value) widgetBgFileInput.value.value = ''
+  widgetBgVersion.value++
+  await refresh()
+  bumpPreviews()
+}
+async function pickWidgetBgWeb(r: { url: string; attribution: string }) {
+  if (!widgetBgId.value) return
+  widgetBgBusy.value = true; widgetBgError.value = ''
+  try { await $fetch(`/api/logements/${route.params.id}/livret/widgets/${widgetBgId.value}/background-web`, { method: 'PUT', body: { url: r.url, attribution: r.attribution } }) }
+  catch (err: any) { widgetBgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  widgetBgBusy.value = false
+  await refresh()
+  bumpPreviews()
+}
+async function removeWidgetBg() {
+  if (!widgetBgId.value) return
+  widgetBgBusy.value = true
+  try { await $fetch(`/api/logements/${route.params.id}/livret/widgets/${widgetBgId.value}/background`, { method: 'DELETE' }) }
+  finally { widgetBgBusy.value = false }
+  await refresh()
+  bumpPreviews()
 }
 
 const navItems = [{ label: 'Défilement (toutes les cartes)', value: 'scroll' }, { label: 'Onglets (une à la fois)', value: 'tabs' }]

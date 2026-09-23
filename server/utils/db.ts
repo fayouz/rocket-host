@@ -76,6 +76,11 @@ export async function initDb() {
   await db.exec(`CREATE TABLE IF NOT EXISTS guest_visit (
     id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, page TEXT NOT NULL, at TEXT NOT NULL)`)
   await db.exec('CREATE INDEX IF NOT EXISTS guest_visit_logement_at ON guest_visit (logement_id, at)')
+  // Fond par widget (carrousel du livret/ecran TV, V3) : surcharge le fond du logement pour ce seul widget/slide.
+  // Absent = herite du fond du logement (comportement inchange si l'hote n'en definit aucun).
+  await db.exec(`CREATE TABLE IF NOT EXISTS widget_background (
+    logement_id INTEGER NOT NULL, widget_id TEXT NOT NULL, ext TEXT NOT NULL DEFAULT '', web_url TEXT NOT NULL DEFAULT '',
+    attribution TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '', PRIMARY KEY (logement_id, widget_id))`)
   // Reglages generaux du livret/ecran TV : fond par defaut pour tous les logements (surchargeable par logement ci-dessus)
   await db.exec(`CREATE TABLE IF NOT EXISTS welcomescreen_settings (
     id INTEGER PRIMARY KEY CHECK (id = 1), background_ext TEXT NOT NULL DEFAULT '', background_web_url TEXT NOT NULL DEFAULT '',
