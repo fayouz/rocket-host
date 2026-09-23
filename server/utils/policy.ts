@@ -18,6 +18,8 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['POST', '/api/auth/activate', 'P', 'Choisir son mot de passe avec un lien a usage unique', '', 'Compte', '{ token, password }'],
   ['POST', '/api/auth/logout', 'AGCM', 'Deconnexion', '', 'Compte'],
   ['GET', '/api/auth/me', 'AGCM', 'Utilisateur connecte', '', 'Compte'],
+  ['GET', '/api/theme', 'AGCM', 'Couleurs de l\'appli (accent, neutre), partagees par toute l\'equipe', '', 'Compte'],
+  ['PUT', '/api/theme', 'A', 'Modifier les couleurs de l\'appli', '', 'Compte', '{ primaryColor?, neutralColor? }'],
   ['POST', '/api/auth/password', 'AGCM', 'Changer son mot de passe (ferme les autres sessions)', '', 'Compte', '{ current, next }'],
   ['GET', '/api/r/:token', 'P', 'Page menage : etat du stock du logement (lien secret)', '', 'Public (jeton)'],
   ['PUT', '/api/r/:token', 'P', 'Page menage : signaler un niveau de stock (lien secret)', '', 'Public (jeton)'],

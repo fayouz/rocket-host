@@ -7,8 +7,8 @@
         <UDropdownMenu v-if="user" :items="userMenu" :content="{ align: 'end' }">
           <UButton color="neutral" variant="ghost" icon="i-lucide-circle-user" :label="user.displayName" class="hidden sm:inline-flex" />
         </UDropdownMenu>
-        <ThemeColorPicker />
-        <UColorModeButton />
+        <ThemeColorPicker v-if="can('A')" />
+        <UColorModeSelect />
       </template>
       <template #body>
         <UNavigationMenu :items="links" orientation="vertical" class="-mx-2.5" />
@@ -27,6 +27,7 @@ const demo = useState('demo', () => false)
 const { data: lg } = await useFetch('/api/logements', { key: 'logements' })
 const { user, refresh, logout, can } = useAuth()
 await refresh()
+useTheme()
 const userMenu = computed(() => [[{ label: user.value?.username ?? '', type: 'label' as const }], [
   { label: 'Mon compte', icon: 'i-lucide-user-cog', to: '/mon-compte' },
   { label: 'Se déconnecter', icon: 'i-lucide-log-out', onSelect: logout },

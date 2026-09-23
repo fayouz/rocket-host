@@ -58,6 +58,12 @@ export async function initDb() {
     faq TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '')`)
   // Lien secret separe de celui du stock (droits differents : lecture seule pour le voyageur, jamais d'ecriture)
   await db.exec('CREATE TABLE IF NOT EXISTS guestbook_token (logement_id INTEGER PRIMARY KEY, token TEXT NOT NULL UNIQUE)')
+  // Couleurs de l'appli (accent + neutre), partagees par toute l'equipe. Le mode clair/sombre/systeme reste un choix
+  // personnel par navigateur (deja gere par le module color-mode), pas stocke ici.
+  await db.exec(`CREATE TABLE IF NOT EXISTS app_theme (
+    id INTEGER PRIMARY KEY CHECK (id = 1), primary_color TEXT NOT NULL DEFAULT 'green', neutral_color TEXT NOT NULL DEFAULT 'slate',
+    updated_at TEXT NOT NULL DEFAULT '')`)
+  await db.exec('INSERT OR IGNORE INTO app_theme (id) VALUES (1)')
   // Comptes utilisateurs et journal d'audit (voir docs/plan-gestion-utilisateurs.md). Mots de passe : hachage scrypt, jamais en clair.
   // session_version : incremente a chaque changement de mot de passe, ce qui invalide toutes les sessions ouvertes.
   await db.exec(`CREATE TABLE IF NOT EXISTS app_user (
