@@ -127,6 +127,9 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['PUT', '/api/logements/:id/livret', 'AG', 'Enregistrer le livret d\'accueil', 'logement', 'Livret d\'accueil'],
   ['POST', '/api/logements/:id/livret/token', 'A', 'Regenerer le lien secret du livret', 'logement', 'Livret d\'accueil'],
   ['GET', '/api/logements/:id/livret/qr', 'AG', 'QR code du livret d\'accueil', 'logement', 'Livret d\'accueil'],
+  ['POST', '/api/logements/:id/livret/background', 'AG', 'Deposer l\'image de fond du livret/ecran TV (multipart)', 'logement', 'Livret d\'accueil'],
+  ['DELETE', '/api/logements/:id/livret/background', 'AG', 'Retirer l\'image de fond', 'logement', 'Livret d\'accueil'],
+  ['GET', '/api/g/:token/background', 'P', 'Image de fond du livret/ecran TV (lien secret)', '', 'Public (jeton)'],
   ['GET', '/api/g/:token', 'P', 'Page publique du livret d\'accueil (lien secret)', '', 'Public (jeton)'],
   ['GET', '/api/tv/:token', 'P', 'Page TV plein ecran (meme lien secret) : accueil du voyageur du jour + livret', '', 'Public (jeton)'],
   // --- Utilisateurs (administrateur)

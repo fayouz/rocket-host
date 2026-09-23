@@ -27,6 +27,20 @@
     </UCard>
 
     <UCard>
+      <template #header><b>Image de fond</b></template>
+      <p class="text-sm text-muted">Affichée en fond du livret et de l'écran TV, avec les blocs en verre dépoli par-dessus. PNG, JPG ou WebP, 8 Mo maximum.</p>
+      <div class="mt-2 flex flex-wrap items-center gap-3">
+        <img v-if="data.hasBackground" :src="backgroundPreviewUrl" alt="Fond actuel" class="h-20 w-32 rounded object-cover ring ring-default">
+        <div class="flex gap-2">
+          <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" :label="data.hasBackground ? 'Remplacer' : 'Choisir une image'" :loading="bgBusy" @click="fileInput?.click()" />
+          <UButton v-if="data.hasBackground" size="sm" color="error" variant="ghost" icon="i-lucide-trash-2" label="Retirer" :loading="bgBusy" @click="removeBackground" />
+        </div>
+        <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadBackground">
+      </div>
+      <p v-if="bgError" class="mt-2 text-sm text-error">{{ bgError }}</p>
+    </UCard>
+
+    <UCard>
       <template #header><b>Wi-Fi</b></template>
       <div class="grid gap-2 sm:grid-cols-2">
         <UFormField label="Nom du réseau (SSID)"><UInput v-model="form.wifiSsid" class="w-full" /></UFormField>
@@ -73,6 +87,33 @@ async function copy() { try { await navigator.clipboard.writeText(link.value); c
 async function regenerate() {
   if (!confirm('Régénérer le lien ? L\'ancien (et le QR déjà imprimé) cessera de fonctionner.')) return
   await $fetch(`/api/logements/${route.params.id}/livret/token`, { method: 'POST' })
+  await refresh()
+}
+
+const fileInput = ref<HTMLInputElement>()
+const backgroundPreviewUrl = computed(() => data.value?.token ? `/api/g/${data.value.token}/background?v=${bgVersion.value}` : '')
+const bgVersion = ref(0)
+const bgBusy = ref(false)
+const bgError = ref('')
+async function uploadBackground(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  bgBusy.value = true; bgError.value = ''
+  try {
+    const body = new FormData(); body.append('file', file)
+    await $fetch(`/api/logements/${route.params.id}/livret/background`, { method: 'POST', body })
+  } catch (err: any) { bgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  bgBusy.value = false
+  if (fileInput.value) fileInput.value.value = ''
+  bgVersion.value++
+  await refresh()
+}
+async function removeBackground() {
+  if (!confirm('Retirer l\'image de fond ?')) return
+  bgBusy.value = true
+  try { await $fetch(`/api/logements/${route.params.id}/livret/background`, { method: 'DELETE' }) }
+  finally { bgBusy.value = false }
+  bgVersion.value++
   await refresh()
 }
 

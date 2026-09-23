@@ -56,6 +56,8 @@ export async function initDb() {
     welcome_text TEXT NOT NULL DEFAULT '', house_rules TEXT NOT NULL DEFAULT '', checkin_info TEXT NOT NULL DEFAULT '',
     checkout_info TEXT NOT NULL DEFAULT '', access_directions TEXT NOT NULL DEFAULT '', local_tips TEXT NOT NULL DEFAULT '',
     faq TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '')`)
+  const guestbookCols = ((await db.prepare('PRAGMA table_info(guestbook)').all()) as any[]).map(c => String(c.name))
+  if (!guestbookCols.includes('background_ext')) await addColumn("ALTER TABLE guestbook ADD COLUMN background_ext TEXT NOT NULL DEFAULT ''")
   // Lien secret separe de celui du stock (droits differents : lecture seule pour le voyageur, jamais d'ecriture)
   await db.exec('CREATE TABLE IF NOT EXISTS guestbook_token (logement_id INTEGER PRIMARY KEY, token TEXT NOT NULL UNIQUE)')
   // Couleurs de l'appli (accent + neutre), partagees par toute l'equipe. Le mode clair/sombre/systeme reste un choix
