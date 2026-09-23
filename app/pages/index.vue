@@ -67,7 +67,7 @@
 
       <h2 class="section-title">La journée</h2>
       <div class="grid gap-4 sm:grid-cols-3">
-        <UCard v-for="s in sections" :key="s.title">
+        <UCard v-for="s in sections" :key="s.title" :ui="{ root: 'flex aspect-square flex-col', body: 'min-h-0 flex-1 overflow-y-auto' }">
           <template #header>
             <h3 class="flex items-center gap-1.5 font-semibold"><UIcon :name="s.icon" class="size-4 text-muted" /> {{ s.title }}</h3>
           </template>
