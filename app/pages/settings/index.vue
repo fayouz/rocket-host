@@ -9,6 +9,18 @@
         Nom court dans Lodgify : <b>{{ l.lodgifyShortName }}</b>
         <UButton size="xs" color="neutral" variant="outline" label="Utiliser ce nom" @click="syncName(l)" />
       </p>
+      <div class="mt-3 flex items-center gap-2">
+        <span class="text-sm text-muted">Couleur repère :</span>
+        <button
+          v-for="c in LOGEMENT_COLOR_CHOICES" :key="c.value" type="button"
+          class="flex size-6 items-center justify-center rounded-full border border-default ring-2 ring-offset-2 ring-offset-default"
+          :class="l.color === c.value ? 'ring-default' : 'ring-transparent'" :style="{ backgroundColor: c.hex || 'transparent' }"
+          :title="c.label" @click="setColor(l, c.value)"
+        >
+          <UIcon v-if="!c.value" name="i-lucide-ban" class="size-4 text-muted" />
+          <UIcon v-else-if="l.color === c.value" name="i-lucide-check" class="size-3.5 text-white" />
+        </button>
+      </div>
     </UCard>
     <h2 class="section-title">Serrures Nuki</h2>
     <UCard v-for="l in data.locks" :key="l.id">
@@ -33,6 +45,7 @@ async function send(url: string, body: object) {
   catch (e: any) { error.value = e?.data?.statusMessage || 'Échec de l’enregistrement' }
 }
 const rename = (l: { id: number; name: string }) => send(`/api/logements/${l.id}`, { name: l.name })
+const setColor = (l: { id: number; color: string }, color: string) => { l.color = color; send(`/api/logements/${l.id}`, { color }) }
 const syncName = async (l: { id: number; name: string }) => {
   error.value = ''
   try { const r = await $fetch<{ name: string }>(`/api/logements/${l.id}/sync-name`, { method: 'POST' }); l.name = r.name; saved.value = true; await refreshNuxtData('logements') }

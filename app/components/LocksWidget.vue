@@ -12,7 +12,7 @@
       <ul class="space-y-3">
         <li v-for="l in data.locks" :key="l.id" class="text-sm">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <NuxtLink :to="link(l)" class="font-medium hover:underline">{{ l.property || l.name }}</NuxtLink>
+            <NuxtLink :to="link(l)" class="flex items-center gap-1.5 font-medium hover:underline"><LogementDot :property-id="l.propertyId" /> {{ l.property || l.name }}</NuxtLink>
             <UBadge :color="l.locked ? 'success' : faulty(l) ? 'error' : 'warning'" variant="subtle" :label="l.state" />
           </div>
           <p class="text-muted">

@@ -1,6 +1,11 @@
 // Logements de l'appli : chacun est associe a un logement Lodgify (lodgify_property_id). Crees automatiquement pour chaque
 // logement Lodgify encore sans logement ; renommables sans toucher a Lodgify.
-export interface Logement { id: number; name: string; lodgifyPropertyId: number | null; lodgifyName: string | null; lodgifyShortName: string | null; latitude: number | null; longitude: number | null }
+export interface Logement { id: number; name: string; color: string; lodgifyPropertyId: number | null; lodgifyName: string | null; lodgifyShortName: string | null; latitude: number | null; longitude: number | null }
+
+// Palette proposee dans les infos du logement (repere visuel sur le tableau de bord, badges...) ; '' = aucune couleur
+export const LOGEMENT_COLORS = ['', 'red', 'orange', 'amber', 'green', 'teal', 'blue', 'violet', 'pink'] as const
+export type LogementColor = (typeof LOGEMENT_COLORS)[number]
+export const isLogementColor = (v: unknown): v is LogementColor => LOGEMENT_COLORS.includes(v as LogementColor)
 
 export async function ensureLogements(): Promise<Logement[]> {
   const db = useDatabase()
@@ -14,7 +19,7 @@ export async function ensureLogements(): Promise<Logement[]> {
   }
   const rows = (await db.sql`SELECT * FROM logement ORDER BY id`).rows as any[]
   return rows.map(r => ({
-    id: Number(r.id), name: String(r.name),
+    id: Number(r.id), name: String(r.name), color: String(r.color ?? ''),
     lodgifyPropertyId: r.lodgify_property_id === null ? null : Number(r.lodgify_property_id),
     lodgifyName: properties.find(p => p.id === Number(r.lodgify_property_id))?.original ?? null,
     // Nom court saisi dans Lodgify (champ « nom interne »), ex. « Le ponant »
@@ -35,6 +40,11 @@ export async function renameLogement(id: number, name: string) {
   const clean = name.trim().slice(0, 80)
   if (!clean) throw createError({ statusCode: 400, statusMessage: 'Nom requis' })
   await useDatabase().sql`UPDATE logement SET name = ${clean} WHERE id = ${id}`
+}
+
+export async function setLogementColor(id: number, color: string) {
+  if (!isLogementColor(color)) throw createError({ statusCode: 400, statusMessage: 'Couleur invalide' })
+  await useDatabase().sql`UPDATE logement SET color = ${color} WHERE id = ${id}`
 }
 
 // Reprend le nom court de Lodgify (nom interne) comme nom du logement
