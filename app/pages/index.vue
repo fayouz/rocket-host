@@ -13,9 +13,19 @@
           <span class="capitalize">{{ nowLabel }}</span>
         </div>
       </div>
-      <UDropdownMenu :items="quickActions" :content="{ align: 'end' }">
-        <UButton color="neutral" variant="outline" icon="i-lucide-zap" label="Actions rapides" trailing-icon="i-lucide-chevron-down" />
-      </UDropdownMenu>
+      <div class="flex flex-wrap items-center gap-2">
+        <USelectMenu
+          v-model="selectedLogements" :items="logementItems" multiple value-key="value" :placeholder="filterLabel"
+          icon="i-lucide-building-2" class="w-56"
+        >
+          <template #default>
+            <span class="truncate">{{ filterLabel }}</span>
+          </template>
+        </USelectMenu>
+        <UDropdownMenu :items="quickActions" :content="{ align: 'end' }">
+          <UButton color="neutral" variant="outline" icon="i-lucide-zap" label="Actions rapides" trailing-icon="i-lucide-chevron-down" />
+        </UDropdownMenu>
+      </div>
     </div>
 
     <!-- KPI du jour -->
@@ -60,9 +70,9 @@
     <div class="min-w-0 space-y-2 lg:col-span-2">
       <h2 class="section-title !mt-0">Vue d'ensemble</h2>
       <div class="grid gap-4 sm:grid-cols-3">
-        <TurnoverWidget />
-        <StockWidget />
-        <LocksWidget />
+        <TurnoverWidget :properties="selectedPropertyIds" />
+        <StockWidget :properties="selectedPropertyIds" />
+        <LocksWidget :properties="selectedPropertyIds" />
       </div>
 
       <h2 class="section-title">La journée</h2>
@@ -124,8 +134,18 @@ const quickActions = computed(() => [[
   can('A') && { label: 'Nouveau contact', icon: 'i-lucide-contact', to: '/contacts' },
 ].filter(Boolean)])
 
-const { data } = await useFetch('/api/today')
-const { data: tl } = await useFetch('/api/timeline', { query: { past: 1, future: 7 } })
+// Filtre "logements" a cote d'Actions rapides : recalcule le tableau de bord sur le perimetre choisi (vide = tous).
+// On selectionne par id de logement (plus lisible), et on convertit en id Lodgify (propertyId) pour filtrer les
+// donnees Lodgify/DB cote serveur (?properties=..., voir server/utils/scope.ts#effectivePropertyIds).
+const { data: lg } = await useFetch('/api/logements', { key: 'logements' })
+const selectedLogements = ref<number[]>([])
+const logementItems = computed(() => (lg.value?.logements ?? []).map(l => ({ label: l.name, value: l.id })))
+const filterLabel = computed(() => !selectedLogements.value.length ? 'Tous les logements' : selectedLogements.value.length === 1 ? logementItems.value.find(i => i.value === selectedLogements.value[0])?.label ?? '1 logement' : `${selectedLogements.value.length} logements`)
+const selectedPropertyIds = computed(() => (lg.value?.logements ?? []).filter(l => selectedLogements.value.includes(l.id) && l.lodgifyPropertyId !== null).map(l => l.lodgifyPropertyId as number))
+const propertiesQuery = computed(() => selectedPropertyIds.value.length ? selectedPropertyIds.value.join(',') : undefined)
+
+const { data } = await useFetch('/api/today', { query: { properties: propertiesQuery } })
+const { data: tl } = await useFetch('/api/timeline', { query: { past: 1, future: 7, properties: propertiesQuery } })
 const events = computed(() => (tl.value?.properties ?? []).flatMap(p => p.events.map(e => ({ ...e, property: p.name }))).sort((a, b) => a.at.localeCompare(b.at)))
 // Colonne timeline : au chargement, fait defiler jusqu'au dernier evenement passe (le "maintenant")
 const tlBox = ref<HTMLElement | null>(null)
@@ -149,8 +169,8 @@ const sections = computed(() => data.value ? [
 // KPI et graphe (revenus/occupation) : reservés au role admin cote serveur (/api/profit, /api/stock) — la requete
 // echoue silencieusement pour les autres roles (comme StockWidget), les cartes correspondantes restent simplement
 // masquees (v-if="profit"/"stock" dans le template) plutot que d'afficher une erreur genante sur le tableau de bord.
-const { data: profit } = await useFetch('/api/profit')
-const { data: stock } = await useFetch('/api/stock')
+const { data: profit } = await useFetch('/api/profit', { query: { properties: propertiesQuery } })
+const { data: stock } = await useFetch('/api/stock', { query: { properties: propertiesQuery } })
 const eur = (n: number) => Math.round(n).toLocaleString('fr-FR') + ' €'
 const months = computed(() => profit.value?.months ?? [])
 function monthTotal(m: { byProperty: { revenue: number; nights: number; occupancy: number }[] } | undefined) {

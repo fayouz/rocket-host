@@ -1,7 +1,7 @@
-// Journee : filtree selon les logements autorises du compte
+// Journee : filtree selon les logements autorises du compte, et le filtre optionnel ?properties=1,2 (selecteur du tableau de bord)
 export default defineEventHandler(async (event) => {
   const data = await loadData()
-  const ids = await allowedPropertyIds(event)
+  const ids = await effectivePropertyIds(event)
   const built = ids
     ? buildToday({ ...data, bookings: data.bookings.filter(b => ids.has(b.propertyId)), properties: data.properties.filter(p => ids.has(p.id)) })
     : buildToday(data)

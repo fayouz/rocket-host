@@ -28,6 +28,17 @@ export async function allowedPropertyIds(event: H3Event): Promise<Set<number> | 
   return new Set(all.filter(l => scope.has(l.id) && l.lodgifyPropertyId !== null).map(l => l.lodgifyPropertyId as number))
 }
 
+// Comme allowedPropertyIds, mais croise en plus avec le filtre optionnel ?properties=1,2 (selecteur de logements du
+// tableau de bord) : le filtre choisi cote client ne peut que restreindre le perimetre deja autorise, jamais l'elargir.
+export async function effectivePropertyIds(event: H3Event): Promise<Set<number> | null> {
+  const allowed = await allowedPropertyIds(event)
+  const q = getQuery(event).properties
+  const selected = typeof q === 'string' && q.trim() ? new Set(q.split(',').map(Number).filter(Number.isFinite)) : null
+  if (!selected) return allowed
+  if (!allowed) return selected
+  return new Set([...allowed].filter(id => selected.has(id)))
+}
+
 // Logement auquel appartient une ressource (undefined = introuvable ou non rattachee : refusee aux non-administrateurs)
 export async function logementOf(kind: 'logement' | 'document' | 'node' | 'booking', id: string): Promise<number | undefined> {
   const n = Number(id)

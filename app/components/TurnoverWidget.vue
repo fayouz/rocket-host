@@ -25,5 +25,8 @@
 <script setup lang="ts">
 // Turnovers du jour, en resume compact : cohabite avec StockWidget/LocksWidget dans une grille a 3 colonnes
 // (bloc "vue d'ensemble" de la page Aujourd'hui), au lieu d'une liste detaillee en pleine largeur.
-const { data, error } = await useFetch('/api/today')
+// `properties` : filtre optionnel du selecteur de logements du tableau de bord (ids Lodgify, vide = tous)
+const props = defineProps<{ properties?: number[] }>()
+const query = computed(() => ({ properties: props.properties?.length ? props.properties.join(',') : undefined }))
+const { data, error } = await useFetch('/api/today', { query })
 </script>

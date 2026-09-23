@@ -50,16 +50,19 @@ export function amazonCartUrl(lines: { asin: string; qty: number }[]) {
   return 'https://www.amazon.fr/gp/aws/cart/add.html?' + l.map((x, i) => `ASIN.${i + 1}=${encodeURIComponent(x.asin)}&Quantity.${i + 1}=${x.qty}`).join('&')
 }
 
-export async function buildStock() {
+// ids : filtre optionnel sur les logements (selecteur du tableau de bord) — n'affecte que les logements et le
+// reassort affiches, pas le catalogue (`items[].propertyIds` reste global, utilise par la page Réglages > Stock)
+export async function buildStock(ids?: Set<number> | null) {
   const db = useDatabase()
-  const properties = await ensureStock()
+  const allProperties = await ensureStock()
+  const properties = ids ? allProperties.filter(p => ids.has(p.id)) : allProperties
   const items = (await db.sql`SELECT * FROM stock_item ORDER BY id`).rows as any[]
   const levels = (await db.sql`SELECT * FROM stock_level`).rows as any[]
   const tokens = (await db.sql`SELECT * FROM property_token`).rows as any[]
 
   const shopping = items.map((it) => {
-    const needing = levels.filter(l => Number(l.item_id) === Number(it.id) && l.level !== 'ok')
-      .map(l => ({ property: properties.find(p => p.id === Number(l.property_id))?.name ?? `Logement ${l.property_id}`, level: l.level as Level, propertyId: Number(l.property_id) }))
+    const needing = levels.filter(l => Number(l.item_id) === Number(it.id) && l.level !== 'ok' && (!ids || ids.has(Number(l.property_id))))
+      .map(l => ({ property: allProperties.find(p => p.id === Number(l.property_id))?.name ?? `Logement ${l.property_id}`, level: l.level as Level, propertyId: Number(l.property_id) }))
     return { itemId: Number(it.id), name: String(it.name), asin: String(it.asin), subscription: !!Number(it.subscription), qty: Number(it.reorder_qty) * needing.length, needing }
   }).filter(x => x.needing.length)
 

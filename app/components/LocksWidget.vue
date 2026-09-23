@@ -29,7 +29,10 @@
 
 <script setup lang="ts">
 // Etat de toutes les serrures Nuki (verrouillee ou non, batterie), avec lien vers la page Serrures du logement
-const { data, error } = await useFetch('/api/locks')
+// `properties` : filtre optionnel du selecteur de logements du tableau de bord (ids Lodgify, vide = tous)
+const props = defineProps<{ properties?: number[] }>()
+const query = computed(() => ({ properties: props.properties?.length ? props.properties.join(',') : undefined }))
+const { data, error } = await useFetch('/api/locks', { query })
 const { data: lg } = await useFetch('/api/logements', { key: 'logements' })
 // Etats anormaux (moteur bloque, non calibree) ou batterie critique : comptes comme alertes
 const faulty = (l: { state: string }) => /bloqu|calibr/i.test(l.state)
