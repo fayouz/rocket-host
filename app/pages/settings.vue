@@ -20,5 +20,6 @@ const menu = [
   { label: 'E-mail (IMAP)', icon: 'i-lucide-mail', to: '/settings/imap' },
   { label: 'API (Swagger)', icon: 'i-lucide-book-open', to: '/docs-api' },
   { label: 'Nouveautés', icon: 'i-lucide-sparkles', to: '/changelog' },
+  { label: 'Manuel', icon: 'i-lucide-book-marked', to: '/docs' },
 ]
 </script>
