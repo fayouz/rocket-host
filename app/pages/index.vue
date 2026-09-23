@@ -1,40 +1,39 @@
 <template>
   <div v-if="data" class="space-y-6">
     <!-- KPI du jour -->
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      <UCard :ui="{ body: 'p-3 sm:p-4' }">
-        <p class="text-xs text-muted">Ménages aujourd'hui</p>
-        <p class="mt-1 text-2xl font-bold">{{ data.turnovers.length }}</p>
-      </UCard>
-      <UCard :ui="{ body: 'p-3 sm:p-4' }">
-        <p class="text-xs text-muted">Arrivées (7 j)</p>
-        <p class="mt-1 text-2xl font-bold">{{ data.arrivalsNext7 }}</p>
-      </UCard>
-      <UCard v-if="profit" :ui="{ body: 'p-3 sm:p-4' }">
-        <p class="text-xs text-muted">Revenus ce mois</p>
-        <p class="mt-1 text-2xl font-bold">{{ eur(revenueThisMonth) }}</p>
-        <p v-if="revenueTrend !== null" class="mt-0.5 text-xs" :class="revenueTrend >= 0 ? 'text-success' : 'text-error'">
-          <UIcon :name="revenueTrend >= 0 ? 'i-lucide-trending-up' : 'i-lucide-trending-down'" class="align-middle" /> {{ Math.abs(revenueTrend) }} % vs mois dernier
-        </p>
-      </UCard>
-      <UCard v-if="profit" :ui="{ body: 'p-3 sm:p-4' }">
-        <p class="text-xs text-muted">Occupation ce mois</p>
-        <p class="mt-1 text-2xl font-bold">{{ occupancyThisMonth }} %</p>
-      </UCard>
-      <UCard v-if="stock" :ui="{ body: 'p-3 sm:p-4' }">
-        <p class="text-xs text-muted">À racheter</p>
-        <p class="mt-1 text-2xl font-bold">{{ stock.shopping.length }}</p>
-      </UCard>
-    </div>
+    <UCard :ui="{ body: 'p-0 sm:p-0' }">
+      <div class="grid grid-cols-2 divide-y divide-default sm:grid-cols-3 sm:divide-x sm:divide-y-0 lg:grid-cols-5">
+        <div v-for="k in kpis" :key="k.label" class="space-y-2 p-4">
+          <div class="flex items-center gap-2">
+            <span class="flex size-8 items-center justify-center rounded-full" :style="{ backgroundColor: `color-mix(in oklab, ${k.color} 15%, transparent)` }">
+              <UIcon :name="k.icon" class="size-4" :style="{ color: k.color }" />
+            </span>
+            <p class="text-xs font-medium uppercase tracking-wide text-muted">{{ k.label }}</p>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <p class="text-2xl font-bold">{{ k.value }}</p>
+            <UBadge v-if="k.trend !== undefined && k.trend !== null" size="sm" :color="k.trend >= 0 ? 'success' : 'error'" variant="subtle" class="rounded-full">
+              {{ k.trend >= 0 ? '+' : '' }}{{ k.trend }}%
+            </UBadge>
+          </div>
+        </div>
+      </div>
+    </UCard>
 
     <div v-if="revenueByMonth.length" class="grid gap-6 lg:grid-cols-2">
       <UCard>
-        <template #header><b>Revenus des 6 derniers mois</b></template>
-        <BarChart :data="revenueByMonth" :height="180" :format="euroShort" />
+        <template #header>
+          <p class="text-xs font-medium uppercase tracking-wide text-muted">Revenus des 6 derniers mois</p>
+          <p class="mt-1 text-2xl font-bold">{{ eur(revenueThisMonth) }}</p>
+        </template>
+        <AreaChart :series="[{ label: 'Revenus', color: 'var(--ui-primary)', data: revenueByMonth.map(m => m.value), fill: true }]" :labels="revenueByMonth.map(m => m.label)" :height="180" />
       </UCard>
       <UCard>
-        <template #header><b>Revenus vs charges</b></template>
-        <LineChart :series="revenueVsCharges" :labels="revenueByMonth.map(m => m.label)" :height="180" />
+        <template #header>
+          <p class="text-xs font-medium uppercase tracking-wide text-muted">Revenus vs charges</p>
+          <p class="mt-1 text-2xl font-bold">{{ eur(revenueThisMonth - chargesThisMonth) }} <span class="text-sm font-normal text-muted">de marge ce mois</span></p>
+        </template>
+        <AreaChart :series="revenueVsCharges" :labels="revenueByMonth.map(m => m.label)" :height="180" />
       </UCard>
     </div>
 
@@ -108,7 +107,6 @@ const sections = computed(() => data.value ? [
 const { data: profit } = await useFetch('/api/profit')
 const { data: stock } = await useFetch('/api/stock')
 const eur = (n: number) => Math.round(n).toLocaleString('fr-FR') + ' €'
-const euroShort = (n: number) => (n >= 1000 ? `${Math.round(n / 100) / 10}k €` : `${Math.round(n)} €`)
 const months = computed(() => profit.value?.months ?? [])
 function monthTotal(m: { byProperty: { revenue: number; nights: number; occupancy: number }[] } | undefined) {
   if (!m) return { revenue: 0, occupancy: 0 }
@@ -117,6 +115,7 @@ function monthTotal(m: { byProperty: { revenue: number; nights: number; occupanc
   return { revenue, occupancy }
 }
 const revenueThisMonth = computed(() => monthTotal(months.value.at(-1)).revenue)
+const chargesThisMonth = computed(() => months.value.at(-1)?.charges ?? 0)
 const occupancyThisMonth = computed(() => monthTotal(months.value.at(-1)).occupancy)
 const revenueTrend = computed(() => {
   const prev = monthTotal(months.value.at(-2)).revenue
@@ -124,14 +123,22 @@ const revenueTrend = computed(() => {
   return Math.round(100 * (revenueThisMonth.value - prev) / prev)
 })
 const monthLabel = (m: string) => new Date(`${m}-01`).toLocaleDateString('fr-FR', { month: 'short' })
-const revenueByMonth = computed(() => months.value.slice(-6).map((m, i, arr) => ({
-  label: monthLabel(m.month), value: monthTotal(m).revenue, highlight: i === arr.length - 1,
-})))
+const revenueByMonth = computed(() => months.value.slice(-6).map(m => ({ label: monthLabel(m.month), value: monthTotal(m).revenue })))
 const revenueVsCharges = computed(() => {
   const last6 = months.value.slice(-6)
   return [
-    { label: 'Revenus', color: 'var(--ui-primary)', data: last6.map(m => monthTotal(m).revenue) },
+    { label: 'Revenus', color: 'var(--ui-primary)', data: last6.map(m => monthTotal(m).revenue), fill: true },
     { label: 'Charges', color: 'var(--ui-error)', data: last6.map(m => m.charges) },
   ]
 })
+
+// Cartes KPI : les 2 premieres toujours visibles (role AG), les suivantes seulement si les donnees admin ont pu
+// etre chargees (profit/stock nuls pour un role sans acces, voir le commentaire au-dessus des deux useFetch).
+const kpis = computed(() => [
+  { label: 'Ménages aujourd\'hui', value: String(data.value?.turnovers.length ?? 0), icon: 'i-lucide-sparkles', color: 'var(--ui-warning)' },
+  { label: 'Arrivées (7 j)', value: String(data.value?.arrivalsNext7 ?? 0), icon: 'i-lucide-calendar-check', color: 'var(--ui-info)' },
+  profit.value && { label: 'Revenus ce mois', value: eur(revenueThisMonth.value), icon: 'i-lucide-euro', color: 'var(--ui-primary)', trend: revenueTrend.value },
+  profit.value && { label: 'Occupation ce mois', value: `${occupancyThisMonth.value} %`, icon: 'i-lucide-percent', color: 'var(--ui-secondary)' },
+  stock.value && { label: 'À racheter', value: String(stock.value.shopping.length), icon: 'i-lucide-shopping-cart', color: 'var(--ui-error)' },
+].filter((k): k is { label: string; value: string; icon: string; color: string; trend?: number | null } => !!k))
 </script>
