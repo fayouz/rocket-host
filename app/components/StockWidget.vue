@@ -29,7 +29,10 @@
 
 <script setup lang="ts">
 // Etat du stock de tous les logements : articles a racheter, et par logement le nombre d'articles vides / bas
-const { data, error } = await useFetch('/api/stock')
+// `properties` : filtre optionnel du selecteur de logements du tableau de bord (ids Lodgify, vide = tous)
+const props = defineProps<{ properties?: number[] }>()
+const query = computed(() => ({ properties: props.properties?.length ? props.properties.join(',') : undefined }))
+const { data, error } = await useFetch('/api/stock', { query })
 const { data: lg } = await useFetch('/api/logements', { key: 'logements' })
 const rows = computed(() => (data.value?.properties ?? []).map((p) => {
   const levels = Object.values(p.levels)

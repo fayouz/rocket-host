@@ -2,6 +2,6 @@
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   const days = (v: unknown, def: number, max: number) => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? Math.min(n, max) : def }
-  const ids = await allowedPropertyIds(event)
+  const ids = await effectivePropertyIds(event)
   return buildTimeline({ pastDays: days(q.past, 3, 30), futureDays: days(q.future, 45, 120), propertyIds: ids ? [...ids] : undefined })
 })
