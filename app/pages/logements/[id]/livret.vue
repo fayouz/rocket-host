@@ -80,19 +80,8 @@
     <template v-else>
       <p class="text-sm text-muted">Même lien que le livret, en plein écran, pensé pour être ouvert sur la TV du logement (grand texte, voyageur du jour affiché s'il y en a un). Voir <code>docs/ecran-tv-android.md</code> pour installer Fully Kiosk Browser dessus. Le fond, la mise en page et les widgets ci-dessous s'appliquent aussi au livret mobile (onglet Livret Accueil).</p>
 
-      <div class="grid gap-4 lg:grid-cols-[480px_1fr]">
-        <UCard :ui="{ body: 'p-0 sm:p-0' }">
-          <template #header><b>Aperçu</b></template>
-          <div class="tv-preview-frame overflow-hidden bg-black">
-            <iframe :src="tvLink" class="tv-preview-iframe" title="Aperçu de l'écran TV" />
-          </div>
-          <div class="flex flex-wrap gap-2 p-4">
-            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir l'aperçu" @click="tvPreviewKey++" />
-            <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-expand" label="Ouvrir en plein écran" :to="tvLink" external target="_blank" />
-          </div>
-        </UCard>
-
-        <div class="space-y-4">
+      <div class="grid gap-4 lg:grid-cols-3">
+        <div class="space-y-4 lg:col-span-2">
           <UCard>
             <template #header><b>Lien de l'écran TV</b></template>
             <div class="flex items-center gap-2">
@@ -117,82 +106,112 @@
             </div>
             <p class="mt-2 text-xs text-muted">En mode « Onglets », le livret et l'écran TV affichent un carrousel avec une barre de menu pour naviguer entre les widgets.</p>
           </UCard>
+
+          <UCard>
+            <template #header><b>Image de fond</b></template>
+            <p class="text-sm text-muted">Affichée en fond du livret et de l'écran TV, avec les blocs en verre dépoli par-dessus.</p>
+
+            <div class="mt-2 rounded-lg border border-default p-3 text-sm">
+              <template v-if="data.background.mode === 'custom'">
+                <p>Fond propre à ce logement.
+                  <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
+                </p>
+              </template>
+              <template v-else-if="data.background.mode === 'none'">
+                <p>Aucun fond, forcé pour ce logement (même si un fond général existe).
+                  <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
+                </p>
+              </template>
+              <template v-else>
+                <p v-if="data.hasDefaultBackground">Utilise le fond général des réglages.
+                  <UButton size="xs" color="neutral" variant="link" label="Forcer aucun fond ici" @click="setMode('none')" />
+                </p>
+                <p v-else>Pas de fond général réglé, et rien de propre à ce logement : fond uni.</p>
+              </template>
+            </div>
+
+            <div v-if="data.background.hasFile || data.background.webUrl" class="mt-3 flex items-center gap-3">
+              <img :src="backgroundPreviewUrl" alt="Fond actuel" class="h-20 w-32 rounded object-cover ring ring-default">
+              <p v-if="data.background.attribution" class="text-xs text-muted">{{ data.background.attribution }}</p>
+            </div>
+
+            <UCheckbox class="mt-3" :model-value="data.background.animated" label="Fond animé (léger effet de zoom/travelling)" @update:model-value="setAnimated" />
+
+            <div class="mt-4 space-y-3">
+              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" label="Déposer une image" :loading="bgBusy" @click="fileInput?.click()" />
+              <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadBackground">
+              <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickWeb" />
+            </div>
+            <p v-if="bgError" class="mt-2 text-sm text-error">{{ bgError }}</p>
+          </UCard>
+
+          <UCard>
+            <template #header>
+              <div class="flex items-center justify-between gap-2">
+                <b>Pages</b>
+                <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-plus" label="Ajouter une page" @click="addPage" />
+              </div>
+            </template>
+            <p class="text-sm text-muted">Chaque page regroupe un ou plusieurs widgets : un onglet du carrousel (mode « Onglets »), ou une section (mode « Défilement »). Un widget coché dans aucune page n'est affiché nulle part.</p>
+            <p class="mt-1 text-xs text-muted">En mode « Onglets », chaque page peut avoir son propre fond (icône <UIcon name="i-lucide-image" class="align-middle" />) ; sans fond propre, elle garde le fond du logement.</p>
+
+            <div class="mt-3 space-y-3">
+              <div v-for="(page, pi) in data.pages" :key="page.id" class="rounded-lg border border-default p-3">
+                <div class="flex items-center gap-2">
+                  <UInput :model-value="page.label" class="flex-1" placeholder="Nom de la page" @change="renamePageLabel(page, ($event.target as HTMLInputElement).value)" />
+                  <UButton
+                    size="xs" color="neutral" :variant="hasPageBg(page) ? 'soft' : 'ghost'" icon="i-lucide-image"
+                    :title="hasPageBg(page) ? 'Fond personnalisé' : 'Définir un fond pour cette page'" @click="openPageBg(page)"
+                  />
+                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="pi === 0" @click="movePage(pi, -1)" />
+                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="pi === data.pages.length - 1" @click="movePage(pi, 1)" />
+                  <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :disabled="data.pages.length <= 1" title="Supprimer la page" @click="removePage(page)" />
+                </div>
+                <ul class="mt-2 divide-y divide-default">
+                  <li v-for="w in WIDGET_CATALOG" :key="w.id" class="flex items-center gap-2 py-1.5 text-sm">
+                    <UCheckbox :model-value="page.widgets.includes(w.id)" @update:model-value="assignWidget(w.id, page, $event)" />
+                    <UIcon :name="w.icon" class="size-4 text-muted" />
+                    <span class="flex-1" :class="{ 'text-muted': !page.widgets.includes(w.id) }">{{ w.label }}</span>
+                    <span v-if="widgetPageLabel(w.id) && widgetPageLabel(w.id) !== page.label" class="text-xs text-muted">déjà dans « {{ widgetPageLabel(w.id) }} »</span>
+                    <template v-if="page.widgets.includes(w.id)">
+                      <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="page.widgets[0] === w.id" @click="moveWidgetInPage(page, w.id, -1)" />
+                      <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="page.widgets[page.widgets.length - 1] === w.id" @click="moveWidgetInPage(page, w.id, 1)" />
+                    </template>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </UCard>
+        </div>
+
+        <div class="lg:col-span-1">
+          <UCard class="lg:sticky lg:top-4" :ui="{ body: 'p-0 sm:p-0' }">
+            <template #header><b>Aperçu</b></template>
+            <div ref="tvFrameEl" class="tv-preview-frame overflow-hidden bg-black">
+              <iframe :src="tvLink" class="tv-preview-iframe" :style="{ transform: `scale(${tvPreviewScale})` }" title="Aperçu de l'écran TV" />
+            </div>
+            <div class="flex flex-wrap gap-2 p-3">
+              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir" @click="tvPreviewKey++" />
+              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-expand" label="Plein écran" :to="tvLink" external target="_blank" />
+            </div>
+          </UCard>
         </div>
       </div>
-
-      <UCard>
-        <template #header><b>Image de fond</b></template>
-        <p class="text-sm text-muted">Affichée en fond du livret et de l'écran TV, avec les blocs en verre dépoli par-dessus.</p>
-
-        <div class="mt-2 rounded-lg border border-default p-3 text-sm">
-          <template v-if="data.background.mode === 'custom'">
-            <p>Fond propre à ce logement.
-              <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
-            </p>
-          </template>
-          <template v-else-if="data.background.mode === 'none'">
-            <p>Aucun fond, forcé pour ce logement (même si un fond général existe).
-              <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
-            </p>
-          </template>
-          <template v-else>
-            <p v-if="data.hasDefaultBackground">Utilise le fond général des réglages.
-              <UButton size="xs" color="neutral" variant="link" label="Forcer aucun fond ici" @click="setMode('none')" />
-            </p>
-            <p v-else>Pas de fond général réglé, et rien de propre à ce logement : fond uni.</p>
-          </template>
-        </div>
-
-        <div v-if="data.background.hasFile || data.background.webUrl" class="mt-3 flex items-center gap-3">
-          <img :src="backgroundPreviewUrl" alt="Fond actuel" class="h-20 w-32 rounded object-cover ring ring-default">
-          <p v-if="data.background.attribution" class="text-xs text-muted">{{ data.background.attribution }}</p>
-        </div>
-
-        <UCheckbox class="mt-3" :model-value="data.background.animated" label="Fond animé (léger effet de zoom/travelling)" @update:model-value="setAnimated" />
-
-        <div class="mt-4 space-y-3">
-          <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" label="Déposer une image" :loading="bgBusy" @click="fileInput?.click()" />
-          <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadBackground">
-          <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickWeb" />
-        </div>
-        <p v-if="bgError" class="mt-2 text-sm text-error">{{ bgError }}</p>
-      </UCard>
-
-      <UCard>
-        <template #header><b>Widgets affichés</b></template>
-        <p class="text-sm text-muted">Choisir lesquels apparaissent sur le livret et l'écran TV, et dans quel ordre. Un widget désactivé ici ne s'affiche jamais, même s'il a du contenu ; un widget activé ne s'affiche que s'il a du contenu (ex. Wi-Fi vide reste masqué).</p>
-        <p class="mt-1 text-xs text-muted">En mode « Onglets », chaque widget peut avoir son propre fond (icône <UIcon name="i-lucide-image" class="align-middle" />) ; sans fond propre, il garde le fond du logement.</p>
-        <ul class="mt-3 divide-y divide-default">
-          <li v-for="w in displayList" :key="w.id" class="flex items-center gap-3 py-2">
-            <UCheckbox :model-value="w.enabled" @update:model-value="toggleWidget(w.id, $event)" />
-            <UIcon :name="w.icon" class="size-4 text-muted" />
-            <span class="flex-1 text-sm" :class="{ 'text-muted': !w.enabled }">{{ w.label }}</span>
-            <div v-if="w.enabled" class="flex items-center gap-1">
-              <UButton
-                size="xs" color="neutral" :variant="hasWidgetBg(w.id) ? 'soft' : 'ghost'" icon="i-lucide-image"
-                :title="hasWidgetBg(w.id) ? 'Fond personnalisé' : 'Définir un fond pour ce widget'" @click="openWidgetBg(w.id)"
-              />
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="w.isFirst" @click="move(w.id, -1)" />
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="w.isLast" @click="move(w.id, 1)" />
-            </div>
-          </li>
-        </ul>
-      </UCard>
     </template>
   </div>
 
-  <UModal v-model:open="widgetBgOpen" :title="`Fond — ${widgetBgLabel}`">
+  <UModal v-model:open="pageBgOpen" :title="`Fond — ${pageBgLabel}`">
     <template #body>
       <div class="space-y-3">
-        <p class="text-xs text-muted">Remplace le fond du logement uniquement pour ce widget (mode « Onglets »). Sans fond propre, ce widget garde le fond du logement.</p>
-        <div v-if="widgetBgPreviewUrl" class="flex items-center gap-3">
-          <img :src="widgetBgPreviewUrl" alt="Fond du widget" class="h-20 w-32 rounded object-cover ring ring-default">
-          <UButton size="xs" color="error" variant="soft" icon="i-lucide-trash-2" label="Retirer" :loading="widgetBgBusy" @click="removeWidgetBg" />
+        <p class="text-xs text-muted">Remplace le fond du logement uniquement pour cette page (mode « Onglets »). Sans fond propre, cette page garde le fond du logement.</p>
+        <div v-if="pageBgPreviewUrl" class="flex items-center gap-3">
+          <img :src="pageBgPreviewUrl" alt="Fond de la page" class="h-20 w-32 rounded object-cover ring ring-default">
+          <UButton size="xs" color="error" variant="soft" icon="i-lucide-trash-2" label="Retirer" :loading="pageBgBusy" @click="removePageBg" />
         </div>
-        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-upload" label="Déposer une image" :loading="widgetBgBusy" @click="widgetBgFileInput?.click()" />
-        <input ref="widgetBgFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadWidgetBg">
-        <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickWidgetBgWeb" />
-        <p v-if="widgetBgError" class="text-sm text-error">{{ widgetBgError }}</p>
+        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-upload" label="Déposer une image" :loading="pageBgBusy" @click="pageBgFileInput?.click()" />
+        <input ref="pageBgFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadPageBg">
+        <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickPageBgWeb" />
+        <p v-if="pageBgError" class="text-sm text-error">{{ pageBgError }}</p>
       </div>
     </template>
   </UModal>
@@ -233,6 +252,17 @@ const livretPreviewLink = computed(() => livretPreviewKey.value ? `${link.value}
 const tvLinkBase = computed(() => data.value ? `${origin}/tv/${data.value.token}` : '')
 const tvPreviewKey = ref(0)
 const tvLink = computed(() => tvPreviewKey.value ? `${tvLinkBase.value}?v=${tvPreviewKey.value}` : tvLinkBase.value)
+// L'aperçu (encart 1/3 large) n'a plus une largeur garantie (avant : colonne fixe 480px) : l'échelle de l'iframe
+// (rendue à sa taille réelle 1920x1080 puis réduite visuellement) s'ajuste à la largeur du cadre plutôt qu'un
+// facteur fixe, pour ne pas être rognée quand la colonne est plus étroite que 480px.
+const tvFrameEl = ref<HTMLElement>()
+const tvPreviewScale = ref(0.25)
+if (import.meta.client) {
+  const updateScale = () => { if (tvFrameEl.value) tvPreviewScale.value = tvFrameEl.value.clientWidth / 1920 }
+  const ro = new ResizeObserver(updateScale)
+  onMounted(() => { if (tvFrameEl.value) ro.observe(tvFrameEl.value) })
+  onUnmounted(() => ro.disconnect())
+}
 // Les deux aperçus (livret mobile, écran TV) doivent se recharger tout seuls après un enregistrement (contenu, fond,
 // mise en page, widgets) : sinon ils restent figés sur l'état d'avant tant qu'on ne clique pas "Rafraîchir" à la main.
 function bumpPreviews() { livretPreviewKey.value++; tvPreviewKey.value++ }
@@ -293,88 +323,104 @@ async function setAnimated(animated: boolean) {
   bumpPreviews()
 }
 
-const widgetOrder = ref<string[]>([])
-watch(() => data.value?.widgetOrder, (o) => { if (o) widgetOrder.value = [...o] }, { immediate: true })
-const displayList = computed(() => {
-  const enabled = widgetOrder.value
-  const disabled = WIDGET_CATALOG.filter(w => !enabled.includes(w.id)).map(w => w.id)
-  const ids = [...enabled, ...disabled]
-  return ids.map((id, i) => {
-    const w = WIDGET_CATALOG.find(c => c.id === id)!
-    const isEnabled = enabled.includes(id)
-    return { id, label: w.label, icon: w.icon, enabled: isEnabled, isFirst: i === 0, isLast: isEnabled && i === enabled.length - 1 }
-  })
-})
-async function saveWidgets() {
-  await $fetch(`/api/logements/${route.params.id}/livret/widgets`, { method: 'PUT', body: { order: widgetOrder.value } })
+// Pages (regroupement de widgets) : chaque action ecrit au serveur puis rafraichit data.value.pages en entier
+// (pas d'etat local separe a resynchroniser, plus simple qu'avant avec le widgetOrder a plat).
+type Page = NonNullable<typeof data.value>['pages'][number]
+async function addPage() {
+  await $fetch(`/api/logements/${route.params.id}/livret/pages`, { method: 'POST', body: { label: 'Nouvelle page', icon: 'i-lucide-file' } })
+  await refresh()
   bumpPreviews()
 }
-function toggleWidget(id: string, on: boolean) {
-  widgetOrder.value = on ? [...widgetOrder.value, id] : widgetOrder.value.filter(w => w !== id)
-  saveWidgets()
+async function renamePageLabel(page: Page, label: string) {
+  if (!label.trim() || label === page.label) return
+  await $fetch(`/api/logements/${route.params.id}/livret/pages/${page.id}`, { method: 'PUT', body: { label, icon: page.icon } })
+  await refresh()
+  bumpPreviews()
 }
-function move(id: string, dir: -1 | 1) {
-  const i = widgetOrder.value.indexOf(id)
+async function movePage(pi: number, dir: -1 | 1) {
+  if (!data.value) return
+  const order = data.value.pages.map(p => p.id)
+  const j = pi + dir
+  if (j < 0 || j >= order.length) return
+  ;[order[pi], order[j]] = [order[j]!, order[pi]!]
+  await $fetch(`/api/logements/${route.params.id}/livret/pages-order`, { method: 'PUT', body: { order } })
+  await refresh()
+  bumpPreviews()
+}
+async function removePage(page: Page) {
+  if (!confirm(`Supprimer la page « ${page.label} » ? Ses widgets ne seront plus affichés (à réassigner ailleurs si besoin).`)) return
+  await $fetch(`/api/logements/${route.params.id}/livret/pages/${page.id}`, { method: 'DELETE' })
+  await refresh()
+  bumpPreviews()
+}
+function widgetPageLabel(widgetId: string) {
+  return data.value?.pages.find(p => p.widgets.includes(widgetId))?.label ?? ''
+}
+async function assignWidget(widgetId: string, page: Page, on: boolean) {
+  await $fetch(`/api/logements/${route.params.id}/livret/widgets/${widgetId}/page`, { method: 'PUT', body: { pageId: on ? page.id : null } })
+  await refresh()
+  bumpPreviews()
+}
+async function moveWidgetInPage(page: Page, widgetId: string, dir: -1 | 1) {
+  const i = page.widgets.indexOf(widgetId)
   const j = i + dir
-  if (i < 0 || j < 0 || j >= widgetOrder.value.length) return
-  const next = [...widgetOrder.value]
-  ;[next[i], next[j]] = [next[j]!, next[i]!]
-  widgetOrder.value = next
-  saveWidgets()
+  if (i < 0 || j < 0 || j >= page.widgets.length) return
+  const order = [...page.widgets]
+  ;[order[i], order[j]] = [order[j]!, order[i]!]
+  await $fetch(`/api/logements/${route.params.id}/livret/pages/${page.id}/widgets-order`, { method: 'PUT', body: { order } })
+  await refresh()
+  bumpPreviews()
 }
 
-// Fond par widget (carrousel) : un seul jeu de champs/modale reutilise pour le widget en cours d'edition (widgetBgId).
-const widgetBgId = ref<string | null>(null)
-const widgetBgOpen = ref(false)
-const widgetBgBusy = ref(false)
-const widgetBgError = ref('')
-const widgetBgFileInput = ref<HTMLInputElement>()
-const widgetBgVersion = ref(0)
-function hasWidgetBg(id: string) {
-  const r = data.value?.widgetBackgrounds?.[id]
-  return !!(r && (r.hasFile || r.webUrl))
-}
-const widgetBgLabel = computed(() => WIDGET_CATALOG.find(w => w.id === widgetBgId.value)?.label ?? '')
-const widgetBgPreviewUrl = computed(() => {
-  if (!data.value || !widgetBgId.value) return ''
-  const r = data.value.widgetBackgrounds?.[widgetBgId.value]
-  if (!r) return ''
-  if (r.hasFile) return `/api/g/${data.value.token}/widgets/${widgetBgId.value}/background?v=${widgetBgVersion.value}`
-  return r.webUrl
+// Fond par page (carrousel) : un seul jeu de champs/modale reutilise pour la page en cours d'edition (pageBgId).
+const pageBgId = ref<number | null>(null)
+const pageBgOpen = ref(false)
+const pageBgBusy = ref(false)
+const pageBgError = ref('')
+const pageBgFileInput = ref<HTMLInputElement>()
+const pageBgVersion = ref(0)
+function hasPageBg(page: Page) { return page.hasFile || !!page.webUrl }
+const pageBgLabel = computed(() => data.value?.pages.find(p => p.id === pageBgId.value)?.label ?? '')
+const pageBgPreviewUrl = computed(() => {
+  if (!data.value || pageBgId.value === null) return ''
+  const p = data.value.pages.find(p => p.id === pageBgId.value)
+  if (!p) return ''
+  if (p.hasFile) return `/api/g/${data.value.token}/pages/${pageBgId.value}/background?v=${pageBgVersion.value}`
+  return p.webUrl
 })
-function openWidgetBg(id: string) {
-  widgetBgId.value = id
-  widgetBgError.value = ''
-  widgetBgOpen.value = true
+function openPageBg(page: Page) {
+  pageBgId.value = page.id
+  pageBgError.value = ''
+  pageBgOpen.value = true
 }
-async function uploadWidgetBg(e: Event) {
+async function uploadPageBg(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file || !widgetBgId.value) return
-  widgetBgBusy.value = true; widgetBgError.value = ''
+  if (!file || pageBgId.value === null) return
+  pageBgBusy.value = true; pageBgError.value = ''
   try {
     const body = new FormData(); body.append('file', file)
-    await $fetch(`/api/logements/${route.params.id}/livret/widgets/${widgetBgId.value}/background`, { method: 'POST', body })
-  } catch (err: any) { widgetBgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
-  widgetBgBusy.value = false
-  if (widgetBgFileInput.value) widgetBgFileInput.value.value = ''
-  widgetBgVersion.value++
+    await $fetch(`/api/logements/${route.params.id}/livret/pages/${pageBgId.value}/background`, { method: 'POST', body })
+  } catch (err: any) { pageBgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  pageBgBusy.value = false
+  if (pageBgFileInput.value) pageBgFileInput.value.value = ''
+  pageBgVersion.value++
   await refresh()
   bumpPreviews()
 }
-async function pickWidgetBgWeb(r: { url: string; attribution: string }) {
-  if (!widgetBgId.value) return
-  widgetBgBusy.value = true; widgetBgError.value = ''
-  try { await $fetch(`/api/logements/${route.params.id}/livret/widgets/${widgetBgId.value}/background-web`, { method: 'PUT', body: { url: r.url, attribution: r.attribution } }) }
-  catch (err: any) { widgetBgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
-  widgetBgBusy.value = false
+async function pickPageBgWeb(r: { url: string; attribution: string }) {
+  if (pageBgId.value === null) return
+  pageBgBusy.value = true; pageBgError.value = ''
+  try { await $fetch(`/api/logements/${route.params.id}/livret/pages/${pageBgId.value}/background-web`, { method: 'PUT', body: { url: r.url, attribution: r.attribution } }) }
+  catch (err: any) { pageBgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  pageBgBusy.value = false
   await refresh()
   bumpPreviews()
 }
-async function removeWidgetBg() {
-  if (!widgetBgId.value) return
-  widgetBgBusy.value = true
-  try { await $fetch(`/api/logements/${route.params.id}/livret/widgets/${widgetBgId.value}/background`, { method: 'DELETE' }) }
-  finally { widgetBgBusy.value = false }
+async function removePageBg() {
+  if (pageBgId.value === null) return
+  pageBgBusy.value = true
+  try { await $fetch(`/api/logements/${route.params.id}/livret/pages/${pageBgId.value}/background`, { method: 'DELETE' }) }
+  finally { pageBgBusy.value = false }
   await refresh()
   bumpPreviews()
 }
@@ -406,15 +452,14 @@ async function save() {
 <style scoped>
 /* Aperçu réduit de l'écran TV (1920x1080 mis à l'échelle) sans avoir à ouvrir un nouvel onglet */
 .tv-preview-frame {
-  width: 480px;
-  height: 270px;
-  max-width: 100%;
+  width: 100%;
+  aspect-ratio: 1920 / 1080;
+  max-width: 480px;
 }
 .tv-preview-iframe {
   width: 1920px;
   height: 1080px;
   border: 0;
-  transform: scale(0.25);
   transform-origin: top left;
 }
 

@@ -28,21 +28,23 @@
         v-if="tvSlides.length" ref="carouselRef" :items="tvSlides"
         :ui="{ item: 'basis-full' }" class="relative pb-8" @select="onSelect"
       >
-        <template #default="{ item }">
-          <div class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
-            <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon :name="tvIcon(item)" class="size-8" /> {{ tvLabel(item) }}</p>
-            <p v-if="item === 'welcome'" class="mt-3 whitespace-pre-line text-2xl">{{ c.welcomeText }}</p>
-            <template v-else-if="item === 'wifi'">
-              <p v-if="c.wifiSsid" class="mt-3 text-3xl font-mono">{{ c.wifiSsid }}</p>
-              <p v-if="c.wifiPassword" class="text-3xl font-mono text-white/80">{{ c.wifiPassword }}</p>
-            </template>
-            <ul v-else-if="item === 'devices'" class="mt-3 space-y-1 text-xl">
-              <li v-for="d in devices" :key="d.id" class="flex justify-between gap-3">
-                <span class="truncate">{{ d.name }}</span>
-                <b class="shrink-0 text-white/80">{{ !d.available ? t.deviceOffline : summary(d) }}</b>
-              </li>
-            </ul>
-            <p v-else class="mt-3 whitespace-pre-line text-2xl">{{ c[SECTIONS[item]!.key] }}</p>
+        <template #default="{ item: page }">
+          <div class="space-y-4">
+            <div v-for="id in page.widgets" :key="id" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
+              <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon :name="tvIcon(id)" class="size-8" /> {{ tvLabel(id) }}</p>
+              <p v-if="id === 'welcome'" class="mt-3 whitespace-pre-line text-2xl">{{ c.welcomeText }}</p>
+              <template v-else-if="id === 'wifi'">
+                <p v-if="c.wifiSsid" class="mt-3 text-3xl font-mono">{{ c.wifiSsid }}</p>
+                <p v-if="c.wifiPassword" class="text-3xl font-mono text-white/80">{{ c.wifiPassword }}</p>
+              </template>
+              <ul v-else-if="id === 'devices'" class="mt-3 space-y-1 text-xl">
+                <li v-for="d in devices" :key="d.id" class="flex justify-between gap-3">
+                  <span class="truncate">{{ d.name }}</span>
+                  <b class="shrink-0 text-white/80">{{ !d.available ? t.deviceOffline : summary(d) }}</b>
+                </li>
+              </ul>
+              <p v-else class="mt-3 whitespace-pre-line text-2xl">{{ c[SECTIONS[id]!.key] }}</p>
+            </div>
           </div>
         </template>
       </UCarousel>
@@ -50,47 +52,42 @@
       <div v-if="tvSlides.length > 1" class="relative flex justify-center">
         <div class="flex max-w-full items-center gap-2 overflow-x-auto rounded-full bg-white/10 p-2 text-white backdrop-blur-xl">
           <button
-            v-for="(id, i) in tvSlides" :key="id" type="button"
+            v-for="(page, i) in tvSlides" :key="page.id" type="button"
             class="flex shrink-0 flex-col items-center gap-1 rounded-full px-5 py-2.5 text-base transition-colors"
             :class="i === activeIndex ? 'bg-white text-gray-900' : 'text-white/70 hover:text-white'"
             :aria-current="i === activeIndex || undefined"
             @click="goTo(i)"
           >
-            <UIcon :name="tvIcon(id)" class="size-6" />
-            <span class="whitespace-nowrap">{{ tvLabel(id) }}</span>
+            <UIcon :name="page.icon" class="size-6" />
+            <span class="whitespace-nowrap">{{ page.label }}</span>
           </button>
         </div>
       </div>
     </template>
 
-    <div v-else class="relative grid gap-10" :class="(data.layout?.tvColumns ?? 2) === 1 ? 'grid-cols-1' : 'grid-cols-2'">
-      <div v-if="c.welcomeText" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
-        <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-heart" class="size-8" /> {{ t.welcomeText }}</p>
-        <p class="mt-3 whitespace-pre-line text-2xl">{{ c.welcomeText }}</p>
-      </div>
-
-      <template v-for="id in gridOrder" :key="id">
-        <div v-if="id === 'wifi' && (c.wifiSsid || c.wifiPassword)" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
-          <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-wifi" class="size-8" /> {{ t.wifi }}</p>
-          <p v-if="c.wifiSsid" class="mt-3 text-3xl font-mono">{{ c.wifiSsid }}</p>
-          <p v-if="c.wifiPassword" class="text-3xl font-mono text-white/80">{{ c.wifiPassword }}</p>
+    <div v-else class="relative space-y-8">
+      <section v-for="page in tvSlides" :key="page.id">
+        <h2 v-if="tvSlides.length > 1" class="mb-3 flex items-center gap-2 text-lg font-semibold uppercase tracking-wide text-white/70">
+          <UIcon :name="page.icon" class="size-5" /> {{ page.label }}
+        </h2>
+        <div class="grid gap-10" :class="(data.layout?.tvColumns ?? 2) === 1 ? 'grid-cols-1' : 'grid-cols-2'">
+          <div v-for="id in page.widgets" :key="id" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
+            <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon :name="tvIcon(id)" class="size-8" /> {{ tvLabel(id) }}</p>
+            <p v-if="id === 'welcome'" class="mt-3 whitespace-pre-line text-2xl">{{ c.welcomeText }}</p>
+            <template v-else-if="id === 'wifi'">
+              <p v-if="c.wifiSsid" class="mt-3 text-3xl font-mono">{{ c.wifiSsid }}</p>
+              <p v-if="c.wifiPassword" class="text-3xl font-mono text-white/80">{{ c.wifiPassword }}</p>
+            </template>
+            <ul v-else-if="id === 'devices'" class="mt-3 space-y-1 text-xl">
+              <li v-for="d in devices" :key="d.id" class="flex justify-between gap-3">
+                <span class="truncate">{{ d.name }}</span>
+                <b class="shrink-0 text-white/80">{{ !d.available ? t.deviceOffline : summary(d) }}</b>
+              </li>
+            </ul>
+            <p v-else class="mt-3 whitespace-pre-line text-2xl">{{ c[SECTIONS[id]!.key] }}</p>
+          </div>
         </div>
-
-        <div v-else-if="SECTIONS[id] && c[SECTIONS[id]!.key]" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
-          <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon :name="SECTIONS[id]!.icon" class="size-8" /> {{ SECTIONS[id]!.label }}</p>
-          <p class="mt-3 whitespace-pre-line text-2xl">{{ c[SECTIONS[id]!.key] }}</p>
-        </div>
-
-        <div v-else-if="id === 'devices' && devices.length" class="rounded-2xl bg-white/10 p-8 backdrop-blur-xl">
-          <p class="flex items-center gap-3 text-2xl text-white/70"><UIcon name="i-lucide-cpu" class="size-8" /> {{ t.devices }}</p>
-          <ul class="mt-3 space-y-1 text-xl">
-            <li v-for="d in devices" :key="d.id" class="flex justify-between gap-3">
-              <span class="truncate">{{ d.name }}</span>
-              <b class="shrink-0 text-white/80">{{ !d.available ? t.deviceOffline : summary(d) }}</b>
-            </li>
-          </ul>
-        </div>
-      </template>
+      </section>
     </div>
 
     <p v-if="empty" class="relative text-2xl text-white/60">{{ t.empty }}</p>
@@ -113,8 +110,6 @@ const SECTIONS = computed<Record<string, { key: string; label: string; icon: str
   tips: { key: 'localTips', label: t.tips, icon: 'i-lucide-compass' },
   faq: { key: 'faq', label: t.faq, icon: 'i-lucide-circle-help' },
 }))
-const showWeather = computed(() => data.value?.widgetOrder?.includes('weather') ?? true)
-const gridOrder = computed(() => (data.value?.widgetOrder ?? []).filter(id => id !== 'weather'))
 const empty = computed(() => !!data.value && !data.value.guest && !c.value.wifiSsid && !c.value.welcomeText && !c.value.localTips && !c.value.checkoutInfo)
 
 // Domotique mise à disposition : affichage seul (pas d'interaction tactile prévue sur une TV)
@@ -131,16 +126,27 @@ function summary(d: DeviceView) {
   return parts.join(' · ') || '—'
 }
 
-// --- Navigation par carrousel (option, partagee avec le livret mobile via layout.navMode) ---
+// --- Pages (partagees avec le livret mobile via data.pages) : chaque page regroupe des widgets, un onglet du
+// carrousel ou une section en mode Defilement. Le mot de bienvenue et la meteo restent geres a part (pas des
+// widgets du catalogue WIDGET_IDS) : la meteo est toujours affichee en haut a droite, le mot de bienvenue devient
+// une page synthetique en tete de liste s'il est rempli.
+// La meteo est toujours affichee a part (coin superieur droit), jamais comme carte dans une page — meme si le
+// widget "weather" est assigne a une page (reglage partage avec le livret mobile, qui lui l'affiche en carte).
+const showWeather = computed(() => (data.value?.pages ?? []).some(p => p.widgets.includes('weather')))
 function tvHasContent(id: string) {
+  if (id === 'weather') return false
   if (id === 'wifi') return !!(c.value.wifiSsid || c.value.wifiPassword)
   if (id === 'devices') return devices.value.length > 0
   const sec = SECTIONS.value[id]
   return sec ? !!c.value[sec.key] : false
 }
-const tvSlides = computed(() => {
-  const ids = gridOrder.value.filter(tvHasContent)
-  return c.value.welcomeText ? ['welcome', ...ids] : ids
+interface TvSlide { id: number | string; label: string; icon: string; widgets: string[] }
+const tvSlides = computed<TvSlide[]>(() => {
+  const pages: TvSlide[] = (data.value?.pages ?? [])
+    .map(p => ({ id: p.id, label: p.label, icon: p.icon, widgets: p.widgets.filter(tvHasContent) }))
+    .filter(p => p.widgets.length > 0)
+  if (!c.value.welcomeText) return pages
+  return [{ id: 'welcome', label: t.welcomeText, icon: 'i-lucide-heart', widgets: ['welcome'] }, ...pages]
 })
 function tvIcon(id: string) {
   if (id === 'welcome') return 'i-lucide-heart'
@@ -160,13 +166,14 @@ watch(tvSlides, () => { activeIndex.value = 0; carouselRef.value?.emblaApi?.scro
 function onSelect(i: number) { activeIndex.value = i }
 function goTo(i: number) { carouselRef.value?.emblaApi?.scrollTo(i) }
 
-// Fond de la slide active en mode carrousel (surcharge par widget si definie, sinon fond du logement) ; le pseudo-
-// widget "welcome" (mot de bienvenue) n'a pas de fond propre. En mode defilement, un seul fond pour toute la page.
+// Fond de la slide active en mode carrousel (surcharge par page si definie, sinon fond du logement) ; la page
+// synthetique "welcome" n'a pas de fond propre. En mode defilement, un seul fond pour toute la page.
 const activeBackground = computed(() => {
   if (!data.value) return null
   if (data.value.layout?.navMode !== 'tabs') return data.value.background
-  const id = tvSlides.value[activeIndex.value]
-  return (id && data.value.widgetBackgrounds?.[id]) || data.value.background
+  const page = tvSlides.value[activeIndex.value]
+  const override = page && typeof page.id === 'number' ? data.value.pageBackgrounds?.[page.id] : undefined
+  return override || data.value.background
 })
 
 // Reste affiche des jours d'affilee sur une TV : on rafraichit les donnees regulierement (meteo, contenu modifie),

@@ -182,10 +182,12 @@ export const DOC_PAGES: DocPage[] = [
         ],
       },
       {
-        id: 'navigation',
-        title: 'Défilement ou onglets',
+        id: 'pages',
+        title: 'Pages et widgets',
         paragraphs: [
-          'Deux modes de navigation au choix (réglage « Navigation », partagé avec l\'écran TV) : Défilement (toutes les cartes empilées) ou Onglets (un carrousel balayable avec une barre de menu par icônes en bas, pour sauter directement à un widget).',
+          'Le contenu est organisé en pages (onglet Écran TV > carte « Pages ») : chaque page a un nom et regroupe un ou plusieurs widgets (météo, Wi-Fi, arrivée, départ…). Un widget non assigné à une page ne s\'affiche nulle part.',
+          'Deux modes de navigation au choix (réglage « Navigation », partagé avec l\'écran TV) : Défilement (les pages s\'enchaînent en sections) ou Onglets (un carrousel balayable avec une barre de menu par icônes en bas, une page par slide).',
+          'Chaque page peut avoir son propre fond d\'écran (en mode Onglets), qui remplace le fond du logement pour cette page seulement.',
         ],
       },
       {

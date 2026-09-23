@@ -28,6 +28,17 @@ interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
     date: '23 sept. 2026',
+    title: 'Pages personnalisées et manuel',
+    icon: 'i-lucide-layout-grid',
+    points: [
+      'Le livret et l\'écran TV s\'organisent maintenant en pages nommées par l\'hôte, chacune regroupant un ou plusieurs widgets (avant : un widget = un onglet)',
+      'Chaque page peut avoir son propre fond d\'écran en mode « Onglets »',
+      'Le mot de bienvenue accepte le repère {{guest}}, remplacé par le prénom du voyageur en cours de séjour',
+      'Nouveau manuel (/docs) et page Nouveautés pour suivre les évolutions de l\'application',
+    ],
+  },
+  {
+    date: '23 sept. 2026',
     title: 'Carrousel du livret et de l\'écran TV',
     icon: 'i-lucide-gallery-horizontal',
     points: [

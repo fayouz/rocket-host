@@ -29,10 +29,10 @@ export default defineEventHandler(async (event) => {
   if (content.welcomeText) content.welcomeText = applyGuestPlaceholder(content.welcomeText, guest?.firstName ?? null)
   const weather = lg.latitude !== null && lg.longitude !== null ? await getWeather(lg.latitude, lg.longitude) : null
   const background = await resolveBackground(logementId, `/api/g/${token}/background`)
-  const widgetOrder = await getWidgetOrder(logementId)
   const layout = await getLayoutSettings(logementId)
-  const widgetBackgrounds = await resolveWidgetBackgrounds(logementId, wid => `/api/g/${token}/widgets/${wid}/background`)
+  const pages = await getPages(logementId)
+  const pageBackgrounds = await resolvePageBackgrounds(logementId, pid => `/api/g/${token}/pages/${pid}/background`)
   // Pas de journalisation de visite ici : la page TV s'auto-rafraichit toutes les 10 min (voir app/pages/tv/[token].vue),
   // ce qui fausserait le compteur (un ecran allume des jours generait des centaines de "visites"). Seul /g/:token compte.
-  return { logement: lg.name, content, guest, weather, background, reloadAt, widgetOrder, layout, widgetBackgrounds }
+  return { logement: lg.name, content, guest, weather, background, reloadAt, layout, pages, pageBackgrounds }
 })
