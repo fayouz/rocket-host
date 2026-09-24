@@ -45,7 +45,7 @@ export async function logementOf(kind: 'logement' | 'document' | 'node' | 'booki
   if (!Number.isInteger(n)) return undefined
   const db = useDatabase()
   if (kind === 'logement') return n
-  if (kind === 'document') { const r = ((await db.sql`SELECT logement_id FROM document WHERE id = ${n}`).rows as any[])[0]; return r && Number(r.logement_id) > 0 ? Number(r.logement_id) : undefined }
+  if (kind === 'document') { const r = ((await db.sql`SELECT logement_id FROM fs_node WHERE id = ${n} AND kind = 'file'`).rows as any[])[0]; return r && Number(r.logement_id) > 0 ? Number(r.logement_id) : undefined }
   if (kind === 'node') { const r = ((await db.sql`SELECT logement_id FROM fs_node WHERE id = ${n}`).rows as any[])[0]; return r ? Number(r.logement_id) : undefined }
   // reservation -> code -> serrure -> logement Lodgify -> logement
   const r = ((await db.sql`SELECT l.id AS id FROM access_code a JOIN lock_link k ON k.lock_id = a.lock_id JOIN logement l ON l.lodgify_property_id = k.property_id WHERE a.booking_id = ${n}`).rows as any[])[0]

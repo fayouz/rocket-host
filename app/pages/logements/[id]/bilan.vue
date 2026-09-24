@@ -4,13 +4,13 @@
       <h2 class="section-title !mt-0">Bilan {{ data.year }}</h2>
       <div class="flex items-center gap-2">
         <USelect v-model="year" :items="data.years.map(y => ({ label: String(y), value: y }))" class="w-28" />
-        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-download" label="Export CSV des documents" :to="`/api/logements/${route.params.id}/documents.csv?year=${data.year}`" external target="_blank" />
+        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-download" label="Export CSV comptable" :to="`/api/logements/${route.params.id}/documents.csv?year=${data.year}`" external target="_blank" />
       </div>
     </div>
 
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <UCard><p class="text-sm text-muted">Revenus Lodgify</p><p class="text-xl font-semibold">{{ eur(data.revenue) }}</p><p class="text-xs text-muted">bruts, répartis par nuit</p></UCard>
-      <UCard><p class="text-sm text-muted">Charges</p><p class="text-xl font-semibold text-warning">− {{ eur(data.chargesTotal) }}</p><p class="text-xs text-muted">{{ data.documents }} document{{ data.documents > 1 ? 's' : '' }} de l'année</p></UCard>
+      <UCard><p class="text-sm text-muted">Charges</p><p class="text-xl font-semibold text-warning">− {{ eur(data.chargesTotal) }}</p><p class="text-xs text-muted">{{ data.documents }} fichier{{ data.documents > 1 ? 's' : '' }} comptable{{ data.documents > 1 ? 's' : '' }} de l'année</p></UCard>
       <UCard><p class="text-sm text-muted">Autres recettes</p><p class="text-xl font-semibold">{{ eur(data.otherIncome) }}</p><p class="text-xs text-muted">hors Lodgify</p></UCard>
       <UCard :class="data.result < 0 ? 'border-l-4 border-l-error' : 'border-l-4 border-l-success'">
         <p class="text-sm text-muted">Résultat estimé</p><p class="text-xl font-semibold">{{ eur(data.result) }}</p>
@@ -25,7 +25,10 @@
     </UCard>
 
     <p v-if="data.chargesWithoutAmount" class="text-sm text-warning">
-      ⚠ {{ data.chargesWithoutAmount }} charge{{ data.chargesWithoutAmount > 1 ? 's' : '' }} sans montant : non comptée{{ data.chargesWithoutAmount > 1 ? 's' : '' }} dans le résultat (à renseigner dans Documents).
+      ⚠ {{ data.chargesWithoutAmount }} charge{{ data.chargesWithoutAmount > 1 ? 's' : '' }} sans montant : non comptée{{ data.chargesWithoutAmount > 1 ? 's' : '' }} dans le résultat (à renseigner dans Documents, clic droit → « Type et montant… »).
+    </p>
+    <p v-if="data.withoutDate" class="text-sm text-warning">
+      ⚠ {{ data.withoutDate }} fichier{{ data.withoutDate > 1 ? 's' : '' }} comptable{{ data.withoutDate > 1 ? 's' : '' }} sans date : non compté{{ data.withoutDate > 1 ? 's' : '' }} dans une année (à dater dans Documents).
     </p>
 
     <template v-if="data.platform.has || data.platform.unassigned">
@@ -52,7 +55,7 @@
         </li>
       </ul>
     </UCard>
-    <UCard v-else><p class="text-sm text-muted">Aucune charge enregistrée pour {{ data.year }} : ajoute tes factures dans l'onglet Documents.</p></UCard>
+    <UCard v-else><p class="text-sm text-muted">Aucune charge enregistrée pour {{ data.year }} : dépose tes factures dans l'onglet Documents et donne-leur un type comptable (clic droit → « Type et montant… »).</p></UCard>
 
     <h3 class="section-title">Revenus par mois</h3>
     <UCard>

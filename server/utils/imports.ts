@@ -43,22 +43,22 @@ export interface ImportDocInput {
   title?: string; category?: unknown; date?: unknown; amount?: unknown; note?: unknown
 }
 
-// Depose un document importe. Sans doublon : meme (source, externalId), ou meme contenu deja present, renvoie l'existant.
+// Depose un fichier importe dans l'explorateur (racine du logement ; logement 0 = « a classer »), avec son type et ses
+// donnees comptables. Sans doublon : meme (source, externalId), ou meme contenu deja present, renvoie l'existant.
 export async function importDocument(i: ImportDocInput) {
   const db = useDatabase()
   if (!isSource(i.source)) throw createError({ statusCode: 400, statusMessage: 'source invalide (2 à 30 caractères : a-z, 0-9, - ou _)' })
   const externalId = i.externalId?.trim().slice(0, 200) || null
   const sha = createHash('sha256').update(i.data).digest('hex')
 
-  const f = parseFields({
-    title: i.title?.trim() || i.filename.replace(/\.[^.]+$/, ''),
-    category: i.category ?? 'autre_doc',
+  const m = parseMeta({
+    fileType: i.category ?? 'autre_doc',
     date: i.date || new Date().toISOString().slice(0, 10),
     amount: i.amount, note: i.note,
   })
   const dup = async (where: 'ext' | 'sha') => (where === 'ext'
-    ? (await db.sql`SELECT id, logement_id FROM document WHERE source = ${i.source} AND external_id = ${externalId}`).rows
-    : (await db.sql`SELECT id, logement_id FROM document WHERE sha256 = ${sha}`).rows) as any[]
+    ? (await db.sql`SELECT id, logement_id FROM fs_node WHERE source = ${i.source} AND external_id = ${externalId}`).rows
+    : (await db.sql`SELECT id, logement_id FROM fs_node WHERE kind = 'file' AND sha256 = ${sha}`).rows) as any[]
   const existing = (externalId ? await dup('ext') : [])[0] ?? (await dup('sha'))[0]
   if (existing) {
     await logImport(i.source, 'document', 'duplicate', `${i.filename} (déjà importé, n°${existing.id})`)
@@ -66,11 +66,16 @@ export async function importDocument(i: ImportDocInput) {
   }
 
   const saved = await saveFile(i.logementId, i.filename, i.data)
+  let id: number
   try {
-    await db.sql`INSERT INTO document (logement_id, title, category, doc_date, amount, note, file_path, original_name, mime, size, created_at, source, external_id, sha256)
-      VALUES (${i.logementId}, ${f.title!}, ${f.category!}, ${f.date!}, ${f.amount ?? null}, ${f.note ?? ''}, ${saved.rel}, ${saved.original}, ${saved.mime}, ${saved.size}, ${new Date().toISOString()}, ${i.source}, ${externalId}, ${sha})`
+    // Nom affiche : le titre fourni (sinon le nom du fichier) + l'extension reelle ; « nom 2.ext » si deja pris
+    const title = cleanName(i.title?.trim() || i.filename.replace(/\.[^.]+$/, '')).replace(/\.[^.]+$/, '')
+    const name = await freeName(i.logementId, null, checkName(`${title}.${saved.ext}`))
+    const now = new Date().toISOString()
+    const r = await db.sql`INSERT INTO fs_node (logement_id, parent_id, kind, name, file_path, mime, size, created_at, updated_at, file_type, doc_date, amount, note, source, external_id, sha256)
+      VALUES (${i.logementId}, ${null}, 'file', ${name}, ${saved.rel}, ${saved.mime}, ${saved.size}, ${now}, ${now}, ${m.fileType ?? ''}, ${m.date ?? null}, ${m.amount ?? null}, ${m.note ?? ''}, ${i.source}, ${externalId}, ${sha})`
+    id = Number(r.lastInsertRowid)
   } catch (e) { await removeFile(saved.rel); throw e }
-  const id = Number(((await db.sql`SELECT MAX(id) AS id FROM document`).rows as any[])[0].id)
   await logImport(i.source, 'document', 'ok', `${saved.original} → ${i.logementId ? `logement ${i.logementId}` : 'à classer'}`)
   return { status: 'ok' as const, id, logementId: i.logementId }
 }

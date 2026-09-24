@@ -41,17 +41,23 @@ export async function initDb() {
   await db.exec(`CREATE TABLE IF NOT EXISTS stock_level (
     property_id INTEGER NOT NULL, item_id INTEGER NOT NULL, level TEXT NOT NULL DEFAULT 'ok', updated_at TEXT NOT NULL,
     PRIMARY KEY (property_id, item_id))`)
-  // Documents par logement (factures, taxes, assurances...) : metadonnees ici, fichiers dans .data/documents/ (jamais dans git)
-  await db.exec(`CREATE TABLE IF NOT EXISTS document (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, title TEXT NOT NULL, category TEXT NOT NULL,
-    doc_date TEXT NOT NULL, amount REAL, note TEXT NOT NULL DEFAULT '', file_path TEXT NOT NULL, original_name TEXT NOT NULL,
-    mime TEXT NOT NULL, size INTEGER NOT NULL, created_at TEXT NOT NULL)`)
   // Explorateur de fichiers (menu Documents) : arborescence libre de dossiers et fichiers, un espace par logement.
   // parent_id NULL = racine du logement. Les fichiers sont sur disque (meme stockage securise que les documents).
   await db.exec(`CREATE TABLE IF NOT EXISTS fs_node (
     id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, parent_id INTEGER, kind TEXT NOT NULL,
     name TEXT NOT NULL, file_path TEXT, mime TEXT, size INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`)
   await db.exec('CREATE INDEX IF NOT EXISTS fs_node_parent ON fs_node (logement_id, parent_id)')
+  // Type de fichier (voir server/utils/documents.ts#CATEGORIES) : un type comptable (charge / recette) fait compter le fichier
+  // dans le Bilan, avec sa date et son montant. source / external_id / sha256 : imports (n8n, IMAP, pieces jointes) sans doublon.
+  // logement_id = 0 : fichier importe pas encore affecte a un logement (« a classer », page Imports).
+  await addColumn("ALTER TABLE fs_node ADD COLUMN file_type TEXT NOT NULL DEFAULT ''")
+  await addColumn('ALTER TABLE fs_node ADD COLUMN doc_date TEXT')
+  await addColumn('ALTER TABLE fs_node ADD COLUMN amount REAL')
+  await addColumn("ALTER TABLE fs_node ADD COLUMN note TEXT NOT NULL DEFAULT ''")
+  await addColumn("ALTER TABLE fs_node ADD COLUMN source TEXT NOT NULL DEFAULT 'manuel'")
+  await addColumn('ALTER TABLE fs_node ADD COLUMN external_id TEXT')
+  await addColumn('ALTER TABLE fs_node ADD COLUMN sha256 TEXT')
+  await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS fs_node_external ON fs_node (source, external_id) WHERE external_id IS NOT NULL')
   // Livret d'accueil par logement (V3 inspiree de WelcomeScreen) : contenu edite par l'hote, page publique a lien secret.
   await db.exec(`CREATE TABLE IF NOT EXISTS guestbook (
     logement_id INTEGER PRIMARY KEY, wifi_ssid TEXT NOT NULL DEFAULT '', wifi_password TEXT NOT NULL DEFAULT '',
@@ -142,11 +148,6 @@ export async function initDb() {
   await db.exec('CREATE INDEX IF NOT EXISTS fs_node_tag_tag ON fs_node_tag (tag_id)')
   // Imports (n8n -> appli) : provenance des documents (dedoublonnage par source + id externe, ou par contenu), lignes de releves
   // de plateformes (commissions, taxes de sejour, reversements) et journal. logement_id = 0 : pas encore affecte a un logement.
-  const docCols = ((await db.prepare('PRAGMA table_info(document)').all()) as any[]).map(c => String(c.name))
-  if (!docCols.includes('source')) await addColumn("ALTER TABLE document ADD COLUMN source TEXT NOT NULL DEFAULT 'manuel'")
-  if (!docCols.includes('external_id')) await addColumn('ALTER TABLE document ADD COLUMN external_id TEXT')
-  if (!docCols.includes('sha256')) await addColumn('ALTER TABLE document ADD COLUMN sha256 TEXT')
-  await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS document_external ON document (source, external_id) WHERE external_id IS NOT NULL')
   await db.exec(`CREATE TABLE IF NOT EXISTS platform_transaction (
     id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT NOT NULL, external_id TEXT NOT NULL, logement_id INTEGER NOT NULL DEFAULT 0,
     tx_date TEXT NOT NULL, kind TEXT NOT NULL, amount REAL NOT NULL, currency TEXT NOT NULL DEFAULT 'EUR',

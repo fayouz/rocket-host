@@ -2,8 +2,8 @@
 export default defineEventHandler(async () => {
   const db = useDatabase()
   const logements = await ensureLogements()
-  const inbox = ((await db.sql`SELECT * FROM document WHERE logement_id = 0 ORDER BY doc_date DESC, id DESC`).rows as any[]).map(docFromRow)
-  const docs = (await db.sql`SELECT source, COUNT(*) AS n, MAX(created_at) AS last FROM document GROUP BY source`).rows as any[]
+  const inbox = ((await db.sql`SELECT * FROM fs_node WHERE logement_id = 0 AND kind = 'file' ORDER BY doc_date DESC, id DESC`).rows as any[]).map(docFromRow)
+  const docs = (await db.sql`SELECT source, COUNT(*) AS n, MAX(created_at) AS last FROM fs_node WHERE kind = 'file' AND source != 'manuel' GROUP BY source`).rows as any[]
   const txs = (await db.sql`SELECT source, COUNT(*) AS n, MAX(imported_at) AS last FROM platform_transaction GROUP BY source`).rows as any[]
   const unassigned = (await db.sql`SELECT source, COUNT(*) AS n, ROUND(SUM(amount), 2) AS total FROM platform_transaction WHERE logement_id = 0 GROUP BY source`).rows as any[]
   const names = new Set<string>([...docs, ...txs].map(r => String(r.source)))

@@ -247,7 +247,9 @@ export const DOC_PAGES: DocPage[] = [
         id: 'documents',
         title: 'Documents',
         paragraphs: [
-          'Chaque logement a un onglet Documents en deux parties : « Pièces comptables » (factures, taxes… avec catégorie et montant, qui alimentent le Bilan) et « Fichiers » (espace libre : contrats, diagnostics, photos, notices…), pour éviter de les chercher dans une boîte mail ou un dossier partagé.',
+          'Chaque logement a un onglet Documents : un explorateur de fichiers (dossiers, étiquettes, glisser-déposer) pour tout ranger au même endroit — factures, contrats, diagnostics, photos, notices…',
+          'Chaque fichier peut recevoir un type (clic droit → « Type et montant… »). Un type comptable (charge ou recette : taxe foncière, assurance, énergie…) demande une date et un montant, et fait compter le fichier dans le Bilan de l\'année. Les autres types (contrat, photo, notice…) servent simplement de repère. Le filtre « Type » retrouve par exemple tous les fichiers comptables.',
+          'Les fichiers importés (n8n, règles IMAP, pièces jointes enregistrées depuis la messagerie) arrivent directement typés dans le logement, ou dans « À classer » (page Imports) si le logement n\'est pas connu.',
         ],
       },
     ],
