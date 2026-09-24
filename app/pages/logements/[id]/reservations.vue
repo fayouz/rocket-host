@@ -67,6 +67,14 @@
             </div>
           </div>
         </div>
+
+        <div v-if="!convError" class="mt-4 space-y-2 border-t border-default pt-4">
+          <UTextarea v-model="draft" :rows="3" autoresize placeholder="Écrire au voyageur…" class="w-full" :disabled="sending" />
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-xs text-muted">{{ sendError || `Envoyé à ${current.guest} via ${current.source || 'Lodgify'}.` }}</p>
+            <UButton icon="i-lucide-send" label="Envoyer" :loading="sending" :disabled="!draft.trim()" @click="send" />
+          </div>
+        </div>
       </UCard>
 
       <UCard class="lg:col-span-1" :ui="{ body: 'p-0 sm:p-0' }">
@@ -127,7 +135,25 @@ watchEffect(() => {
 })
 const current = computed(() => data.value?.items.find(b => b.id === selected.value) ?? null)
 // Fil de conversation Lodgify de la reservation selectionnee (charge a la selection, cote client)
-const { data: conv, status: convStatus, error: convError } = useFetch(
+// Reponse au voyageur : un identifiant par brouillon, reutilise si on reessaie (Lodgify ne l'enverra pas deux fois)
+const draft = ref('')
+const draftId = ref(crypto.randomUUID())
+const sending = ref(false)
+const sendError = ref('')
+watch(selected, () => { draft.value = ''; draftId.value = crypto.randomUUID(); sendError.value = '' })
+async function send() {
+  if (!draft.value.trim() || !selected.value) return
+  sending.value = true
+  sendError.value = ''
+  try {
+    await $fetch(`/api/logements/${route.params.id}/reservations/${selected.value}/conversation`, { method: 'POST', body: { text: draft.value, messageId: draftId.value } })
+    draft.value = ''
+    draftId.value = crypto.randomUUID()
+    await refreshConv()
+  } catch (e: any) { sendError.value = e?.data?.statusMessage || 'Échec de l’envoi' }
+  finally { sending.value = false }
+}
+const { data: conv, status: convStatus, error: convError, refresh: refreshConv } = useFetch(
   () => `/api/logements/${route.params.id}/reservations/${selected.value}/conversation`,
   { server: false, immediate: !!selected.value, watch: [selected] },
 )
