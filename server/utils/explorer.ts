@@ -122,3 +122,16 @@ export async function tagNameTaken(name: string, exceptId = 0) {
   const rows = (await useDatabase().sql`SELECT id, name FROM fs_tag`).rows as any[]
   return rows.some(r => Number(r.id) !== exceptId && norm(String(r.name)) === norm(name))
 }
+
+// Dossier « nom » dans parent (cree s'il n'existe pas) ; renvoie son id. Sert aux imports automatiques (connecteurs).
+export async function ensureFolder(logementId: number, parentId: number | null, name: string): Promise<number> {
+  const db = useDatabase()
+  const clean = checkName(name)
+  const found = (parentId === null
+    ? await db.sql`SELECT id FROM fs_node WHERE logement_id = ${logementId} AND parent_id IS NULL AND kind = 'folder' AND name = ${clean}`
+    : await db.sql`SELECT id FROM fs_node WHERE logement_id = ${logementId} AND parent_id = ${parentId} AND kind = 'folder' AND name = ${clean}`).rows as any[]
+  if (found[0]) return Number(found[0].id)
+  const now = new Date().toISOString()
+  const r = await db.sql`INSERT INTO fs_node (logement_id, parent_id, kind, name, size, created_at, updated_at) VALUES (${logementId}, ${parentId}, 'folder', ${await freeName(logementId, parentId, clean)}, 0, ${now}, ${now})`
+  return Number(r.lastInsertRowid)
+}

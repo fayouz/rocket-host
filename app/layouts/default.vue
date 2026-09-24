@@ -109,6 +109,7 @@ const groups = computed(() => ([
           { label: 'Stock', to: '/settings/stock' },
           { label: 'Livret & écran TV', to: '/settings/welcomescreen' },
           { label: 'Imports', to: '/settings/imports' },
+          { label: 'Plugins', icon: 'i-lucide-blocks', to: '/settings/plugins' },
           { label: 'E-mail (IMAP)', to: '/settings/imap' },
           { label: 'API (Swagger)', to: '/docs-api' },
           { label: 'Nouveautés', icon: 'i-lucide-sparkles', to: '/changelog' },

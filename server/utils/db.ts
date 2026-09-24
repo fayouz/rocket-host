@@ -58,6 +58,13 @@ export async function initDb() {
   await addColumn('ALTER TABLE fs_node ADD COLUMN external_id TEXT')
   await addColumn('ALTER TABLE fs_node ADD COLUMN sha256 TEXT')
   await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS fs_node_external ON fs_node (source, external_id) WHERE external_id IS NOT NULL')
+  // Connecteurs : un plugin de la bibliotheque (server/utils/connectors.ts) configure pour un logement. config_json ne contient
+  // jamais de secret (seulement des noms de variables .env CONNECTOR_...).
+  await db.exec(`CREATE TABLE IF NOT EXISTS connector (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, plugin_id TEXT NOT NULL, name TEXT NOT NULL,
+    config_json TEXT NOT NULL DEFAULT '{}', enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+    last_run_at TEXT, last_result TEXT NOT NULL DEFAULT '')`)
+  await db.exec('CREATE INDEX IF NOT EXISTS connector_logement ON connector (logement_id)')
   // Livret d'accueil par logement (V3 inspiree de WelcomeScreen) : contenu edite par l'hote, page publique a lien secret.
   await db.exec(`CREATE TABLE IF NOT EXISTS guestbook (
     logement_id INTEGER PRIMARY KEY, wifi_ssid TEXT NOT NULL DEFAULT '', wifi_password TEXT NOT NULL DEFAULT '',

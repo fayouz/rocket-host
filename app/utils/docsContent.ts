@@ -161,6 +161,37 @@ export const DOC_PAGES: DocPage[] = [
     ],
   },
   {
+    slug: 'plugins-connecteurs',
+    title: 'Plugins et connecteurs',
+    description: 'Brancher des services (Homey, API web…) à un logement.',
+    group: 'Logements',
+    icon: 'i-lucide-plug',
+    sections: [
+      {
+        id: 'bibliotheque',
+        title: 'Bibliothèque de plugins',
+        paragraphs: [
+          'Réglages → Plugins présente les services que l\'appli sait brancher : Homey (domotique, lecture seule) et « Service web », qui permet de brancher n\'importe quelle API web par simple configuration (adresse, authentification, chemins).',
+        ],
+      },
+      {
+        id: 'connecteurs',
+        title: 'Connecteurs d\'un logement',
+        paragraphs: [
+          'L\'onglet Connecteurs d\'un logement (administrateur) liste ses connecteurs : un plugin configuré pour ce logement. Un logement peut en avoir plusieurs, y compris du même plugin (par exemple deux Homey, ou plusieurs services web).',
+          'Selon le plugin, un connecteur peut afficher des informations lues sur le service (« Lire »), lancer des actions manuelles (toujours avec confirmation) et récupérer des documents : ils arrivent dans l\'onglet Documents, dossier « Connecteurs / <nom> », avec le type choisi, sans doublon.',
+        ],
+      },
+      {
+        id: 'secrets',
+        title: 'Jetons et clés',
+        paragraphs: [
+          'Aucun secret n\'est saisi dans l\'appli. Tu ajoutes toi-même le jeton ou la clé dans le fichier .env sous un nom commençant par CONNECTOR_ (ex. CONNECTOR_MON_SERVICE), puis tu redémarres l\'appli ; le connecteur n\'indique que ce nom et affiche s\'il est bien présent. Un secret n\'est jamais envoyé en http vers Internet (https obligatoire, sauf sur le réseau local).',
+        ],
+      },
+    ],
+  },
+  {
     slug: 'livret-accueil',
     title: 'Livret d\'accueil',
     description: 'La page mobile destinée au voyageur (welcomescreen).',
