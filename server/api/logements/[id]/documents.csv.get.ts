@@ -1,9 +1,9 @@
-// Export CSV des documents (?year=AAAA), pour le comptable ou un tableur. Separateur ";", BOM pour Excel.
+// Export CSV des fichiers comptables et typés du logement (?year=AAAA), pour le comptable ou un tableur. Separateur ";", BOM pour Excel.
 export default defineEventHandler(async (event) => {
   const lg = await getLogement(getRouterParam(event, 'id'))
   const year = /^\d{4}$/.test(String(getQuery(event).year ?? '')) ? String(getQuery(event).year) : null
-  const rows = ((await useDatabase().sql`SELECT * FROM document WHERE logement_id = ${lg.id} ORDER BY doc_date, id`).rows as any[])
-    .filter(r => !year || String(r.doc_date).startsWith(year)).map(docFromRow)
+  const rows = ((await useDatabase().sql`SELECT * FROM fs_node WHERE logement_id = ${lg.id} AND kind = 'file' AND file_type != '' ORDER BY doc_date, id`).rows as any[])
+    .filter(r => !year || String(r.doc_date ?? '').startsWith(year)).map(docFromRow)
   // Anti-injection de formules : un texte commencant par = + - @ est precede d'une apostrophe ; guillemets doubles echappes
   const text = (v: string) => `"${(/^[=+\-@\t\r]/.test(v) ? `'${v}` : v).replace(/"/g, '""')}"`
   const nature: Record<string, string> = { charge: 'Charge', recette: 'Recette', doc: 'Justificatif' }

@@ -3,6 +3,7 @@
 //  - ?logement=<id> (&folder=<id>) : contenu de la racine du logement ou d'un de ses dossiers
 //  - &q=<texte> : recherche par nom dans le logement (ou dans tous les logements sans ?logement)
 //  - &tag=<id> : ne garde que les elements portant cette etiquette (combinable avec q)
+//  - &type=<type> | compta : ne garde que les fichiers de ce type, ou tous les fichiers comptables (Bilan)
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   const db = useDatabase()
@@ -10,31 +11,34 @@ export default defineEventHandler(async (event) => {
   const logements = (await ensureLogements()).filter(l => !scope || scope.has(l.id))
   const q0 = String(q.q ?? '').trim().slice(0, 80)
   const tagId = q.tag === undefined || q.tag === '' ? null : (await getTag(q.tag)).id
+  const type = typeof q.type === 'string' && (q.type === 'compta' || isCategory(q.type)) ? q.type : null
+  const typeKeys = type === 'compta' ? Object.entries(CATEGORIES).filter(([, c]) => c.kind !== 'doc').map(([k]) => k) : type ? [type] : []
 
   if (q.logement === undefined || q.logement === '') {
     const counts = new Map(((await db.sql`SELECT logement_id, COUNT(*) AS n FROM fs_node GROUP BY logement_id`).rows as any[]).map(r => [Number(r.logement_id), Number(r.n)]))
-    if (!q0 && tagId === null) return { root: true, logement: null, path: [], logements: logements.map(l => ({ id: l.id, name: l.name })), items: logements.map(l => ({ id: l.id, kind: 'logement' as const, name: l.name, size: counts.get(l.id) ?? 0, updatedAt: '', createdAt: '', parentId: null, logementId: l.id, ext: '', inline: false })) }
+    if (!q0 && tagId === null && !type) return { root: true, logement: null, path: [], logements: logements.map(l => ({ id: l.id, name: l.name })), items: logements.map(l => ({ id: l.id, kind: 'logement' as const, name: l.name, size: counts.get(l.id) ?? 0, updatedAt: '', createdAt: '', parentId: null, logementId: l.id, ext: '', inline: false })) }
   }
 
   const lg = q.logement === undefined || q.logement === '' ? null : await getLogement(q.logement)
   if (lg) await assertLogement(event, lg.id)
   const lgList = logements.map(l => ({ id: l.id, name: l.name }))
 
-  if (q0 || tagId !== null) {
+  if (q0 || tagId !== null || type) {
     const like = `%${q0.replace(/[\\%_]/g, m => `\\${m}`)}%`
     const where = ['1=1']; const args: (string | number)[] = []
     if (lg) { where.push('n.logement_id = ?'); args.push(lg.id) }
-    else if (scope) { where.push(`n.logement_id IN (${[...scope, 0].map(() => '?').join(',')})`); args.push(...scope, 0) } // recherche globale : seulement les logements autorises
+    else if (scope) { where.push(`n.logement_id IN (${[...scope].map(() => '?').join(',') || 'NULL'})`); args.push(...scope) } // recherche globale : seulement les logements autorises (jamais les imports « a classer »)
     if (q0) { where.push("n.name LIKE ? ESCAPE '\\'"); args.push(like) }
     if (tagId !== null) { where.push('EXISTS (SELECT 1 FROM fs_node_tag x WHERE x.node_id = n.id AND x.tag_id = ?)'); args.push(tagId) }
+    if (typeKeys.length) { where.push(`n.kind = 'file' AND n.file_type IN (${typeKeys.map(() => '?').join(',')})`); args.push(...typeKeys) }
     const rows = (await db.prepare(`SELECT n.* FROM fs_node n WHERE ${where.join(' AND ')} ORDER BY n.kind, n.name LIMIT 100`).all(...args)) as any[]
     const items = []
     for (const r of rows) {
       const chain = (await ancestors(r as FsRow)).slice(0, -1).map(n => n.name)
       const owner = logements.find(l => l.id === Number(r.logement_id))
-      items.push({ ...nodeFromRow(r), where: [owner?.name ?? '?', ...chain].join(' / ') })
+      items.push({ ...nodeFromRow(r), where: [owner?.name ?? (Number(r.logement_id) === 0 ? 'À classer' : '?'), ...chain].join(' / ') })
     }
-    return { root: false, search: q0, tag: tagId, logement: lg ? { id: lg.id, name: lg.name } : null, path: [], logements: lgList, items: await attachTags(items) }
+    return { root: false, search: q0, tag: tagId, type, logement: lg ? { id: lg.id, name: lg.name } : null, path: [], logements: lgList, items: await attachTags(items) }
   }
 
   const folder = q.folder === undefined || q.folder === '' ? null : await getNode(q.folder)

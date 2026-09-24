@@ -41,6 +41,8 @@
       </button>
       <span v-if="!tags.length" class="text-muted">aucune pour l'instant</span>
       <button v-if="!readonly" type="button" class="flex items-center gap-1 rounded-full px-2 py-0.5 text-muted hover:bg-elevated" @click="manageOpen = true"><UIcon name="i-lucide-settings-2" class="size-3" /> Gérer</button>
+      <!-- Type de fichier : les types comptables alimentent le Bilan -->
+      <USelect v-model="typeFilter" :items="typeFilterItems" size="xs" class="ml-auto w-48" />
     </div>
 
     <div class="flex min-h-0 flex-1">
@@ -83,6 +85,7 @@
               <UIcon :name="iconOf(it)" class="size-12" :class="colorOf(it)" />
               <input v-if="renaming === key(it)" ref="renameInput" v-model="renameValue" class="rename" @click.stop @dblclick.stop @keydown.enter.prevent="commitRename(it)" @keydown.esc.prevent="renaming = ''" @blur="commitRename(it)">
               <span v-else class="line-clamp-2 break-all text-center text-xs leading-tight">{{ it.name }}</span>
+              <span v-if="it.typeLabel" class="line-clamp-1 rounded px-1 text-[10px]" :class="TYPE_BADGE[it.typeKind || 'doc']" :title="typeTitle(it)">{{ incomplete(it) ? '⚠ ' : '' }}{{ it.typeLabel }}</span>
               <span v-if="it.tags?.length" class="flex flex-wrap justify-center gap-0.5"><span v-for="t in it.tags" :key="t.id" class="size-2 rounded-full" :class="DOT[t.color]" :title="t.name" /></span>
               <span v-if="it.where" class="line-clamp-1 text-[10px] text-muted">{{ it.where }}</span>
             </div>
@@ -110,6 +113,9 @@
                     <UIcon :name="iconOf(it)" class="size-5 shrink-0" :class="colorOf(it)" />
                     <input v-if="renaming === key(it)" ref="renameInput" v-model="renameValue" class="rename !text-left" @click.stop @dblclick.stop @keydown.enter.prevent="commitRename(it)" @keydown.esc.prevent="renaming = ''" @blur="commitRename(it)">
                     <span v-else class="truncate">{{ it.name }}<span v-if="it.where" class="ml-2 text-xs text-muted">{{ it.where }}</span></span>
+                    <span v-if="it.typeLabel" class="shrink-0 rounded px-1.5 text-[11px]" :class="TYPE_BADGE[it.typeKind || 'doc']" :title="typeTitle(it)">
+                      {{ incomplete(it) ? '⚠ ' : '' }}{{ it.typeLabel }}<template v-if="it.amount !== null && it.amount !== undefined"> · {{ eur(it.amount) }}</template>
+                    </span>
                     <span v-for="t in it.tags" :key="t.id" class="flex shrink-0 items-center gap-1 rounded-full border border-default px-1.5 text-[11px] text-muted"><span class="size-1.5 rounded-full" :class="DOT[t.color]" />{{ t.name }}</span>
                   </span>
                 </td>
@@ -154,6 +160,27 @@
       </template>
     </UModal>
 
+    <!-- Type et donnees comptables d'un fichier -->
+    <UModal v-model:open="metaOpen" :title="metaItem?.name" description="Un type comptable (charge ou recette) fait compter le fichier dans le Bilan du logement, avec sa date et son montant.">
+      <template #body>
+        <form class="grid gap-3 sm:grid-cols-2" @submit.prevent="saveMeta">
+          <UFormField label="Type" class="sm:col-span-2">
+            <USelect v-model="metaType" :items="typeItems" class="w-full" />
+          </UFormField>
+          <template v-if="metaAccounting">
+            <UFormField label="Date" required><UInput v-model="meta.date" type="date" class="w-full" /></UFormField>
+            <UFormField label="Montant (€)" required><UInput v-model="meta.amount" inputmode="decimal" placeholder="0,00" class="w-full" /></UFormField>
+          </template>
+          <UFormField label="Note" class="sm:col-span-2"><UInput v-model="meta.note" class="w-full" placeholder="Facultatif" /></UFormField>
+          <p v-if="metaError" class="text-sm text-error sm:col-span-2">{{ metaError }}</p>
+        </form>
+      </template>
+      <template #footer>
+        <UButton color="neutral" variant="ghost" label="Annuler" @click="metaOpen = false" />
+        <UButton label="Enregistrer" :loading="metaBusy" @click="saveMeta" />
+      </template>
+    </UModal>
+
     <!-- Aperçu (Coup d'œil) -->
     <UModal v-model:open="previewOpen" :title="preview?.name" :ui="{ content: 'sm:max-w-4xl' }">
       <template #body>
@@ -175,9 +202,10 @@
 
 <script setup lang="ts">
 interface Tag { id: number; name: string; color: string; count?: number }
-interface Item { tags?: Tag[]; id: number; kind: 'folder' | 'file' | 'logement'; name: string; size: number; updatedAt: string; createdAt: string; parentId: number | null; logementId: number; ext: string; inline: boolean; where?: string }
+interface Item { tags?: Tag[]; fileType?: string; typeLabel?: string; typeKind?: '' | 'charge' | 'recette' | 'doc'; date?: string | null; amount?: number | null; note?: string; id: number; kind: 'folder' | 'file' | 'logement'; name: string; size: number; updatedAt: string; createdAt: string; parentId: number | null; logementId: number; ext: string; inline: boolean; where?: string }
 interface Loc { logement?: number; folder?: number | null }
-interface TagList { colors: string[]; tags: (Tag & { count: number })[] }
+interface FileType { key: string; label: string; kind: 'charge' | 'recette' | 'doc' }
+interface TagList { colors: string[]; tags: (Tag & { count: number })[]; types: FileType[] }
 interface ListResult { root: boolean; search?: string; logement: { id: number; name: string } | null; path: { id: number; name: string }[]; logements: { id: number; name: string }[]; items: Item[] }
 
 const props = withDefaults(defineProps<{ logementId?: number; height?: string; readonly?: boolean }>(), { logementId: undefined, height: '32rem', readonly: false })
@@ -194,6 +222,7 @@ function go(to: Loc) {
   query.value = ''
   debounced.value = ''
   tagFilter.value = null
+  typeFilter.value = 'all'
   loc.value = { ...to }
   history.value = [...history.value.slice(0, hpos.value + 1), { ...to }]
   hpos.value = history.value.length - 1
@@ -208,10 +237,11 @@ let timer: ReturnType<typeof setTimeout> | undefined
 watch(query, (v) => { clearTimeout(timer); timer = setTimeout(() => { debounced.value = v.trim() }, 250) })
 onBeforeUnmount(() => clearTimeout(timer))
 const tagFilter = ref<number | null>(null)
-const searching = computed(() => !!debounced.value || tagFilter.value !== null)
+const typeFilter = ref('all') // all | compta | <type>
+const searching = computed(() => !!debounced.value || tagFilter.value !== null || typeFilter.value !== 'all')
 const { data, refresh, error: loadError } = await useFetch<ListResult>('/api/explorer/list', {
   key: `explorer-${props.logementId ?? 'all'}`,
-  query: computed(() => ({ logement: loc.value.logement, folder: loc.value.folder ?? undefined, q: debounced.value || undefined, tag: tagFilter.value ?? undefined })),
+  query: computed(() => ({ logement: loc.value.logement, folder: loc.value.folder ?? undefined, q: debounced.value || undefined, tag: tagFilter.value ?? undefined, type: typeFilter.value === 'all' ? undefined : typeFilter.value })),
 })
 const { data: tagData, refresh: refreshTags } = await useFetch<TagList>('/api/explorer/tags', { key: 'explorer-tags' })
 const tags = computed(() => tagData.value?.tags ?? [])
@@ -219,6 +249,48 @@ const colors = computed(() => tagData.value?.colors ?? [])
 // Classes complètes (Tailwind ne devine pas les noms de classes assemblés)
 const DOT: Record<string, string> = { red: 'bg-red-500', orange: 'bg-orange-500', amber: 'bg-amber-500', green: 'bg-green-500', teal: 'bg-teal-500', blue: 'bg-blue-500', violet: 'bg-violet-500', pink: 'bg-pink-500', gray: 'bg-gray-400' }
 function toggleFilter(id: number) { tagFilter.value = tagFilter.value === id ? null : id }
+
+// --- Types de fichier (voir server/utils/documents.ts#CATEGORIES) ---
+const types = computed(() => tagData.value?.types ?? [])
+const KIND_GROUPS: Record<FileType['kind'], string> = { charge: 'Charges (Bilan)', recette: 'Recettes (Bilan)', doc: 'Autres types' }
+const groupedTypes = (kinds: FileType['kind'][]) => kinds.map(k => [
+  { type: 'label' as const, label: KIND_GROUPS[k] },
+  ...types.value.filter(t => t.kind === k).map(t => ({ label: t.label, value: t.key })),
+])
+const typeItems = computed(() => [[{ label: 'Sans type', value: 'none' }], ...groupedTypes(['charge', 'recette', 'doc'])])
+const typeFilterItems = computed(() => [[{ label: 'Tous les types', value: 'all' }, { label: 'Fichiers comptables (Bilan)', value: 'compta' }], ...groupedTypes(['charge', 'recette', 'doc'])])
+const TYPE_BADGE: Record<string, string> = { charge: 'bg-warning/15 text-warning', recette: 'bg-success/15 text-success', doc: 'bg-elevated text-muted' }
+const isAccounting = (kind?: string) => kind === 'charge' || kind === 'recette'
+// Fichier comptable sans date ou sans montant : il ne compte pas encore (ou pas au bon endroit) dans le Bilan
+const incomplete = (it: Item) => isAccounting(it.typeKind) && (!it.date || it.amount === null || it.amount === undefined)
+const eur = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+const typeTitle = (it: Item) => [it.typeLabel, it.date ? dateFr(it.date) : '', it.amount !== null && it.amount !== undefined ? eur(it.amount) : '', incomplete(it) ? 'à compléter pour le Bilan' : ''].filter(Boolean).join(' · ')
+const metaOpen = ref(false)
+const metaItem = ref<Item | null>(null)
+const meta = reactive({ fileType: '', date: '', amount: '', note: '' })
+const metaBusy = ref(false)
+const metaError = ref('')
+// Le composant Select refuse une valeur vide : « Sans type » y vaut 'none', stocke '' cote serveur
+const metaType = computed({ get: () => meta.fileType || 'none', set: (v: string) => { meta.fileType = v === 'none' ? '' : v } })
+const metaAccounting = computed(() => isAccounting(types.value.find(t => t.key === meta.fileType)?.kind))
+function editMeta(it: Item) {
+  metaItem.value = it
+  Object.assign(meta, { fileType: it.fileType ?? '', date: it.date ?? '', amount: it.amount === null || it.amount === undefined ? '' : String(it.amount).replace('.', ','), note: it.note ?? '' })
+  metaError.value = ''
+  metaOpen.value = true
+}
+async function saveMeta() {
+  if (!metaItem.value) return
+  if (metaAccounting.value && (!meta.date || !meta.amount.trim())) { metaError.value = 'Date et montant requis pour un type comptable.'; return }
+  metaBusy.value = true
+  metaError.value = ''
+  try {
+    await $fetch(`/api/explorer/${metaItem.value.id}`, { method: 'PATCH', body: metaAccounting.value ? { ...meta } : { fileType: meta.fileType, note: meta.note, date: '', amount: '' } })
+    metaOpen.value = false
+    await refresh()
+  } catch (e) { metaError.value = msg(e) }
+  finally { metaBusy.value = false }
+}
 const error = ref('')
 const msg = (e: any) => e?.data?.statusMessage || 'Échec, réessaie.'
 watch(loadError, (e) => { error.value = e ? msg(e) : '' })
@@ -236,7 +308,8 @@ const crumbs = computed(() => {
   }
   if (searching.value) {
     const tn = tags.value.find(t => t.id === tagFilter.value)?.name
-    out.push({ label: [tn ? `Étiquette : ${tn}` : '', debounced.value ? `Recherche : ${debounced.value}` : ''].filter(Boolean).join(' + '), loc: loc.value, search: true })
+    const ty = typeFilter.value === 'compta' ? 'Fichiers comptables' : types.value.find(t => t.key === typeFilter.value)?.label
+    out.push({ label: [ty ? `Type : ${ty}` : '', tn ? `Étiquette : ${tn}` : '', debounced.value ? `Recherche : ${debounced.value}` : ''].filter(Boolean).join(' + '), loc: loc.value, search: true })
   }
   return out
 })
@@ -492,6 +565,7 @@ const menuItems = computed(() => {
     ],
     [
       { label: 'Renommer', icon: 'i-lucide-pencil', disabled: !one || one.kind === 'logement', onSelect: () => one && startRename(one) },
+      { label: 'Type et montant…', icon: 'i-lucide-receipt', disabled: !one || one.kind !== 'file' || props.readonly, onSelect: () => { if (one) setTimeout(() => editMeta(one), 50) } }, // apres fermeture du menu (sinon il reste affiche sous la fenetre)
       { label: 'Supprimer', icon: 'i-lucide-trash-2', color: 'error' as const, disabled: !real, onSelect: removeSel },
     ],
     [

@@ -1,4 +1,5 @@
 // Renomme et/ou deplace un element : { name?, parent? } (parent null = racine du logement). Meme logement uniquement.
+// Fichier : { fileType?, date?, amount?, note? } pour son type et ses donnees comptables (Bilan).
 export default defineEventHandler(async (event) => {
   const node = await getNode(getRouterParam(event, 'id'))
   const b = (await readBody(event)) ?? {}
@@ -20,6 +21,12 @@ export default defineEventHandler(async (event) => {
     }
   }
   if (await nameTaken(lgId, parent, name, Number(node.id))) throw createError({ statusCode: 409, statusMessage: 'Un élément porte déjà ce nom dans ce dossier' })
-  await useDatabase().sql`UPDATE fs_node SET name = ${name}, parent_id = ${parent}, updated_at = ${new Date().toISOString()} WHERE id = ${Number(node.id)}`
+  const meta = parseMeta(b)
+  if (node.kind !== 'file' && Object.keys(meta).length) throw createError({ statusCode: 400, statusMessage: 'Seul un fichier peut avoir un type' })
+  const cur = node as FsRow & { file_type: string; doc_date: string | null; amount: number | null; note: string }
+  await useDatabase().sql`UPDATE fs_node SET name = ${name}, parent_id = ${parent},
+    file_type = ${meta.fileType ?? cur.file_type ?? ''}, doc_date = ${meta.date === undefined ? cur.doc_date ?? null : meta.date},
+    amount = ${meta.amount === undefined ? cur.amount ?? null : meta.amount}, note = ${meta.note ?? cur.note ?? ''},
+    updated_at = ${new Date().toISOString()} WHERE id = ${Number(node.id)}`
   return { ok: true }
 })

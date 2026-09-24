@@ -19,6 +19,10 @@ export const nodeFromRow = (r: any) => ({
   logementId: Number(r.logement_id),
   ext: r.kind === 'file' ? (String(r.name).split('.').pop() || '').toLowerCase() : '',
   inline: r.kind === 'file' && !!r.file_path && isInline(String(r.file_path)),
+  // Type (voir CATEGORIES) et donnees comptables : un type charge/recette fait compter le fichier dans le Bilan
+  fileType: String(r.file_type ?? ''), typeLabel: typeInfo(r.file_type).label, typeKind: typeInfo(r.file_type).kind,
+  date: r.doc_date ? String(r.doc_date) : null, amount: r.amount === null || r.amount === undefined ? null : Number(r.amount),
+  note: String(r.note ?? ''), source: String(r.source ?? 'manuel'),
 })
 
 export async function getNode(idParam: unknown): Promise<FsRow> {

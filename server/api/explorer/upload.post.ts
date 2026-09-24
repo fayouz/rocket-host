@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 // Depose un ou plusieurs fichiers (multipart) : champs logement, parent? (id de dossier) et file (repetable).
 // Un nom deja pris devient « nom 2.ext ». Chaque fichier est verifie (type, contenu, taille) ; les refus sont listes sans bloquer les autres.
 export default defineEventHandler(async (event) => {
@@ -23,8 +25,10 @@ export default defineEventHandler(async (event) => {
       saved = await saveFile(lg.id, f.filename!, f.data)
       const name = await freeName(lg.id, parent, checkName(display))
       const now = new Date().toISOString()
-      const r = await db.sql`INSERT INTO fs_node (logement_id, parent_id, kind, name, file_path, mime, size, created_at, updated_at)
-        VALUES (${lg.id}, ${parent}, 'file', ${name}, ${saved.rel}, ${saved.mime}, ${saved.size}, ${now}, ${now})`
+      // Empreinte du contenu : un import ulterieur du meme fichier (n8n, IMAP) sera reconnu comme doublon
+      const sha = createHash('sha256').update(f.data).digest('hex')
+      const r = await db.sql`INSERT INTO fs_node (logement_id, parent_id, kind, name, file_path, mime, size, created_at, updated_at, sha256)
+        VALUES (${lg.id}, ${parent}, 'file', ${name}, ${saved.rel}, ${saved.mime}, ${saved.size}, ${now}, ${now}, ${sha})`
       added.push(Number(r.lastInsertRowid))
     } catch (e: any) {
       if (saved) await removeFile(saved.rel)

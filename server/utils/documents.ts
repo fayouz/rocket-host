@@ -1,10 +1,11 @@
-// Documents par logement : metadonnees en base (table document), fichiers sur disque dans .data/documents/<logement>/<uuid>.<ext>.
+// Fichiers des logements (explorateur, table fs_node) : fichiers sur disque dans .data/documents/<logement>/<uuid>.<ext>.
+// Chaque fichier peut avoir un type (CATEGORIES) ; les types comptables (charge / recette) alimentent le Bilan.
 // Le nom du fichier stocke est genere ici : jamais un nom ou un chemin fourni par l'utilisateur.
 import { randomUUID } from 'node:crypto'
 import { mkdir, unlink, writeFile } from 'node:fs/promises'
 import { dirname, resolve, sep } from 'node:path'
 
-// kind : charge (compte dans le bilan), recette (autre recette hors Lodgify), doc (justificatif, non compte)
+// Types de fichier. kind : charge (compte dans le bilan), recette (autre recette hors Lodgify), doc (simple repere, non compte)
 export const CATEGORIES = {
   taxe_fonciere: { label: 'Taxe foncière', kind: 'charge' },
   assurance: { label: 'Assurance', kind: 'charge' },
@@ -21,6 +22,8 @@ export const CATEGORIES = {
   reversement: { label: 'Reversement de plateforme', kind: 'doc' },
   bail_contrat: { label: 'Contrat / bail', kind: 'doc' },
   diagnostic: { label: 'Diagnostic / attestation', kind: 'doc' },
+  photo: { label: 'Photo', kind: 'doc' },
+  notice: { label: 'Notice / mode d\'emploi', kind: 'doc' },
   autre_doc: { label: 'Autre document', kind: 'doc' },
 } as const
 export type CategoryKey = keyof typeof CATEGORIES
@@ -79,26 +82,25 @@ export async function removeFile(rel: string) {
 
 export const isInline = (rel: string) => INLINE.has(rel.split('.').pop() || '')
 
-// Champs communs (creation / modification), valides cote serveur
-export function parseFields(b: Record<string, unknown>, partial = false) {
-  const out: { title?: string; category?: CategoryKey; date?: string; amount?: number | null; note?: string } = {}
-  if (b.title !== undefined || !partial) {
-    const t = String(b.title ?? '').trim().slice(0, 120)
-    if (!t) throw createError({ statusCode: 400, statusMessage: 'Titre requis' })
-    out.title = t
+// Type et donnees comptables d'un fichier (modification partielle : seuls les champs presents sont valides et renvoyes).
+// fileType '' = sans type ; date/amount vides = null.
+export function parseMeta(b: Record<string, unknown>) {
+  const out: { fileType?: CategoryKey | ''; date?: string | null; amount?: number | null; note?: string } = {}
+  if (b.fileType !== undefined) {
+    if (b.fileType !== '' && !isCategory(b.fileType)) throw createError({ statusCode: 400, statusMessage: 'Type de fichier invalide' })
+    out.fileType = b.fileType as CategoryKey | ''
   }
-  if (b.category !== undefined || !partial) {
-    if (!isCategory(b.category)) throw createError({ statusCode: 400, statusMessage: 'Catégorie invalide' })
-    out.category = b.category
-  }
-  if (b.date !== undefined || !partial) {
-    const d = String(b.date ?? '')
-    const y = Number(d.slice(0, 4))
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(Date.parse(d)) || y < 2000 || y > 2100) throw createError({ statusCode: 400, statusMessage: 'Date invalide (AAAA-MM-JJ)' })
-    out.date = d
+  if (b.date !== undefined) {
+    const d = String(b.date ?? '').trim()
+    if (!d) out.date = null
+    else {
+      const y = Number(d.slice(0, 4))
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(Date.parse(d)) || y < 2000 || y > 2100) throw createError({ statusCode: 400, statusMessage: 'Date invalide (AAAA-MM-JJ)' })
+      out.date = d
+    }
   }
   if (b.amount !== undefined) {
-    const raw = String(b.amount).trim().replace(',', '.')
+    const raw = String(b.amount ?? '').trim().replace(',', '.')
     if (raw === '') out.amount = null
     else {
       const n = Number(raw)
@@ -106,11 +108,11 @@ export function parseFields(b: Record<string, unknown>, partial = false) {
       out.amount = Math.round(n * 100) / 100
     }
   }
-  if (b.note !== undefined) out.note = String(b.note).trim().slice(0, 500)
+  if (b.note !== undefined) out.note = String(b.note ?? '').trim().slice(0, 500)
   return out
 }
 
-// Charges (documents de categorie kind='charge') totalisees par mois, tous logements confondus — pour le graphe
+// Charges (fichiers de type kind='charge') totalisees par mois, tous logements confondus — pour le graphe
 // revenus/charges du tableau de bord. Approximation volontairement simple (pas la substitution frais-de-plateforme
 // du Bilan par logement, voir buildBilan) : suffisante pour une tendance, pas pour un chiffre exact par logement.
 const CHARGE_CATEGORIES = Object.entries(CATEGORIES).filter(([, c]) => c.kind === 'charge').map(([k]) => k)
@@ -120,20 +122,26 @@ export async function getChargesByMonth(months: string[], logementIds?: number[]
   const placeholders = CHARGE_CATEGORIES.map(() => '?').join(',')
   const logementFilter = logementIds ? ` AND logement_id IN (${logementIds.map(() => '?').join(',')})` : ''
   const rows = (await db.prepare(
-    `SELECT substr(doc_date, 1, 7) AS m, SUM(amount) AS total FROM document
-     WHERE amount IS NOT NULL AND category IN (${placeholders})${logementFilter} GROUP BY m`,
+    `SELECT substr(doc_date, 1, 7) AS m, SUM(amount) AS total FROM fs_node
+     WHERE kind = 'file' AND logement_id > 0 AND amount IS NOT NULL AND doc_date IS NOT NULL AND file_type IN (${placeholders})${logementFilter} GROUP BY m`,
   ).all(...CHARGE_CATEGORIES, ...(logementIds ?? []))) as any[]
   const byMonth = Object.fromEntries(rows.map(r => [String(r.m), Number(r.total)]))
   return Object.fromEntries(months.map(m => [m, Math.round((byMonth[m] ?? 0) * 100) / 100]))
 }
 
-// Ligne de la table -> objet renvoye au navigateur (jamais le chemin du fichier sur le disque)
+// Type d'un fichier -> libelle et nature ('' = sans type)
+export function typeInfo(t: unknown) {
+  return isCategory(t) ? { label: CATEGORIES[t].label as string, kind: CATEGORIES[t].kind as 'charge' | 'recette' | 'doc' } : { label: '', kind: '' as const }
+}
+export const ACCOUNTING_KINDS = new Set(['charge', 'recette'])
+
+// Fichier (ligne fs_node) -> piece renvoyee au navigateur pour les Imports et l'export (jamais le chemin sur le disque)
 export function docFromRow(r: any) {
-  const cat = (isCategory(r.category) ? CATEGORIES[r.category] : { label: String(r.category), kind: 'doc' }) as { label: string; kind: string }
+  const t = typeInfo(r.file_type)
   return {
-    id: Number(r.id), title: String(r.title), category: String(r.category), categoryLabel: cat.label, kind: cat.kind,
-    date: String(r.doc_date), amount: r.amount === null ? null : Number(r.amount), note: String(r.note),
-    fileName: String(r.original_name), size: Number(r.size), inline: isInline(String(r.file_path)),
+    id: Number(r.id), title: String(r.name).replace(/\.[^.]+$/, ''), category: String(r.file_type), categoryLabel: t.label || 'Sans type', kind: t.kind,
+    date: r.doc_date ? String(r.doc_date) : '', amount: r.amount === null || r.amount === undefined ? null : Number(r.amount), note: String(r.note ?? ''),
+    fileName: String(r.name), size: Number(r.size), inline: !!r.file_path && isInline(String(r.file_path)),
     source: String(r.source ?? 'manuel'), logementId: Number(r.logement_id),
   }
 }
