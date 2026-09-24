@@ -247,7 +247,7 @@ export const DOC_PAGES: DocPage[] = [
         id: 'documents',
         title: 'Documents',
         paragraphs: [
-          'Chaque logement a un espace de fichiers avec étiquettes (factures, diagnostics, contrats…), pour éviter de les chercher dans une boîte mail ou un dossier partagé.',
+          'Chaque logement a un onglet Documents en deux parties : « Pièces comptables » (factures, taxes… avec catégorie et montant, qui alimentent le Bilan) et « Fichiers » (espace libre : contrats, diagnostics, photos, notices…), pour éviter de les chercher dans une boîte mail ou un dossier partagé.',
         ],
       },
     ],
