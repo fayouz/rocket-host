@@ -1,12 +1,20 @@
 <template>
-  <div v-if="data" class="space-y-3">
+  <div class="space-y-3">
+    <!-- Documents = pieces comptables (categorie, montant, alimentent le Bilan) + fichiers libres (explorateur) -->
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 class="section-title !mt-0">Documents</h2>
-      <div class="flex items-center gap-2">
+      <UTabs v-model="view" :items="views" :content="false" size="sm" />
+      <div v-if="view === 'compta'" class="flex items-center gap-2">
         <USelect v-model="year" :items="yearItems" class="w-36" />
         <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-download" label="Export CSV" :to="csvUrl" external target="_blank" />
       </div>
     </div>
+
+    <template v-if="view === 'fichiers'">
+      <p class="text-sm text-muted">Le dossier de ce logement (le même que dans le menu Documents) : contrats, photos, notices, tout ce que tu veux classer.</p>
+      <FileExplorer :logement-id="Number(route.params.id)" height="calc(100vh - 22rem)" :readonly="!can('AG')" />
+    </template>
+
+    <template v-else-if="data">
     <p class="text-sm text-muted">
       Factures, taxes, assurances… déposés par logement, avec une date, une catégorie et un montant : ils alimentent le Bilan de l'année.
       Fichiers acceptés : PDF, images, Excel, Word, CSV, texte — {{ Math.round(data.maxSize / 1048576) }} Mo au plus.
@@ -61,11 +69,23 @@
       </form>
     </UCard>
     <UCard v-if="!data.items.length"><p class="text-sm text-muted">Aucun document {{ year === 'all' ? '' : `en ${year}` }}.</p></UCard>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 const route = useRoute()
+const { can, refresh: refreshAuth } = useAuth()
+await refreshAuth()
+// Sous-onglet memorise dans l'adresse (?vue=fichiers) : l'ancien onglet Fichiers redirige ici
+const views = [
+  { label: 'Pièces comptables', value: 'compta', icon: 'i-lucide-receipt' },
+  { label: 'Fichiers', value: 'fichiers', icon: 'i-lucide-folder-tree' },
+]
+const view = computed({
+  get: () => (route.query.vue === 'fichiers' ? 'fichiers' : 'compta'),
+  set: v => navigateTo({ query: { ...route.query, vue: v === 'fichiers' ? 'fichiers' : undefined } }, { replace: true }),
+})
 const year = ref(String(new Date().getFullYear()))
 const yearParam = computed(() => (year.value === 'all' ? undefined : year.value))
 const { data, refresh } = await useFetch(() => `/api/logements/${route.params.id}/documents`, { query: { year: yearParam } })
