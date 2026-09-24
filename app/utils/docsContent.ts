@@ -109,14 +109,14 @@ export const DOC_PAGES: DocPage[] = [
         id: 'creation-automatique',
         title: 'Création automatique',
         paragraphs: [
-          'Un code est prévu pour chaque réservation à venir puis créé sur la serrure Nuki à l\'approche de l\'arrivée. La page Codes indique s\'il est « prévu », « créé » ou en erreur (à vérifier manuellement dans ce cas).',
+          'Un code est prévu automatiquement pour chaque réservation à venir, mais il n\'est envoyé à la serrure Nuki qu\'après ton clic sur « Créer sur Nuki » (onglet Serrures) ou « Générer sur la serrure » (détail d\'une réservation). Son statut est « prévu », « créé » ou en erreur (à vérifier manuellement dans ce cas).',
         ],
       },
       {
         id: 'etat-serrure',
-        title: 'État de la serrure',
+        title: 'Onglet Serrures',
         paragraphs: [
-          'La page Serrures affiche l\'état en direct (verrouillée/déverrouillée, niveau de batterie) remonté par l\'API Nuki.',
+          'À gauche la liste des serrures du logement ; à droite la serrure choisie : état en direct et batterie en en-tête, les codes clavier des réservations à venir, et l\'historique des passages.',
         ],
       },
     ],

@@ -23,7 +23,6 @@ const menu = computed(() => {
   return [
     ['AG', { label: 'Réservations', icon: 'i-lucide-calendar-days', to: `${base}/reservations` }],
     ['AG', { label: 'Serrures', icon: 'i-lucide-lock', to: `${base}/serrures` }],
-    ['AG', { label: 'Codes', icon: 'i-lucide-key-round', to: `${base}/codes` }],
     ['AG', { label: 'Timeline', icon: 'i-lucide-git-commit-vertical', to: `${base}/timeline` }],
     ['AGM', { label: 'Stock', icon: 'i-lucide-package', to: `${base}/stock` }],
     ['AG', { label: 'Domotique', icon: 'i-lucide-thermometer', to: `${base}/domotique` }],
