@@ -32,6 +32,7 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['PUT', '/api/logements/:id', 'A', 'Renommer un logement / changer sa couleur', 'logement', 'Logements'],
   ['POST', '/api/logements/:id/sync-name', 'A', 'Reprendre le nom court de Lodgify', 'logement', 'Logements'],
   ['GET', '/api/logements/:id/reservations', 'AG', 'Reservations du logement', 'logement', 'Logements'],
+  ['GET', '/api/logements/:id/reservations/:bookingId/conversation', 'AG', 'Fil de conversation Lodgify d\'une reservation (texte)', 'logement', 'Logements'],
   ['GET', '/api/logements/:id/locks', 'AG', 'Serrures du logement', 'logement', 'Logements'],
   ['GET', '/api/logements/:id/codes', 'AG', 'Codes clavier des reservations a venir', 'logement', 'Logements'],
   ['GET', '/api/logements/:id/timeline', 'AG', 'Chronologie du logement', 'logement', 'Logements'],
