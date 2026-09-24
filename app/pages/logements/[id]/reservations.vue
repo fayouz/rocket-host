@@ -58,13 +58,18 @@
         <p v-else-if="convError" class="text-sm text-muted">Conversation indisponible pour le moment.</p>
         <p v-else-if="!conv?.messages.length" class="text-sm text-muted">Aucun message.</p>
         <div v-else ref="convBox" class="max-h-[60vh] min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 lg:max-h-none">
-          <div v-for="m in conv.messages" :key="m.id" class="flex" :class="m.from === 'host' ? 'justify-end' : 'justify-start'">
-            <div class="max-w-[85%] rounded-lg px-3 py-2 text-sm" :class="m.from === 'host' ? 'bg-primary/10' : 'bg-elevated'">
-              <p class="mb-1 text-xs text-muted">
-                {{ m.from === 'host' ? 'Toi' : current.guest }} · {{ when(m.at) }}<template v-if="m.from === 'host' && m.status"> · {{ m.status === 'Delivered' ? 'Délivré' : m.status }}</template>
+          <div v-for="m in conv.messages" :key="m.key" class="flex" :class="m.from === 'host' ? 'justify-end' : 'justify-start'">
+            <div
+              class="max-w-[85%] rounded-lg px-3 py-2 text-sm"
+              :class="[m.from === 'host' ? 'bg-primary/10' : 'bg-elevated', m.kind === 'mail' && 'border border-dashed border-default']"
+            >
+              <p class="mb-1 flex items-center gap-1 text-xs text-muted">
+                <UIcon v-if="m.kind === 'mail'" name="i-lucide-mail" class="size-3.5" />
+                {{ m.kind === 'mail' ? (m.from === 'host' ? 'Toi (e-mail)' : m.sender) : (m.from === 'host' ? 'Toi' : current.guest) }} · {{ when(m.at) }}<template v-if="m.from === 'host' && m.status"> · {{ m.status === 'Delivered' ? 'Délivré' : m.status }}</template>
               </p>
-              <p v-if="m.from === 'host' && m.subject" class="mb-1 font-medium">{{ m.subject }}</p>
-              <p class="whitespace-pre-line">{{ m.text }}</p>
+              <p v-if="(m.from === 'host' || m.kind === 'mail') && m.subject" class="mb-1 font-medium">{{ m.subject }}</p>
+              <p class="whitespace-pre-line">{{ m.text }}<template v-if="m.kind === 'mail'">…</template></p>
+              <UButton v-if="m.kind === 'mail'" class="mt-1 -ml-2" size="xs" color="neutral" variant="link" icon="i-lucide-external-link" label="Ouvrir l'e-mail" :to="`/mail?booking=${current.id}&open=${m.mailId}`" />
             </div>
           </div>
         </div>
