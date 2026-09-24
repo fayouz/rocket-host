@@ -128,30 +128,40 @@
             <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-lock" class="size-3.5" /> Serrure connectée</p>
             <UButton size="xs" color="neutral" variant="link" :to="`/logements/${route.params.id}/serrures`" label="Détails" trailing-icon="i-lucide-arrow-right" />
           </div>
-        </template>
-        <p v-if="!locks" class="text-sm text-muted">Indisponible pour le moment (Nuki ne répond pas).</p>
-        <p v-else-if="!locks.locks.length" class="text-sm text-muted">Aucune serrure associée à ce logement.</p>
-        <div v-for="l in locks?.locks ?? []" :key="l.id" class="space-y-2 text-sm">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <b>{{ l.name }}</b>
-            <UBadge :color="l.locked ? 'success' : 'warning'" variant="subtle" :label="l.state" />
+          <!-- Etat et batterie de la (des) serrure(s), toujours visibles en en-tete -->
+          <div v-for="l in locks?.locks ?? []" :key="l.id" class="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+            <b class="text-sm">{{ l.name }}</b>
+            <UBadge size="sm" :color="l.locked ? 'success' : 'warning'" variant="subtle" :label="l.state" />
+            <UBadge size="sm" :color="l.batteryCritical ? 'error' : 'neutral'" variant="subtle" :icon="batteryIcon(l.battery)" :label="l.battery === null ? '?' : `${l.battery} %`" />
+            <UBadge v-if="l.keypadBatteryCritical" size="sm" color="error" variant="subtle" label="Pile clavier faible" />
           </div>
-          <p class="text-muted">
-            Batterie {{ l.battery === null ? 'inconnue' : `${l.battery} %` }}
-            <span v-if="l.batteryCritical || l.keypadBatteryCritical" class="text-error"> · ⚠ {{ l.batteryCritical ? 'batterie critique' : 'pile du clavier faible' }}</span>
-          </p>
-          <template v-if="stayLogs(l.logs).length">
-            <p class="pt-1 text-xs font-medium text-muted">Pendant ce séjour</p>
-            <p v-for="(g, i) in stayLogs(l.logs)" :key="i" class="text-xs text-muted">{{ when(g.date) }} · {{ lockActions[g.action] || `Action ${g.action}` }}<template v-if="g.who"> · {{ g.who }}</template></p>
+          <p v-if="!locks" class="mt-2 text-xs text-muted">Nuki ne répond pas pour le moment.</p>
+          <p v-else-if="!locks.locks.length" class="mt-2 text-xs text-muted">Aucune serrure associée à ce logement.</p>
+        </template>
+
+        <!-- Code clavier prevu pour cette reservation -->
+        <div v-if="current.access" class="space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="font-mono text-2xl font-semibold tracking-widest">{{ current.access.code }}</span>
+            <UBadge :color="current.access.status === 'created' ? 'success' : current.access.status === 'error' ? 'error' : 'neutral'" variant="subtle"
+                    :label="current.access.status === 'created' ? 'Créé sur Nuki' : current.access.status === 'error' ? 'Erreur' : 'Prévu'" />
+          </div>
+          <p class="text-xs text-muted">Valable du {{ when(current.access.validFrom) }} au {{ when(current.access.validUntil) }}</p>
+          <p v-if="current.access.status === 'error' && current.access.error" class="text-xs text-error">⚠ {{ current.access.error }}</p>
+          <template v-if="current.access.status !== 'created'">
+            <UButton v-if="phase(current) === 'next'" block icon="i-lucide-key-round" label="Générer sur la serrure" :loading="generating" :disabled="data.demo" @click="generateCode" />
+            <p v-else class="text-xs text-muted">Séjour commencé ou passé : le code n'est plus envoyé automatiquement à la serrure.</p>
           </template>
+          <p v-if="genError" class="text-xs text-error">{{ genError }}</p>
         </div>
-        <div v-if="bookingCode" class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-default pt-3 text-sm">
-          <span class="text-muted">Code clavier <b class="font-mono text-default">{{ bookingCode.code }}</b></span>
-          <UBadge :color="bookingCode.status === 'created' ? 'success' : bookingCode.status === 'error' ? 'error' : 'neutral'" variant="subtle"
-                  :label="bookingCode.status === 'created' ? 'Créé sur Nuki' : bookingCode.status === 'error' ? 'Erreur' : 'Prévu'" />
-          <p class="w-full text-xs text-muted">Valable du {{ when(bookingCode.validFrom) }} au {{ when(bookingCode.validUntil) }}</p>
-        </div>
-        <p v-else-if="locks?.locks.length" class="mt-3 border-t border-default pt-3 text-xs text-muted">Pas de code clavier planifié pour cette réservation.</p>
+        <p v-else class="text-sm text-muted">Pas de code clavier prévu pour cette réservation.</p>
+
+        <template v-for="l in locks?.locks ?? []" :key="l.id">
+          <div v-if="stayLogs(l.logs).length" class="mt-3 border-t border-default pt-3">
+            <p class="text-xs font-medium text-muted">Passages pendant ce séjour</p>
+            <p v-for="(g, i) in stayLogs(l.logs)" :key="i" class="text-xs text-muted">{{ when(g.date) }} · {{ lockActions[g.action] || `Action ${g.action}` }}<template v-if="g.who"> · {{ g.who }}</template></p>
+          </div>
+        </template>
       </UCard>
 
       <UCard :ui="{ body: 'p-0 sm:p-0' }">
@@ -272,8 +282,23 @@ const { data: pricing, status: pricingStatus } = useFetch(
 const money = (n: number, div = 1) => (n / (div || 1)).toLocaleString('fr-FR', { style: 'currency', currency: pricing.value?.currency || 'EUR', maximumFractionDigits: 2 })
 // Serrure(s) du logement et code clavier de la reservation selectionnee (charges une fois pour le logement)
 const { data: locks } = useFetch(() => `/api/logements/${route.params.id}/locks`, { server: false })
-const { data: codes } = useFetch(() => `/api/logements/${route.params.id}/codes`, { server: false })
-const bookingCode = computed(() => codes.value?.items.find(c => c.bookingId === selected.value) ?? null)
+const batteryIcon = (b: number | null) => b === null ? 'i-lucide-battery' : b <= 20 ? 'i-lucide-battery-low' : b <= 60 ? 'i-lucide-battery-medium' : 'i-lucide-battery-full'
+// Creation du code sur la serrure : action sur la porte, confirmee par l'utilisateur (meme regle que la page Codes)
+const generating = ref(false)
+const genError = ref('')
+watch(selected, () => { genError.value = '' })
+async function generateCode() {
+  const b = current.value
+  if (!b?.access) return
+  if (!confirm(`Créer le code ${b.access.code} sur la serrure Nuki pour ${b.guest} (${fr(b.arrival)} → ${fr(b.departure)}) ?`)) return
+  generating.value = true
+  genError.value = ''
+  try {
+    await $fetch(`/api/codes/${b.id}`, { method: 'POST' })
+    await refreshNuxtData()
+  } catch (e: any) { genError.value = e?.data?.statusMessage || 'Échec de la création du code' }
+  finally { generating.value = false }
+}
 const lockActions: Record<number, string> = { 1: 'Déverrouillage', 2: 'Verrouillage', 3: 'Ouverture (pêne)', 4: 'Lock’n’Go', 5: 'Lock’n’Go + ouverture' }
 const stayLogs = (logs: { date: string; action: number; who: string }[]) => {
   const b = current.value
