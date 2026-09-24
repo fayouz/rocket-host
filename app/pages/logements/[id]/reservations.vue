@@ -75,10 +75,21 @@
         </div>
 
         <div v-if="!convError" class="mt-4 space-y-2 border-t border-default pt-4">
-          <UTextarea v-model="draft" :rows="3" autoresize placeholder="Écrire au voyageur…" class="w-full" :disabled="sending" />
+          <!-- Composition hybride : message Lodgify (canal de la reservation) ou e-mail (SMTP, administrateur) -->
+          <div v-if="can('A')" class="flex gap-1">
+            <UButton size="xs" :variant="mode === 'message' ? 'soft' : 'ghost'" color="neutral" icon="i-lucide-message-circle" label="Message" @click="mode = 'message'" />
+            <UButton size="xs" :variant="mode === 'mail' ? 'soft' : 'ghost'" color="neutral" icon="i-lucide-mail" label="E-mail" @click="mode = 'mail'" />
+          </div>
+          <div v-if="mode === 'mail'" class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="mailTo" size="sm" placeholder="Destinataire" :disabled="sending" :ui="{ base: 'ps-8' }"><template #leading><span class="text-xs text-muted">À</span></template></UInput>
+            <UInput v-model="mailSubject" size="sm" placeholder="Objet" :disabled="sending" :ui="{ base: 'ps-14' }"><template #leading><span class="text-xs text-muted">Objet</span></template></UInput>
+          </div>
+          <UTextarea v-model="draft" :rows="3" autoresize :placeholder="mode === 'mail' ? 'Écrire un e-mail…' : 'Écrire au voyageur…'" class="w-full" :disabled="sending" />
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <p class="text-xs text-muted">{{ sendError || `Envoyé à ${current.guest} via ${current.source || 'Lodgify'}.` }}</p>
-            <UButton icon="i-lucide-send" label="Envoyer" :loading="sending" :disabled="!draft.trim()" @click="send" />
+            <p class="text-xs text-muted">
+              {{ sendError || sentInfo || (mode === 'mail' ? `Envoyé par e-mail depuis ta boîte${lastMail ? ', en réponse au dernier e-mail échangé' : ''}.` : `Envoyé à ${current.guest} via ${current.source || 'Lodgify'}.`) }}
+            </p>
+            <UButton icon="i-lucide-send" label="Envoyer" :loading="sending" :disabled="!draft.trim() || (mode === 'mail' && (!mailTo.trim() || !mailSubject.trim()))" @click="send" />
           </div>
         </div>
       </UCard>
@@ -146,16 +157,45 @@ const draft = ref('')
 const draftId = ref(crypto.randomUUID())
 const sending = ref(false)
 const sendError = ref('')
-watch(selected, () => { draft.value = ''; draftId.value = crypto.randomUUID(); sendError.value = '' })
+const sentInfo = ref('')
+// Mode e-mail (administrateur) : destinataire = e-mail du voyageur, reponse au dernier e-mail rattache s'il y en a un
+const { can } = useAuth()
+const mode = ref<'message' | 'mail'>('message')
+const mailTo = ref('')
+const mailSubject = ref('')
+// Dernier e-mail echange AVEC le voyageur (pas une notification Lodgify rattachee a la reservation) : on y repond dans le meme fil
+const lastMail = computed(() => {
+  const g = current.value?.guestEmail?.toLowerCase()
+  if (!g) return null
+  return [...(conv.value?.messages ?? [])].reverse().find(m => m.kind === 'mail' && (m.fromAddr === g || m.toAddrs?.includes(g))) ?? null
+})
+function resetMail() {
+  mailTo.value = current.value?.guestEmail ?? ''
+  const s = lastMail.value?.subject
+  mailSubject.value = s ? (/^re\s*:/i.test(s) ? s : `Re: ${s}`) : `Votre séjour – ${data.value?.logement.name ?? ''}`
+}
+watch(selected, () => { draft.value = ''; draftId.value = crypto.randomUUID(); sendError.value = ''; sentInfo.value = '' })
 async function send() {
   if (!draft.value.trim() || !selected.value) return
   sending.value = true
   sendError.value = ''
+  sentInfo.value = ''
   try {
-    await $fetch(`/api/logements/${route.params.id}/reservations/${selected.value}/conversation`, { method: 'POST', body: { text: draft.value, messageId: draftId.value } })
-    draft.value = ''
-    draftId.value = crypto.randomUUID()
-    await refreshConv()
+    if (mode.value === 'mail') {
+      const fd = new FormData()
+      fd.append('to', mailTo.value)
+      fd.append('subject', mailSubject.value)
+      fd.append('text', draft.value)
+      if (lastMail.value?.mailId) fd.append('replyTo', String(lastMail.value.mailId))
+      await $fetch('/api/mail/send', { method: 'POST', body: fd })
+      draft.value = ''
+      sentInfo.value = 'E-mail envoyé. Il apparaîtra dans le fil après la prochaine synchronisation de la messagerie.'
+    } else {
+      await $fetch(`/api/logements/${route.params.id}/reservations/${selected.value}/conversation`, { method: 'POST', body: { text: draft.value, messageId: draftId.value } })
+      draft.value = ''
+      draftId.value = crypto.randomUUID()
+      await refreshConv()
+    }
   } catch (e: any) { sendError.value = e?.data?.statusMessage || 'Échec de l’envoi' }
   finally { sending.value = false }
 }
@@ -165,7 +205,7 @@ const { data: conv, status: convStatus, error: convError, refresh: refreshConv }
 )
 // Affiche le dernier message (bas du fil) a chaque chargement de conversation
 const convBox = ref<HTMLElement | null>(null)
-watch(conv, () => nextTick(() => { if (convBox.value) convBox.value.scrollTop = convBox.value.scrollHeight }))
+watch(conv, () => { resetMail(); nextTick(() => { if (convBox.value) convBox.value.scrollTop = convBox.value.scrollHeight }) })
 const when = (d: string) => new Date(d).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 const statusColor = (s: string) => /book/i.test(s) ? 'success' : /declin|cancel/i.test(s) ? 'error' : 'info'
 const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })

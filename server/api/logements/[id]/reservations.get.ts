@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     .filter(b => b.propertyId === lg.lodgifyPropertyId && b.departure >= since)
     .sort((a, b) => b.arrival.localeCompare(a.arrival))
     .map(b => ({
-      id: b.id, guest: b.guest, source: b.source, status: b.status, arrival: b.arrival, departure: b.departure,
+      id: b.id, guest: b.guest, guestEmail: b.guestEmail ?? null, source: b.source, status: b.status, arrival: b.arrival, departure: b.departure,
       nights: nights(b.arrival, b.departure), checkIn: b.checkIn ?? null, checkOut: b.checkOut ?? null, total: b.total,
       mails: Number(mails.find(m => Number(m.target_id) === b.id)?.n ?? 0),
       active: isActiveBooking(b), code: codes.find(c => Number(c.booking_id) === b.id)?.status ?? null,
