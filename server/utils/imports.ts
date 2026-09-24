@@ -39,7 +39,7 @@ export async function resolveLogement(i: { logementId?: unknown; lodgifyProperty
 }
 
 export interface ImportDocInput {
-  source: string; externalId?: string; logementId: number; filename: string; data: Buffer
+  source: string; externalId?: string; logementId: number; parentId?: number | null; filename: string; data: Buffer
   title?: string; category?: unknown; date?: unknown; amount?: unknown; note?: unknown
 }
 
@@ -70,10 +70,10 @@ export async function importDocument(i: ImportDocInput) {
   try {
     // Nom affiche : le titre fourni (sinon le nom du fichier) + l'extension reelle ; « nom 2.ext » si deja pris
     const title = cleanName(i.title?.trim() || i.filename.replace(/\.[^.]+$/, '')).replace(/\.[^.]+$/, '')
-    const name = await freeName(i.logementId, null, checkName(`${title}.${saved.ext}`))
+    const name = await freeName(i.logementId, i.parentId ?? null, checkName(`${title}.${saved.ext}`))
     const now = new Date().toISOString()
     const r = await db.sql`INSERT INTO fs_node (logement_id, parent_id, kind, name, file_path, mime, size, created_at, updated_at, file_type, doc_date, amount, note, source, external_id, sha256)
-      VALUES (${i.logementId}, ${null}, 'file', ${name}, ${saved.rel}, ${saved.mime}, ${saved.size}, ${now}, ${now}, ${m.fileType ?? ''}, ${m.date ?? null}, ${m.amount ?? null}, ${m.note ?? ''}, ${i.source}, ${externalId}, ${sha})`
+      VALUES (${i.logementId}, ${i.parentId ?? null}, 'file', ${name}, ${saved.rel}, ${saved.mime}, ${saved.size}, ${now}, ${now}, ${m.fileType ?? ''}, ${m.date ?? null}, ${m.amount ?? null}, ${m.note ?? ''}, ${i.source}, ${externalId}, ${sha})`
     id = Number(r.lastInsertRowid)
   } catch (e) { await removeFile(saved.rel); throw e }
   await logImport(i.source, 'document', 'ok', `${saved.original} → ${i.logementId ? `logement ${i.logementId}` : 'à classer'}`)

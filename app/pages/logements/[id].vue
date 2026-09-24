@@ -32,6 +32,7 @@ const menu = computed(() => {
     ['AGC', { label: 'Bilan', icon: 'i-lucide-calculator', to: `${base}/bilan` }],
     ['A', { label: 'E-mails', icon: 'i-lucide-mail', to: `${base}/mails` }],
     ['A', { label: 'Contacts', icon: 'i-lucide-contact', to: `${base}/contacts` }],
+    ['A', { label: 'Connecteurs', icon: 'i-lucide-plug', to: `${base}/connecteurs` }],
   ].filter(([letters]) => can(letters as string)).map(([, item]) => item)
 })
 </script>
