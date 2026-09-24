@@ -70,7 +70,7 @@ export async function planCodes() {
     .map((b) => {
       const r = existing.find(x => Number(x.booking_id) === b.id)!
       return {
-        bookingId: b.id, propertyId: b.propertyId, property: name(b.propertyId), guest: b.guest, source: b.source, arrival: b.arrival, departure: b.departure,
+        bookingId: b.id, propertyId: b.propertyId, lockId: Number(r.lock_id), property: name(b.propertyId), guest: b.guest, source: b.source, arrival: b.arrival, departure: b.departure,
         code: r.code, validFrom: r.valid_from, validUntil: r.valid_until, status: r.status, error: r.error,
         // Reservation modifiee apres creation du code : il faut le refaire (non gere automatiquement)
         outdated: r.status === 'created' && (r.valid_from !== validity(b).from || r.valid_until !== validity(b).until),
