@@ -1,5 +1,5 @@
 <template>
-  <div v-if="data" class="flex flex-col gap-4 lg:h-[calc(100vh-11rem)] lg:flex-row">
+  <div v-if="data" class="flex flex-col gap-4 lg:h-[calc(100vh-17rem)] lg:flex-row">
     <!-- Colonne gauche : liste compacte, comme la boite de reception d'un client mail -->
     <div class="min-w-0 space-y-1 overflow-y-auto lg:w-80 lg:shrink-0 lg:border-r lg:border-default lg:pr-3">
       <h2 class="section-title !mt-0">Réservations</h2>
@@ -29,8 +29,9 @@
     </div>
 
     <!-- Colonne droite : detail de la reservation selectionnee (2/3), comme le contenu d'un e-mail, + apercu du livret (1/3) -->
-    <div v-if="current" class="grid min-w-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-3">
-      <UCard class="lg:col-span-2">
+    <div v-if="current" class="grid min-w-0 flex-1 gap-4 lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)]">
+      <!-- Carte en colonne : en-tete fixe, messages defilants, zone de saisie toujours visible en bas (comme une messagerie) -->
+      <UCard class="lg:col-span-2" :ui="{ root: 'flex flex-col lg:min-h-0', body: 'flex min-h-0 flex-1 flex-col' }">
         <div class="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h3 class="text-lg font-semibold">{{ current.guest }}</h3>
@@ -53,10 +54,10 @@
         </div>
 
         <h4 class="mt-6 mb-3 flex items-center gap-1.5 text-sm font-semibold"><UIcon name="i-lucide-messages-square" class="size-4 text-muted" /> Conversation</h4>
-        <p v-if="convStatus === 'pending'" class="text-sm text-muted">Chargement…</p>
+        <p v-if="convStatus === 'pending' || convStatus === 'idle'" class="text-sm text-muted">Chargement…</p>
         <p v-else-if="convError" class="text-sm text-muted">Conversation indisponible pour le moment.</p>
         <p v-else-if="!conv?.messages.length" class="text-sm text-muted">Aucun message.</p>
-        <div v-else class="space-y-3">
+        <div v-else ref="convBox" class="max-h-[60vh] min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 lg:max-h-none">
           <div v-for="m in conv.messages" :key="m.id" class="flex" :class="m.from === 'host' ? 'justify-end' : 'justify-start'">
             <div class="max-w-[85%] rounded-lg px-3 py-2 text-sm" :class="m.from === 'host' ? 'bg-primary/10' : 'bg-elevated'">
               <p class="mb-1 text-xs text-muted">
@@ -77,7 +78,7 @@
         </div>
       </UCard>
 
-      <UCard class="lg:col-span-1" :ui="{ body: 'p-0 sm:p-0' }">
+      <UCard class="lg:col-span-1 lg:self-start" :ui="{ body: 'p-0 sm:p-0' }">
         <template #header><b>Aperçu du livret</b></template>
         <div v-if="livretLink" class="livret-preview-frame overflow-hidden bg-black">
           <iframe :src="livretPreviewLink" class="livret-preview-iframe" title="Aperçu du livret" />
@@ -157,6 +158,9 @@ const { data: conv, status: convStatus, error: convError, refresh: refreshConv }
   () => `/api/logements/${route.params.id}/reservations/${selected.value}/conversation`,
   { server: false, immediate: !!selected.value, watch: [selected] },
 )
+// Affiche le dernier message (bas du fil) a chaque chargement de conversation
+const convBox = ref<HTMLElement | null>(null)
+watch(conv, () => nextTick(() => { if (convBox.value) convBox.value.scrollTop = convBox.value.scrollHeight }))
 const when = (d: string) => new Date(d).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 const statusColor = (s: string) => /book/i.test(s) ? 'success' : /declin|cancel/i.test(s) ? 'error' : 'info'
 const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
