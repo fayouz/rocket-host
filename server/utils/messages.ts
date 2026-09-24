@@ -2,6 +2,8 @@
 import type { Booking, SentMessage } from './types'
 
 const cache = new Map<string, { at: number; msgs: SentMessage[] }>()
+// Apres un envoi depuis l'appli : la timeline relit le fil au lieu d'attendre l'expiration du cache
+export const forgetThread = (threadUid: string) => cache.delete(threadUid)
 
 async function sentMessages(threadUid: string): Promise<SentMessage[]> {
   const hit = cache.get(threadUid)
