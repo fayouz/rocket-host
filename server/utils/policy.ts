@@ -33,6 +33,7 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['POST', '/api/logements/:id/sync-name', 'A', 'Reprendre le nom court de Lodgify', 'logement', 'Logements'],
   ['GET', '/api/logements/:id/reservations', 'AG', 'Reservations du logement', 'logement', 'Logements'],
   ['GET', '/api/logements/:id/reservations/:bookingId/conversation', 'AG', 'Fil de conversation Lodgify d\'une reservation (texte)', 'logement', 'Logements'],
+  ['GET', '/api/logements/:id/reservations/:bookingId/pricing', 'AG', 'Valeur d\'une reservation et detail du calcul (devis Lodgify)', 'logement', 'Logements'],
   ['POST', '/api/logements/:id/reservations/:bookingId/conversation', 'AG', 'Envoyer un message au voyageur (pousse sur Airbnb/Booking)', 'logement', 'Logements', '{ text, messageId }'],
   ['GET', '/api/logements/:id/locks', 'AG', 'Serrures du logement', 'logement', 'Logements'],
   ['GET', '/api/logements/:id/codes', 'AG', 'Codes clavier des reservations a venir', 'logement', 'Logements'],

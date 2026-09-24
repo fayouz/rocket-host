@@ -94,7 +94,34 @@
         </div>
       </UCard>
 
-      <UCard class="lg:col-span-1 lg:self-start" :ui="{ body: 'p-0 sm:p-0' }">
+      <div class="min-h-0 space-y-4 lg:col-span-1 lg:overflow-y-auto">
+      <!-- Valeur de la reservation et detail du calcul (devis Lodgify) -->
+      <UCard>
+        <template #header>
+          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-receipt-euro" class="size-3.5" /> Valeur de la réservation</p>
+          <p class="mt-1 text-2xl font-bold">{{ pricing ? money(pricing.total) : (current.total ? eur(current.total) : '—') }}</p>
+          <p v-if="pricing?.nights" class="text-xs text-muted">{{ money(pricing.lines.find(l => l.kind === 'RoomRate')?.amount ?? 0, pricing.nights) }} / nuit en moyenne · {{ pricing.nights }} nuit{{ pricing.nights > 1 ? 's' : '' }}</p>
+        </template>
+        <p v-if="pricingStatus === 'pending' || pricingStatus === 'idle'" class="text-sm text-muted">Chargement du détail…</p>
+        <p v-else-if="!pricing" class="text-sm text-muted">Détail indisponible pour le moment.</p>
+        <template v-else>
+          <dl class="space-y-1.5 text-sm">
+            <div v-for="(l, i) in pricing.lines" :key="i" class="flex justify-between gap-2">
+              <dt class="text-muted">{{ l.label }}</dt><dd class="tabular-nums">{{ money(l.amount) }}</dd>
+            </div>
+            <div class="flex justify-between gap-2 border-t border-default pt-1.5 font-semibold">
+              <dt>Total</dt><dd class="tabular-nums">{{ money(pricing.total) }}</dd>
+            </div>
+          </dl>
+          <div v-if="pricing.paid || pricing.due" class="mt-3 flex flex-wrap gap-1">
+            <UBadge v-if="pricing.paid" color="success" variant="subtle" :label="`Payé ${money(pricing.paid)}`" />
+            <UBadge v-if="pricing.due" color="warning" variant="subtle" :label="`Reste dû ${money(pricing.due)}`" />
+          </div>
+          <p class="mt-3 text-xs text-muted">Montants du devis Lodgify, hors commission de la plateforme.</p>
+        </template>
+      </UCard>
+
+      <UCard :ui="{ body: 'p-0 sm:p-0' }">
         <template #header><b>Aperçu du livret</b></template>
         <div v-if="livretLink" class="livret-preview-frame overflow-hidden bg-black">
           <iframe :src="livretPreviewLink" class="livret-preview-iframe" title="Aperçu du livret" />
@@ -105,6 +132,7 @@
           <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-eye" label="Ouvrir" :to="livretLink" external target="_blank" />
         </div>
       </UCard>
+      </div>
     </div>
     <UCard v-else class="min-w-0 flex-1"><p class="text-sm text-muted">Sélectionne une réservation dans la liste.</p></UCard>
   </div>
@@ -203,6 +231,12 @@ const { data: conv, status: convStatus, error: convError, refresh: refreshConv }
   () => `/api/logements/${route.params.id}/reservations/${selected.value}/conversation`,
   { server: false, immediate: !!selected.value, watch: [selected] },
 )
+// Valeur et detail du calcul de la reservation selectionnee (devis Lodgify)
+const { data: pricing, status: pricingStatus } = useFetch(
+  () => `/api/logements/${route.params.id}/reservations/${selected.value}/pricing`,
+  { server: false, immediate: !!selected.value, watch: [selected] },
+)
+const money = (n: number, div = 1) => (n / (div || 1)).toLocaleString('fr-FR', { style: 'currency', currency: pricing.value?.currency || 'EUR', maximumFractionDigits: 2 })
 // Affiche le dernier message (bas du fil) a chaque chargement de conversation
 const convBox = ref<HTMLElement | null>(null)
 watch(conv, () => { resetMail(); nextTick(() => { if (convBox.value) convBox.value.scrollTop = convBox.value.scrollHeight }) })
