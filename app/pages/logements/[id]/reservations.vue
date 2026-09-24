@@ -3,8 +3,18 @@
     <!-- Colonne gauche : liste compacte, comme la boite de reception d'un client mail -->
     <div class="min-w-0 space-y-1 overflow-y-auto lg:w-80 lg:shrink-0 lg:border-r lg:border-default lg:pr-3">
       <h2 class="section-title !mt-0">Réservations</h2>
+      <div class="mb-2 space-y-2">
+        <UInput v-model="search" icon="i-lucide-search" placeholder="Rechercher un voyageur…" size="sm" class="w-full" />
+        <div class="flex items-center gap-1.5">
+          <USelect v-model="filter" :items="filterItems" size="sm" class="flex-1" />
+          <UButton
+            size="sm" color="neutral" variant="outline" square :icon="sortAsc ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-narrow-wide'"
+            :title="sortAsc ? 'Plus anciennes en premier' : 'Plus récentes en premier'" @click="sortAsc = !sortAsc"
+          />
+        </div>
+      </div>
       <button
-        v-for="b in data.items" :key="b.id" type="button" class="block w-full rounded-md p-2.5 text-left transition-colors"
+        v-for="b in filteredItems" :key="b.id" type="button" class="block w-full rounded-md p-2.5 text-left transition-colors"
         :class="[selected === b.id ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-elevated', { 'opacity-60': !b.active }]"
         @click="selected = b.id"
       >
@@ -15,7 +25,7 @@
         </div>
         <p class="truncate text-xs text-muted">{{ fr(b.arrival) }} → {{ fr(b.departure) }} · {{ b.nights }} nuit{{ b.nights > 1 ? 's' : '' }}</p>
       </button>
-      <p v-if="!data.items.length" class="text-sm text-muted">Aucune réservation sur cette période.</p>
+      <p v-if="!filteredItems.length" class="text-sm text-muted">Aucune réservation{{ data.items.length ? ' pour ce filtre' : ' sur cette période' }}.</p>
     </div>
 
     <!-- Colonne droite : detail de la reservation selectionnee (2/3), comme le contenu d'un e-mail, + apercu du livret (1/3) -->
@@ -71,11 +81,32 @@ watchEffect(() => { demo.value = !!data.value?.demo })
 const today = new Date().toISOString().slice(0, 10)
 const phase = (b: { active: boolean; arrival: string; departure: string }) =>
   !b.active ? 'other' : b.arrival <= today && b.departure > today ? 'now' : b.arrival > today ? 'next' : 'past'
-// Reservation selectionnee (colonne de droite) : par defaut celle en cours, sinon la premiere de la liste (la plus recente/proche)
+// Classement et filtre de la liste (colonne de gauche) : recherche par voyageur, filtre par etat, ordre par date d'arrivee
+const search = ref('')
+const filter = ref<'all' | 'now' | 'next' | 'past' | 'cancelled'>('all')
+const filterItems = [
+  { label: 'Toutes', value: 'all' },
+  { label: 'En cours', value: 'now' },
+  { label: 'À venir', value: 'next' },
+  { label: 'Passées', value: 'past' },
+  { label: 'Annulées', value: 'cancelled' },
+]
+const sortAsc = ref(false) // par defaut : les plus recentes en premier (meme ordre que l'API)
+const filteredItems = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  const items = (data.value?.items ?? []).filter((b) => {
+    if (q && !b.guest.toLowerCase().includes(q)) return false
+    if (filter.value === 'cancelled') return !b.active
+    if (filter.value !== 'all') return b.active && phase(b) === filter.value
+    return true
+  })
+  return [...items].sort((a, b) => sortAsc.value ? a.arrival.localeCompare(b.arrival) : b.arrival.localeCompare(a.arrival))
+})
+// Reservation selectionnee (colonne de droite) : par defaut celle en cours, sinon la premiere de la liste filtree (la plus recente/proche)
 const selected = ref<number | null>(null)
 watchEffect(() => {
-  if (selected.value !== null && data.value?.items.some(b => b.id === selected.value)) return
-  const items = data.value?.items ?? []
+  if (selected.value !== null && filteredItems.value.some(b => b.id === selected.value)) return
+  const items = filteredItems.value
   selected.value = (items.find(b => phase(b) === 'now') ?? items[0])?.id ?? null
 })
 const current = computed(() => data.value?.items.find(b => b.id === selected.value) ?? null)
