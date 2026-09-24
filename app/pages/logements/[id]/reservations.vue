@@ -51,6 +51,22 @@
                   :label="current.code === 'created' ? 'Code créé sur Nuki' : current.code === 'error' ? 'Erreur de création du code' : 'Code prévu'" />
           <UButton v-if="current.mails" size="xs" color="neutral" variant="soft" icon="i-lucide-mail" :label="`${current.mails} e-mail${current.mails > 1 ? 's' : ''}`" :to="`/mail?booking=${current.id}`" title="E-mails rattachés à cette réservation" />
         </div>
+
+        <h4 class="mt-6 mb-3 flex items-center gap-1.5 text-sm font-semibold"><UIcon name="i-lucide-messages-square" class="size-4 text-muted" /> Conversation</h4>
+        <p v-if="convStatus === 'pending'" class="text-sm text-muted">Chargement…</p>
+        <p v-else-if="convError" class="text-sm text-muted">Conversation indisponible pour le moment.</p>
+        <p v-else-if="!conv?.messages.length" class="text-sm text-muted">Aucun message.</p>
+        <div v-else class="space-y-3">
+          <div v-for="m in conv.messages" :key="m.id" class="flex" :class="m.from === 'host' ? 'justify-end' : 'justify-start'">
+            <div class="max-w-[85%] rounded-lg px-3 py-2 text-sm" :class="m.from === 'host' ? 'bg-primary/10' : 'bg-elevated'">
+              <p class="mb-1 text-xs text-muted">
+                {{ m.from === 'host' ? 'Toi' : current.guest }} · {{ when(m.at) }}<template v-if="m.from === 'host' && m.status"> · {{ m.status === 'Delivered' ? 'Délivré' : m.status }}</template>
+              </p>
+              <p v-if="m.from === 'host' && m.subject" class="mb-1 font-medium">{{ m.subject }}</p>
+              <p class="whitespace-pre-line">{{ m.text }}</p>
+            </div>
+          </div>
+        </div>
       </UCard>
 
       <UCard class="lg:col-span-1" :ui="{ body: 'p-0 sm:p-0' }">
@@ -110,6 +126,12 @@ watchEffect(() => {
   selected.value = (items.find(b => phase(b) === 'now') ?? items[0])?.id ?? null
 })
 const current = computed(() => data.value?.items.find(b => b.id === selected.value) ?? null)
+// Fil de conversation Lodgify de la reservation selectionnee (charge a la selection, cote client)
+const { data: conv, status: convStatus, error: convError } = useFetch(
+  () => `/api/logements/${route.params.id}/reservations/${selected.value}/conversation`,
+  { server: false, immediate: !!selected.value, watch: [selected] },
+)
+const when = (d: string) => new Date(d).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 const statusColor = (s: string) => /book/i.test(s) ? 'success' : /declin|cancel/i.test(s) ? 'error' : 'info'
 const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
 const eur = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €'
