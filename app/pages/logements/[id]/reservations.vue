@@ -121,6 +121,39 @@
         </template>
       </UCard>
 
+      <!-- Serrure connectee : etat Nuki, code clavier de cette reservation, passages pendant le sejour -->
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between gap-2">
+            <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-lock" class="size-3.5" /> Serrure connectée</p>
+            <UButton size="xs" color="neutral" variant="link" :to="`/logements/${route.params.id}/serrures`" label="Détails" trailing-icon="i-lucide-arrow-right" />
+          </div>
+        </template>
+        <p v-if="!locks" class="text-sm text-muted">Indisponible pour le moment (Nuki ne répond pas).</p>
+        <p v-else-if="!locks.locks.length" class="text-sm text-muted">Aucune serrure associée à ce logement.</p>
+        <div v-for="l in locks?.locks ?? []" :key="l.id" class="space-y-2 text-sm">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <b>{{ l.name }}</b>
+            <UBadge :color="l.locked ? 'success' : 'warning'" variant="subtle" :label="l.state" />
+          </div>
+          <p class="text-muted">
+            Batterie {{ l.battery === null ? 'inconnue' : `${l.battery} %` }}
+            <span v-if="l.batteryCritical || l.keypadBatteryCritical" class="text-error"> · ⚠ {{ l.batteryCritical ? 'batterie critique' : 'pile du clavier faible' }}</span>
+          </p>
+          <template v-if="stayLogs(l.logs).length">
+            <p class="pt-1 text-xs font-medium text-muted">Pendant ce séjour</p>
+            <p v-for="(g, i) in stayLogs(l.logs)" :key="i" class="text-xs text-muted">{{ when(g.date) }} · {{ lockActions[g.action] || `Action ${g.action}` }}<template v-if="g.who"> · {{ g.who }}</template></p>
+          </template>
+        </div>
+        <div v-if="bookingCode" class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-default pt-3 text-sm">
+          <span class="text-muted">Code clavier <b class="font-mono text-default">{{ bookingCode.code }}</b></span>
+          <UBadge :color="bookingCode.status === 'created' ? 'success' : bookingCode.status === 'error' ? 'error' : 'neutral'" variant="subtle"
+                  :label="bookingCode.status === 'created' ? 'Créé sur Nuki' : bookingCode.status === 'error' ? 'Erreur' : 'Prévu'" />
+          <p class="w-full text-xs text-muted">Valable du {{ when(bookingCode.validFrom) }} au {{ when(bookingCode.validUntil) }}</p>
+        </div>
+        <p v-else-if="locks?.locks.length" class="mt-3 border-t border-default pt-3 text-xs text-muted">Pas de code clavier planifié pour cette réservation.</p>
+      </UCard>
+
       <UCard :ui="{ body: 'p-0 sm:p-0' }">
         <template #header><b>Aperçu du livret</b></template>
         <div v-if="livretLink" class="livret-preview-frame overflow-hidden bg-black">
@@ -237,6 +270,16 @@ const { data: pricing, status: pricingStatus } = useFetch(
   { server: false, immediate: !!selected.value, watch: [selected] },
 )
 const money = (n: number, div = 1) => (n / (div || 1)).toLocaleString('fr-FR', { style: 'currency', currency: pricing.value?.currency || 'EUR', maximumFractionDigits: 2 })
+// Serrure(s) du logement et code clavier de la reservation selectionnee (charges une fois pour le logement)
+const { data: locks } = useFetch(() => `/api/logements/${route.params.id}/locks`, { server: false })
+const { data: codes } = useFetch(() => `/api/logements/${route.params.id}/codes`, { server: false })
+const bookingCode = computed(() => codes.value?.items.find(c => c.bookingId === selected.value) ?? null)
+const lockActions: Record<number, string> = { 1: 'Déverrouillage', 2: 'Verrouillage', 3: 'Ouverture (pêne)', 4: 'Lock’n’Go', 5: 'Lock’n’Go + ouverture' }
+const stayLogs = (logs: { date: string; action: number; who: string }[]) => {
+  const b = current.value
+  if (!b) return []
+  return logs.filter(g => g.date.slice(0, 10) >= b.arrival && g.date.slice(0, 10) <= b.departure).slice(0, 5)
+}
 // Affiche le dernier message (bas du fil) a chaque chargement de conversation
 const convBox = ref<HTMLElement | null>(null)
 watch(conv, () => { resetMail(); nextTick(() => { if (convBox.value) convBox.value.scrollTop = convBox.value.scrollHeight }) })
