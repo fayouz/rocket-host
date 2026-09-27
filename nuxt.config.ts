@@ -14,6 +14,10 @@ export default defineNuxtConfig({
     homeyRedirectUri: process.env.HOMEY_REDIRECT_URI || '', // facultatif : adresse de retour OAuth si elle ne se deduit pas de l'adresse du site
     homeyApiKey: process.env.HOMEY_API_KEY || '', // cle d'API Homey Pro : jamais en base, jamais renvoyee au navigateur
     demo: process.env.DEMO || '',
+    // Rocket PMS (fayouz/rocket-pms), optionnel : si PMS_API_URL est vide, l'appli continue de parler a Lodgify/Nuki en
+    // direct comme avant. jeton d'application Rocket Core ("rpm_..."), jamais renvoye au navigateur.
+    pmsApiUrl: process.env.PMS_API_URL || '',
+    pmsApiToken: process.env.PMS_API_TOKEN || '',
   },
   // Mini base SQLite (fichier .data/db.sqlite3, ignore par git)
   nitro: { experimental: { database: true } },

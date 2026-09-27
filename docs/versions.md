@@ -20,6 +20,10 @@ documents par logement et bilan annuel ; **explorateur de fichiers** façon Find
 
 **Non fait / à valider** : rangement des e-mails jamais lancé sur la vraie boîte ; HTTPS Let's Encrypt jamais testé ; codes Nuki jamais créés sur la vraie serrure ; workflows n8n non montés ; Git non choisi. Détail dans la mémoire du projet.
 
+## Chantier en cours — client Rocket PMS
+Voir `docs/rocket-pms.md` : LoussaHousing sait parler à Rocket PMS (fayouz/rocket-pms), débranché tant que `PMS_API_URL` n'est pas dans `.env`.
+Première tranche : logements + réservations en lecture. Reste à faire : serrures/codes, conversation, domotique, documents.
+
 ## V3 — plus tard
 Voir `docs/roadmap-v3.md` : livret d'accueil et écran TV inspirés de WelcomeScreen, séjour personnalisé, extras, avis, IA, suivi des clés par traceur.
 

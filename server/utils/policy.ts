@@ -126,6 +126,7 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['POST', '/api/homey/disconnect', 'A', 'Deconnecter le compte Homey', '', 'Homey'],
   ['GET', '/api/homey/homeys', 'A', 'Homey du compte connecte', '', 'Homey'],
   ['GET', '/api/plugins', 'A', 'Bibliotheque de plugins', '', 'Plugins et connecteurs'],
+  ['GET', '/api/pms/status', 'A', 'Etat de la connexion a Rocket PMS (si PMS_API_URL est renseigne)', '', 'Plugins et connecteurs'],
   ['GET', '/api/logements/:id/connectors', 'A', 'Connecteurs du logement', 'logement', 'Plugins et connecteurs'],
   ['POST', '/api/logements/:id/connectors', 'A', 'Ajouter un connecteur', 'logement', 'Plugins et connecteurs', '{ pluginId, name, config }'],
   ['PUT', '/api/connectors/:cid', 'A', 'Modifier un connecteur', '', 'Plugins et connecteurs', '{ name?, config?, enabled? }'],

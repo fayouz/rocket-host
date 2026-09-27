@@ -8,6 +8,15 @@
       Les plugins sont les services que l'appli sait brancher. Dans chaque logement (onglet <b>Connecteurs</b>), tu crées un ou plusieurs connecteurs
       à partir de ces plugins — par exemple deux Homey, ou plusieurs services web pour récupérer des documents.
     </p>
+    <UAlert
+      v-if="pms"
+      :color="!pms.configured ? 'neutral' : pms.ok ? 'success' : 'error'" variant="subtle"
+      :icon="!pms.configured ? 'i-lucide-server-off' : pms.ok ? 'i-lucide-server' : 'i-lucide-server-crash'"
+      title="Rocket PMS"
+      :description="!pms.configured
+        ? 'Non branché : les logements, réservations et serrures continuent de venir de Lodgify et Nuki en direct.'
+        : pms.ok ? 'Connecté : logements et réservations viennent de Rocket PMS.' : `Branché mais injoignable : ${pms.error || 'erreur inconnue'}`"
+    />
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <UCard v-for="p in shown" :key="p.id" :ui="{ body: 'flex h-full flex-col gap-3' }">
         <div class="flex items-start gap-3">
@@ -33,6 +42,7 @@
 
 <script setup lang="ts">
 const { data } = await useFetch('/api/plugins')
+const { data: pms } = await useFetch('/api/pms/status')
 const CATEGORY_LABEL: Record<string, string> = { domotique: 'Domotique', documents: 'Documents', general: 'Général' }
 const CAP: Record<string, { label: string; icon: string }> = {
   info: { label: 'Infos', icon: 'i-lucide-info' }, actions: { label: 'Actions', icon: 'i-lucide-zap' }, documents: { label: 'Documents', icon: 'i-lucide-folder-down' },
