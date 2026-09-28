@@ -27,6 +27,16 @@
 interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
+    date: '27 sept. 2026',
+    title: 'Premier pas vers Rocket PMS',
+    icon: 'i-lucide-server',
+    points: [
+      'L\'appli sait maintenant parler à Rocket PMS (fayouz/rocket-pms) : logements et réservations peuvent venir de là plutôt que de Lodgify en direct',
+      'Débranché tant que PMS_API_URL n\'est pas renseigné dans .env : rien ne change pour l\'instant',
+      'État de la connexion visible dans Réglages > Plugins',
+    ],
+  },
+  {
     date: '23 sept. 2026',
     title: 'Pages personnalisées et manuel',
     icon: 'i-lucide-layout-grid',

@@ -6,6 +6,23 @@
     </div>
 
     <UAlert v-if="oauthMsg" :color="oauthMsg.color" variant="subtle" :title="oauthMsg.text" />
+
+    <!-- Rocket PMS actif : connecteurs du lieu vus par Rocket Place (lecture seule, rien n'est commande d'ici) -->
+    <UCard v-if="data.pms">
+      <template #header><p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-house-wifi" class="size-3.5" /> Domotique du lieu (Rocket Place, lecture seule)</p></template>
+      <p v-if="data.pms.error" class="text-sm text-error">{{ data.pms.error }}</p>
+      <p v-else-if="!data.pms.sections.length" class="text-sm text-muted">Aucun connecteur sur ce lieu dans Rocket Place.</p>
+      <div v-for="sec in data.pms.sections" :key="sec.connectorId" class="mb-3 last:mb-0">
+        <p class="mb-1 flex items-center gap-1.5 font-medium"><UIcon :name="sec.icon" class="size-4" />{{ sec.name }}<span class="text-xs font-normal text-muted">· {{ sec.pluginName }}</span></p>
+        <p v-if="sec.error" class="text-sm text-error">{{ sec.error }}</p>
+        <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div v-for="(c, i) in sec.cards" :key="i" class="rounded-md border border-default p-2">
+            <p class="flex items-center gap-1.5 text-sm font-medium"><UIcon :name="c.icon" class="size-3.5" />{{ c.title }}</p>
+            <p v-for="(it, j) in c.items" :key="j" class="flex justify-between gap-2 text-xs text-muted"><span>{{ it.label }}</span><span class="tabular-nums">{{ it.value }}</span></p>
+          </div>
+        </div>
+      </div>
+    </UCard>
     <UTabs v-model="tab" :items="tabs" :content="false" />
 
     <!-- ONGLET APPAREILS -->

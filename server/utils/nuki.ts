@@ -36,6 +36,7 @@ async function fetchLocks(token: string): Promise<Lock[]> {
 let cache: { at: number; data: Lock[] | null } = { at: 0, data: null }
 
 export async function loadLocks() {
+  if (pmsEnabled()) return pmsLocks() // Rocket PMS actif : serrures lues via PMS / Rocket Place, Nuki n'est plus appele en direct
   const cfg = useRuntimeConfig()
   const demo = cfg.demo === '1' || !cfg.nukiApiToken
   if (!cache.data || Date.now() - cache.at > 60 * 1000) {

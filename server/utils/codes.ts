@@ -42,6 +42,7 @@ function validity(b: { arrival: string; departure: string; checkIn?: string; che
 }
 
 export async function planCodes() {
+  if (pmsEnabled()) return pmsCodes() // Rocket PMS actif : codes planifies par PMS / Rocket Place, table access_code non utilisee
   const db = useDatabase()
   const [{ bookings, properties, demo }, { locks }] = await Promise.all([loadData(), loadLocks()])
   const today = new Date().toISOString().slice(0, 10)
@@ -80,6 +81,7 @@ export async function planCodes() {
 }
 
 export async function sendCode(bookingId: number) {
+  if (pmsEnabled()) return pmsSendCode(bookingId)
   const db = useDatabase()
   await planCodes() // s'assure que la ligne existe et que les dates sont a jour
   const r = ((await db.sql`SELECT * FROM access_code WHERE booking_id = ${bookingId}`).rows as unknown as AccessCode[])[0]
