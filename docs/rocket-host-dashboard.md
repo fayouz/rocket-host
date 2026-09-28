@@ -1,7 +1,15 @@
 # Tableau de bord intelligent
 
-Quand Rocket PMS est branché (`PMS_API_URL`), l'accueil de Rocket Host (`/`) devient un tableau de bord qui croise les
-briques Rocket. Sans PMS, l'accueil historique (`app/components/ClassicHome.vue`, Lodgify en direct) reste affiché.
+L'accueil de Rocket Host (`/`, `app/pages/index.vue`) reste l'accueil historique, inchangé (en-tête, KPI du jour,
+revenus, vue d'ensemble, la journée, contacts, timeline). Quand Rocket PMS est branché (`PMS_API_URL`), des **cartes**
+qui croisent les briques Rocket s'ajoutent juste sous la bande des KPI du jour, dans la grille existante :
+
+- rangée 1 : « Arrivées à préparer » (2/3, badges ménage / linge / accès / écran / paiement) + « Alertes » (1/3) ;
+- rangée 2 : « Finances du mois » (2/3, revenus, occupation, ménages, conso. stock, 30 prochains jours, canaux)
+  + « Briques » (1/3, état et temps de réponse de chaque brique, bouton Rafraîchir).
+
+Chaque carte n'apparaît que si sa donnée ou sa brique est disponible (pas d'arrivée = pas de carte, aucune alerte = pas
+de carte). Sans PMS, aucune carte n'est ajoutée.
 
 ## Configuration
 
@@ -25,8 +33,9 @@ ROCKET_CAST_URL=…        ROCKET_CAST_TOKEN=rct_…
   appel passe par `guard()` : en cas d'échec la brique est marquée en panne, sa donnée est vide, une alerte
   « brique injoignable » est ajoutée, le reste continue.
 - `GET /api/dashboard/smart` (rôles admin et gestionnaire, filtré par les logements autorisés et `?properties=`).
-- `app/components/SmartDashboard.vue` : bouton Rafraîchir + rafraîchissement automatique toutes les 5 minutes
-  (onglet visible), badge d'état par brique, « Source : » sur chaque widget.
+- `app/components/dashboard/SmartCards.vue` (`<DashboardSmartCards>`, inséré dans `pages/index.vue`) : bouton
+  Rafraîchir (carte Briques) + rafraîchissement automatique toutes les 5 minutes (onglet visible), « Source : » sur
+  chaque carte.
 
 La correspondance logement ↔ lieu vient de `GET /api/place-links` du PMS (`placeId` par logement, identifiant partagé
 par Place, Clean et Stock). Repli sur `/api/properties` (sans lieu) si Place est injoignable côté PMS.
