@@ -130,6 +130,7 @@
 </template>
 
 <script setup lang="ts">
+import DashboardSmartCards from '~/components/dashboard/SmartCards.vue'
 const { user, can } = useAuth()
 // Meme cle que le menu (layouts/default.vue) : un seul appel a /api/pms/status.
 const { data: pms } = await useFetch('/api/pms/status', { key: 'pms-status' })
