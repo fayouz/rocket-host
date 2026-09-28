@@ -199,7 +199,7 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
     }
     if (a.access && a.access.status !== 'sent') {
       const level: AlertLevel = a.access.status === 'error' || a.day === 'today' ? 'critical' : 'warning'
-      alerts.push({ level, code: a.access.status === 'error' ? 'access_error' : 'access_not_sent', brick: on('place') ? 'place' : 'pms', at, link: lg(a.propertyId, 'serrures'), title: `Accès ${a.access.status === 'error' ? 'en erreur' : 'non envoyé'} pour ${a.propertyName}`, detail: `${a.access.detail} ; arrivée ${when(a)}` })
+      alerts.push({ level, code: a.access.status === 'error' ? 'access_error' : 'access_not_sent', brick: on('place') ? 'place' : 'pms', at, link: lg(a.propertyId, 'serrures'), title: `${a.access.status === 'error' ? 'Accès en erreur' : a.access.status === 'none' ? 'Aucun accès planifié' : 'Accès non envoyé'} pour ${a.propertyName}`, detail: `${a.access.detail} ; arrivée ${when(a)}` })
     }
     if (a.screen?.status === 'offline' && a.day === 'today') alerts.push({ level: 'warning', code: 'screen_offline', brick: 'cast', at, link: lg(a.propertyId, 'livret'), title: `Écran hors ligne à ${a.propertyName}`, detail: `${a.screen.name} ; arrivée ${when(a)}` })
     if (a.stockLow?.length) {
