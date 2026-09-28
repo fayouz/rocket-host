@@ -27,6 +27,19 @@
 interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
+    date: '28 sept. 2026',
+    title: 'Rocket PMS : livret, e-mails, bilan et ménages',
+    icon: 'i-lucide-rocket',
+    points: [
+      'Quand Rocket PMS est branché, chaque réservation affiche son lien de livret personnalisé (copier, QR code) et un bouton « Envoyer le livret » (messagerie Lodgify ou e-mail), toujours après confirmation',
+      'Les e-mails échangés avec le voyageur (Rocket Mailer) apparaissent dans la réservation, avec un formulaire pour lui écrire (envoi uniquement au clic)',
+      'L\'onglet Livret montre le lien de l\'écran TV, les visites et renvoie vers l\'éditeur Rocket PMS',
+      'L\'onglet Bilan utilise le bilan calculé par Rocket PMS (export CSV, liste des dépenses et recettes)',
+      'L\'onglet Timeline liste les ménages planifiés dans Rocket Place après chaque départ (lecture seule)',
+      'Sans PMS_API_URL dans .env, rien ne change',
+    ],
+  },
+  {
     date: '27 sept. 2026',
     title: 'Premier pas vers Rocket PMS',
     icon: 'i-lucide-server',

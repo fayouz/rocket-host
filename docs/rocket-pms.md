@@ -47,6 +47,29 @@ Tout passe par `server/utils/pms.ts` ; le logement est traduit de l'identifiant 
 6. **Stock** : `stock.get.ts` renvoie les niveaux du lieu (`pms: true`), modifiables via
    `PUT /api/logements/:id/pms-stock/:levelId` ; le catalogue se gère dans Rocket Place.
 
+## Tranche 2 (branche `feature/pms-v2`, même drapeau)
+
+7. **Livret et écran TV** : `GET /api/logements/:id/pms-livret` (lien TV, visites 30 jours, aperçu du contenu, lien vers
+   l'éditeur du front PMS `…/properties/<uuid>?tab=livret`), affiché en tête de l'onglet Livret. Par réservation (colonne
+   droite de l'onglet Réservations, composant `PmsBookingPanel`) : `GET …/reservations/:bookingId/guest-link` (lien
+   `/g/<token>` du front PMS + QR code) et `POST …/guest-link` `{ channel: lodgify|email, messageId }` = bouton
+   « Envoyer le livret », **uniquement après confirmation** (messageId du navigateur : double clic = un seul envoi).
+8. **E-mails** (Rocket Mailer via le PMS) : `GET …/reservations/:bookingId/emails`, `GET …/emails/:conversationId`
+   (texte seul) et `POST …/emails` `{ subject, text, messageId }` (formulaire de la réservation, envoi au clic confirmé).
+9. **Bilan** : `GET /api/logements/:id/pms-bilan?year=` et `GET /api/logements/:id/pms-bilan.csv?year=` ; l'onglet Bilan
+   affiche alors le bilan du PMS (revenus, charges, catégories, mois, liste des dépenses/recettes). La saisie et
+   l'import des dépenses se font dans Rocket PMS (pas d'écriture depuis LoussaHousing).
+10. **Ménages** : `GET /api/logements/:id/pms-menages` lit les événements `cleaning` de la timeline du PMS (14 jours
+    passés, 60 à venir), affichés en lecture seule en tête de l'onglet Timeline.
+
+`GET /api/logements/:id` renvoie `pms: true|false` : l'interface bascule sur ces blocs seulement si le PMS est actif.
+
+Limites connues (côté PMS) :
+- Le PMS n'expose pas les tâches de ménage Rocket Place ni leur lien secret `/m/<token>` : pas de lien direct vers la
+  page ménage de Rocket Place, les ménages sont lus via la timeline (libellé, date, état, personne).
+- La timeline du PMS (`GET …/timeline`) planifie les codes et synchronise les ménages au passage (écriture côté
+  Rocket Place déclenchée par une lecture).
+
 Côté serveurs, Rocket PMS et Rocket Place acceptent les jetons d'application sans usurpation (`X-Impersonate-User`
 absent) sur leurs routes métier seulement (voters `PMS_*` / `PLACE_*`), jamais sur l'administration.
 

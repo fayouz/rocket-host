@@ -22,7 +22,8 @@ documents par logement et bilan annuel ; **explorateur de fichiers** façon Find
 
 ## Chantier en cours — client Rocket PMS
 Voir `docs/rocket-pms.md` : LoussaHousing sait parler à Rocket PMS (fayouz/rocket-pms), débranché tant que `PMS_API_URL` n'est pas dans `.env`.
-Première tranche : logements + réservations en lecture. Reste à faire : serrures/codes, conversation, domotique, documents.
+Tranches branchées : logements + réservations, conversation, prix, serrures/codes, domotique, documents, stock (V1 du client) ;
+puis (branche `feature/pms-v2`) livret du séjour + écran TV, e-mails Rocket Mailer, bilan PMS et ménages Rocket Place en lecture.
 
 ## V3 — plus tard
 Voir `docs/roadmap-v3.md` : livret d'accueil et écran TV inspirés de WelcomeScreen, séjour personnalisé, extras, avis, IA, suivi des clés par traceur.

@@ -1,6 +1,10 @@
 <template>
   <div v-if="data" class="space-y-3">
     <h2 class="section-title !mt-0">Livret Accueil</h2>
+    <template v-if="pms">
+      <PmsLivretCard :logement-id="String(route.params.id)" />
+      <p class="text-xs text-muted">Ci-dessous : l'ancien livret local de LoussaHousing (lien /g/ propre à l'appli), conservé tant que la bascule n'est pas terminée.</p>
+    </template>
     <UTabs v-model="tab" :items="tabs" :content="false" />
 
     <!-- ONGLET LIVRET ACCUEIL -->
@@ -219,6 +223,7 @@
 
 <script setup lang="ts">
 const route = useRoute()
+const pms = useState<boolean>('pms', () => false)
 const router = useRouter()
 const { data, refresh } = await useFetch(() => `/api/logements/${route.params.id}/livret`, { key: `livret-${route.params.id}` })
 
