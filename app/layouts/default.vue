@@ -20,6 +20,9 @@
       </template>
 
       <template #footer="{ collapsed }">
+        <NuxtLink v-if="can('A') && !collapsed" to="/settings/connexions" class="mb-1 flex flex-wrap items-center gap-1 px-1">
+          <UBadge v-for="b in brickPills" :key="b.label" size="sm" variant="subtle" :color="b.color" :label="b.label" />
+        </NuxtLink>
         <UDropdownMenu v-if="user && collapsed" :items="userMenu" :content="{ align: 'start' }" class="w-full">
           <UButton color="neutral" variant="ghost" block square icon="i-lucide-circle-user" />
         </UDropdownMenu>
@@ -99,64 +102,41 @@ const firstLg = computed(() => lg.value?.logements?.[0]?.id)
 const lgPage = (tab: string) => (firstLg.value ? `/logements/${firstLg.value}/${tab}` : '/logements')
 const ext = (url: string, label: string): NavItem[] => (url ? [{ label, icon: 'i-lucide-external-link', to: url, target: '_blank' }] : [])
 const managed = (label: string) => (pmsOn.value ? label : undefined)
-const adminGroups = computed((): NavGroup[] => [
-  {
-    label: 'Administration',
-    brick: { name: 'Rocket PMS', icon: 'i-lucide-rocket', status: pmsStatus.value },
-    items: [
-      { label: 'Connexions (URL, jetons, secrets)', icon: 'i-lucide-plug', to: '/settings/connexions' },
-      { label: 'Réservations / Lodgify', icon: 'i-lucide-calendar-days', to: lgPage('reservations') },
-      { label: 'Livret & écran TV', icon: 'i-lucide-tv', to: '/settings/welcomescreen', badge: managed('PMS') },
-      { label: 'Bilan', icon: 'i-lucide-calculator', to: lgPage('bilan') },
-      { label: 'E-mails voyageurs', icon: 'i-lucide-send', to: lgPage('mails') },
-      ...ext(front.pmsFrontUrl, 'Ouvrir Rocket PMS'),
-    ],
-  },
-  {
-    label: '',
-    brick: { name: 'Rocket Place', icon: 'i-lucide-map-pin', status: viaPms.value },
-    items: [
-      { label: 'Lieux', icon: 'i-lucide-building-2', to: '/settings', badge: managed('Place') },
-      { label: 'Serrures & accès', icon: 'i-lucide-key-round', to: lgPage('serrures') },
-      { label: 'Domotique / connecteurs', icon: 'i-lucide-cpu', to: lgPage('domotique') },
-      { label: 'Ménage', icon: 'i-lucide-sparkles', to: lgPage('timeline') },
-      { label: 'Stock', icon: 'i-lucide-package', to: '/settings/stock', badge: managed('Place') },
-      ...ext(front.placeFrontUrl, 'Ouvrir Rocket Place'),
-    ],
-  },
-  {
-    label: '',
-    brick: { name: 'Rocket Mailer', icon: 'i-lucide-mail', status: pmsOn.value ? viaPms.value : { label: 'local', color: 'info' } },
-    items: [{ label: 'Boîte e-mail (IMAP/SMTP)', icon: 'i-lucide-inbox', to: '/settings/imap' }],
-  },
-  {
-    label: '',
-    brick: { name: 'Rocket Cloud', icon: 'i-lucide-cloud', status: pmsOn.value ? viaPms.value : { label: 'local', color: 'info' } },
-    items: [{ label: 'Documents / explorateur', icon: 'i-lucide-folder-tree', to: '/documents' }],
-  },
-  {
-    label: '',
-    brick: { name: 'Rocket Host (local)', icon: 'i-lucide-house' },
-    items: [
-      { label: 'Utilisateurs & rôles', icon: 'i-lucide-users', to: '/settings/utilisateurs' },
-      { label: 'Journal d\'audit', icon: 'i-lucide-scroll-text', to: '/settings/utilisateurs?tab=journal' },
-      { label: 'Plugins / connecteurs', icon: 'i-lucide-blocks', to: '/settings/plugins' },
-      { label: 'Imports', icon: 'i-lucide-file-down', to: '/settings/imports' },
-      {
-        label: 'Autres réglages', icon: 'i-lucide-settings', type: 'trigger', defaultOpen: false,
-        children: [
-          { label: 'Mon compte (thème : palette en haut à droite)', to: '/mon-compte' },
-          { label: 'API (Swagger)', to: '/docs-api' },
-          { label: 'Nouveautés', to: '/changelog' },
-          { label: 'Manuel', to: '/docs' },
-        ],
-      },
-    ],
-  },
+// Pastilles compactes d'etat des briques (bas de la sidebar, admins seulement), vers Reglages > Connexions.
+const brickPills = computed((): { label: string; color: BadgeColor }[] => [
+  { label: 'PMS', color: pmsStatus.value.color },
+  { label: 'Place', color: viaPms.value.color },
+  { label: 'Mailer', color: (pmsOn.value ? viaPms.value : { label: 'local', color: 'info' as BadgeColor }).color },
+  { label: 'Cloud', color: (pmsOn.value ? viaPms.value : { label: 'local', color: 'info' as BadgeColor }).color },
+])
+// Reglages avances : replies dans un seul sous-menu replie par defaut (Administration), admins seulement. Pages inchangees.
+const adminChildren = computed((): NavItem[] => [
+  { label: 'Connexions & intégrations', to: '/settings/connexions' },
+  { label: 'Plugins / connecteurs', to: '/settings/plugins' },
+  { label: 'Domotique', to: lgPage('domotique') },
+  { label: 'Boîte e-mail (IMAP/SMTP)', to: '/settings/imap' },
+  { label: 'Logements & lieux', to: '/settings', badge: managed('Place') },
+  ...ext(front.pmsFrontUrl, 'Ouvrir Rocket PMS (Lodgify)'),
+  { label: 'Utilisateurs & rôles', to: '/settings/utilisateurs' },
+  { label: 'Journal d\'audit', to: '/settings/utilisateurs?tab=journal' },
+  { label: 'Imports', to: '/settings/imports' },
+  { label: 'API (Swagger)', to: '/docs-api' },
+  { label: 'Nouveautés', to: '/changelog' },
+  { label: 'Manuel', to: '/docs' },
 ])
 // Groupes de la sidebar : un intitule en majuscules par groupe (vide pour le premier, comme Aujourd'hui seul en tete)
 const groups = computed(() => ([
   { label: '', items: [can('AG') && { label: 'Aujourd\'hui', icon: 'i-lucide-layout-dashboard', to: '/' }].filter(Boolean) },
+  {
+    label: 'Au quotidien',
+    items: [
+      can('AG') && { label: 'Réservations', icon: 'i-lucide-calendar-days', to: lgPage('reservations') },
+      can('AGM') && { label: 'Ménage & linge', icon: 'i-lucide-sparkles', to: lgPage('timeline') },
+      can('AG') && { label: 'Accès & serrures', icon: 'i-lucide-key-round', to: lgPage('serrures') },
+      can('AGM') && { label: 'Stock & courses', icon: 'i-lucide-package', to: '/settings/stock', badge: managed('Place') },
+      can('AG') && { label: 'Écrans & livret', icon: 'i-lucide-tv', to: '/settings/welcomescreen', badge: managed('PMS') },
+    ].filter(Boolean),
+  },
   {
     label: 'Logements',
     items: [
@@ -167,15 +147,23 @@ const groups = computed(() => ([
   {
     label: 'Gestion',
     items: [
+      can('A') && {
+        label: 'Finances', icon: 'i-lucide-line-chart', type: 'trigger', defaultOpen: false,
+        children: [
+          { label: 'Rentabilité', to: '/profit' },
+          { label: 'Bilan', to: lgPage('bilan') },
+        ],
+      },
       can('AGC') && { label: 'Documents', icon: 'i-lucide-folder', to: '/documents' },
       can('A') && { label: 'E-mails', icon: 'i-lucide-mail', to: '/mail' },
       can('A') && { label: 'Contacts', icon: 'i-lucide-contact', to: '/contacts' },
-      can('A') && { label: 'Rentabilité', icon: 'i-lucide-line-chart', to: '/profit' },
     ].filter(Boolean),
   },
-  // Administration regroupee par brique logicielle (Rocket PMS, Place, Mailer, Cloud, puis le local). Pages inchangees ;
-  // quand Rocket PMS est branche, les pages locales remplacees affichent « géré dans Rocket PMS/Place » (BrickHint).
-  ...(can('A') ? adminGroups.value : []),
+  // Administration : un seul sous-menu replie par defaut, admins seulement. Pages inchangees (juste regroupees).
+  ...(can('A') ? [{
+    label: 'Administration',
+    items: [{ label: 'Réglages avancés', icon: 'i-lucide-settings', type: 'trigger' as const, defaultOpen: false, children: adminChildren.value }],
+  }] : []),
 ] as NavGroup[]).filter(g => g.items.length))
 
 // Recherche (⌘K) : jusqu'aux logements et aux sous-pages Réglages, pas de contenu (juste sauter d'une page à l'autre)

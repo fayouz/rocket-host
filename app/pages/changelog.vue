@@ -27,6 +27,18 @@
 interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
+    date: '29 sept. 2026',
+    title: 'Menu réorganisé par tâche',
+    icon: 'i-lucide-list-tree',
+    points: [
+      'Nouveau groupe « Au quotidien » : Réservations, Ménage & linge, Accès & serrures, Stock & courses, Écrans & livret — les mêmes pages qu\'avant, regroupées par ce qu\'on fait plutôt que par brique logicielle',
+      'Ménage voit maintenant directement Ménage & linge et Stock & courses dans le menu (plus seulement via Logements)',
+      '« Administration » repliée par défaut en un seul sous-menu (connexions, utilisateurs, imports, aide…) pour les admins',
+      'Doublons supprimés : Documents et Mon compte n\'apparaissent plus qu\'une fois (Mon compte reste dans le menu utilisateur)',
+      'Pastilles d\'état des briques (PMS, Place, Mailer, Cloud) en bas de la sidebar, vers Connexions',
+    ],
+  },
+  {
     date: '28 sept. 2026',
     title: 'Secrets et connexions dans l\'appli',
     icon: 'i-lucide-key-round',

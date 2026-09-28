@@ -1,5 +1,8 @@
 # Versions de Rocket Host
 
+## Menu par tâche (2026-09-29)
+Branche `feature/menu-par-tache` : réorganisation de la barre latérale (`app/layouts/default.vue`), pages et permissions inchangées. Groupe **Au quotidien** (Réservations, Ménage & linge, Accès & serrures, Stock & courses, Écrans & livret) ouvert à tous les rôles concernés (Ménage voit désormais Ménage & linge et Stock & courses, pas seulement via « Logements »). **Logements** inchangé. **Gestion** : Finances (Rentabilité + Bilan) remplace l'entrée Rentabilité isolée, plus Documents/E-mails/Contacts. **Administration** repliée par défaut en un seul sous-menu (Connexions & intégrations, Plugins, Domotique, IMAP, Logements & lieux/Lodgify, Utilisateurs & rôles, Journal, Imports, Aide), au lieu des groupes par brique. Doublons supprimés (Documents et Mon compte n'apparaissent plus qu'une fois ; Mon compte reste uniquement dans le menu utilisateur). Pastilles compactes d'état des briques (PMS, Place, Mailer, Cloud) ajoutées en bas de la sidebar, lien vers Connexions. Recherche « Aller à » (⌘K) suit automatiquement le nouveau menu.
+
 ## Secrets en base (2026-09-28)
 Branche `feature/secrets-in-db` : jetons, clés, mots de passe et adresses des intégrations (Lodgify, Nuki, IMAP/SMTP, Homey, Rocket PMS/Place/Clean/Stock/Cast, webhook n8n, `CONNECTOR_*`) quittent `.env` : saisis dans **Administration › Connexions**, chiffrés en base (AES-256-GCM, clé maître `ROCKET_SECRETS_KEY`, seule restée dans l'environnement avec l'infrastructure). Jamais renvoyés au navigateur (« ••••1234 »). Import `npm run secrets:import-env`, rotation `npm run secrets:rotate`, contrôle `npm run check:secrets`. Détail : `docs/secrets.md`.
 
