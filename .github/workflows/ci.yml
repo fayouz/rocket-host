@@ -24,7 +24,7 @@ jobs:
       contents: read
       packages: write
     # TODO: epingler sur le prochain tag de rocket-core une fois fayouz/rocket-core#6 (docker-images.yml) publie.
-    uses: fayouz/rocket-core/.github/workflows/docker-images.yml@feature/docker-images-workflow
+    uses: fayouz/rocket-core/.github/workflows/docker-images.yml@v0.3.1
     with:
       images: '[{"component": "app", "context": ".", "image": "ghcr.io/fayouz/rocket-host"}]'
       # Les tests de fumee api/front des briques ne s'appliquent pas a l'image Nitro unique.
