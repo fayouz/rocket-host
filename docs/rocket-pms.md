@@ -1,6 +1,6 @@
 # Client Rocket PMS
 
-LoussaHousing peut devenir client de l'API de **Rocket PMS** (`fayouz/rocket-pms`, brique privée du Middleware Rocket qui
+Rocket Host peut devenir client de l'API de **Rocket PMS** (`fayouz/rocket-pms`, brique privée du Middleware Rocket qui
 gère les logements, réservations Lodgify, serrures Nuki, domotique et documents). Ce chantier est **désactivé par défaut** :
 tant que `.env` ne contient pas `PMS_API_URL`, rien ne change (Lodgify et Nuki restent appelés en direct, comme avant).
 
@@ -61,7 +61,7 @@ Tout passe par `server/utils/pms.ts` ; le logement est traduit de l'identifiant 
    (texte seul) et `POST …/emails` `{ subject, text, messageId }` (formulaire de la réservation, envoi au clic confirmé).
 9. **Bilan** : `GET /api/logements/:id/pms-bilan?year=` et `GET /api/logements/:id/pms-bilan.csv?year=` ; l'onglet Bilan
    affiche alors le bilan du PMS (revenus, charges, catégories, mois, liste des dépenses/recettes). La saisie et
-   l'import des dépenses se font dans Rocket PMS (pas d'écriture depuis LoussaHousing).
+   l'import des dépenses se font dans Rocket PMS (pas d'écriture depuis Rocket Host).
 10. **Ménages** : `GET /api/logements/:id/pms-menages` lit les événements `cleaning` de la timeline du PMS (14 jours
     passés, 60 à venir), affichés en lecture seule en tête de l'onglet Timeline.
 
@@ -89,4 +89,4 @@ npx nuxi typecheck
 npm run check:policy
 ```
 
-- **E-mails et envoi du livret** : Rocket Mailer exige un utilisateur. Renseigner `PMS_IMPERSONATE_USER` (e-mail d’un compte Rocket PMS) ; LoussaHousing ajoute alors `X-Impersonate-User` sur ces seuls appels.
+- **E-mails et envoi du livret** : Rocket Mailer exige un utilisateur. Renseigner `PMS_IMPERSONATE_USER` (e-mail d’un compte Rocket PMS) ; Rocket Host ajoute alors `X-Impersonate-User` sur ces seuls appels.

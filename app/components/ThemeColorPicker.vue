@@ -16,7 +16,7 @@ const COLORS = [
 ] as const
 
 // Thème pré-rempli avec les couleurs relevées sur le livret d'accueil Canva (Gaston) : terracotta + bleu nuit.
-const PRESET = { primary: 'terracotta', neutral: 'navy', label: 'Marque LoussaHousing' }
+const PRESET = { primary: 'terracotta', neutral: 'navy', label: 'Marque Rocket Host' }
 
 const appConfig = useAppConfig()
 const { theme, refresh } = useTheme()

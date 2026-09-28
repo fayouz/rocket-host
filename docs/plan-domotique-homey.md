@@ -4,7 +4,7 @@ Statut : **brouillon à fignoler** (2026-09-21). Page Domotique en deux onglets 
 
 ## 1. Objectif
 
-Faire piloter par LoussaHousing les appareils du logement **Le ponant** (Béglès) à partir des réservations Lodgify : chauffage avant l'arrivée, scènes d'arrivée et de départ,
+Faire piloter par Rocket Host les appareils du logement **Le ponant** (Béglès) à partir des réservations Lodgify : chauffage avant l'arrivée, scènes d'arrivée et de départ,
 alertes (porte ouverte, fuite, température anormale). L'appli reste le « cerveau » métier ; Homey est l'exécutant local (principe de `project-open-architecture-home-assistant`).
 
 **Ce qui est acquis** : Homey Pro à Béglès (clé d'API locale possible), HomeKit, hub Aqara. **Ce qui est inconnu** : modèle du hub Aqara, liste des appareils, où tourne l'appli (voir §7).
@@ -12,7 +12,7 @@ alertes (porte ouverte, fuite, température anormale). L'appli reste le « cerve
 ## 2. Architecture
 
 ```
-Lodgify (réservations) ─► LoussaHousing ──(adaptateur homey.ts)──► Homey Pro ──► appareils (Aqara via Matter/Zigbee, autres)
+Lodgify (réservations) ─► Rocket Host ──(adaptateur homey.ts)──► Homey Pro ──► appareils (Aqara via Matter/Zigbee, autres)
                               ▲                                       │
                               └────────── événements (alertes) ◄──────┘  (Flows Homey → webhook, à valider)
 ```

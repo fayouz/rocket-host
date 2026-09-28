@@ -19,7 +19,7 @@ reproduire **à notre façon** dans une V3. On reprend les idées, jamais leurs 
 | **Réservations directes** | Lien vers le site du propriétaire pour les séjours suivants. |
 | **Avis** | Objectif : transformer un bon séjour en avis 5 étoiles. |
 
-## Ce que LoussaHousing a déjà (bases réutilisables)
+## Ce que Rocket Host a déjà (bases réutilisables)
 
 - **Données du séjour** : voyageur, dates, horaires de check-in/out, canal, e-mail — lus dans Lodgify.
 - **Code d'accès** : codes clavier Nuki calculés par réservation (valables de l'arrivée au départ).
@@ -42,9 +42,9 @@ reproduire **à notre façon** dans une V3. On reprend les idées, jamais leurs 
 Un vrai paiement en ligne, pas un simple formulaire : le voyageur choisit et paie des « plus » depuis le livret (late check-out, panier petit-déjeuner, ménage supplémentaire, parking, bois de chauffage, activité locale…).
 
 **Paiement — Stripe Checkout** (recherché le 2026-09-22) :
-- Page de paiement **hébergée par Stripe** : LoussaHousing ne touche jamais les numéros de carte, pas de conformité PCI à notre charge — cohérent avec la règle « jamais d'identifiants financiers dans l'appli ».
+- Page de paiement **hébergée par Stripe** : Rocket Host ne touche jamais les numéros de carte, pas de conformité PCI à notre charge — cohérent avec la règle « jamais d'identifiants financiers dans l'appli ».
 - Frais (cartes européennes, 2026) : **1,5 % + 0,25 €** par paiement (cartes premium : 2,8 % + 0,25 € à partir d'octobre 2026) ; aucun abonnement, on ne paie qu'à la vente. Compte Stripe au nom du user (le sien, un auto-entrepreneur/entreprise ne change rien au tarif de base d'après mes lectures — à confirmer avec Violette SERY, la comptable, notamment pour la TVA et la déclaration de ce revenu).
-- Le compte Stripe reste **celui du user** ; LoussaHousing s'y connecte par API (clé secrète dans `.env`, jamais en base ni renvoyée au navigateur — même principe que Lodgify/Nuki/Homey).
+- Le compte Stripe reste **celui du user** ; Rocket Host s'y connecte par API (clé secrète dans `.env`, jamais en base ni renvoyée au navigateur — même principe que Lodgify/Nuki/Homey).
 
 **Modèle de données envisagé** (même logique que le catalogue de stock : commun, avec activation/prix par logement) :
 - `upsell_item` : catalogue commun (nom, description, photo, catégorie).

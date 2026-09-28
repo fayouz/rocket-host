@@ -1,4 +1,4 @@
-# Deploiement : appli LoussaHousing + n8n + Traefik (HTTPS). Voir docs/deploiement.md
+# Deploiement : appli Rocket Host + n8n + Traefik (HTTPS). Voir docs/deploiement.md
 services:
   traefik:
     image: traefik:v3.1

@@ -1,4 +1,7 @@
-# Versions de LoussaHousing
+# Versions de Rocket Host
+
+## Renommé en Rocket Host (2026-09-28)
+Branche `feature/rocket-host` : le produit s'appelle Rocket Host (dépôt `fayouz/rocket-host`). LoussaHousing reste le nom de l'activité de Faez, premier client. Identifiant client Rocket Auth `loussahousing`, domaines `loussahousing.*`, fichiers de base et variables d'environnement inchangés (compatibilité).
 
 ## V1 — socle (début du projet)
 Tableau de bord Nuxt lisant Lodgify : page **Aujourd'hui** (arrivées, départs, turnovers) et **Rentabilité** (revenus et occupation par mois).
@@ -21,13 +24,13 @@ documents par logement et bilan annuel ; **explorateur de fichiers** façon Find
 **Non fait / à valider** : rangement des e-mails jamais lancé sur la vraie boîte ; HTTPS Let's Encrypt jamais testé ; codes Nuki jamais créés sur la vraie serrure ; workflows n8n non montés ; Git non choisi. Détail dans la mémoire du projet.
 
 ## Chantier en cours — client Rocket PMS
-Voir `docs/rocket-pms.md` : LoussaHousing sait parler à Rocket PMS (fayouz/rocket-pms), débranché tant que `PMS_API_URL` n'est pas dans `.env`.
+Voir `docs/rocket-pms.md` : Rocket Host sait parler à Rocket PMS (fayouz/rocket-pms), débranché tant que `PMS_API_URL` n'est pas dans `.env`.
 Tranches branchées : logements + réservations, conversation, prix, serrures/codes, domotique, documents, stock (V1 du client) ;
 puis (branche `feature/pms-v2`) livret du séjour + écran TV, e-mails Rocket Mailer, bilan PMS et ménages Rocket Place en lecture ;
 menu Administration rangé par brique (Rocket PMS / Place / Mailer / Cloud / local) avec état de chaque brique et liens facultatifs `PMS_FRONT_URL` / `PLACE_FRONT_URL`.
 
 ## Chantier en cours — Rocket Auth (connexion unique)
-Branche `feature/rocket-auth` : LoussaHousing client OpenID Connect de Rocket Auth (code + PKCE, jeton vérifié par JWKS, comptes associés par e-mail,
+Branche `feature/rocket-auth` : Rocket Host client OpenID Connect de Rocket Auth (code + PKCE, jeton vérifié par JWKS, comptes associés par e-mail,
 rôles d'après les groupes, déconnexion chez Rocket Auth et back-channel logout, sélecteur d'applications de la suite). Débranché tant que `ROCKET_AUTH_URL`
 est vide ; connexion locale gardée pendant la transition. Voir `docs/rocket-auth.md`.
 

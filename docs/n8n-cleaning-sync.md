@@ -1,4 +1,4 @@
-# Synchro des tâches de ménage Lodgify → LoussaHousing via n8n
+# Synchro des tâches de ménage Lodgify → Rocket Host via n8n
 
 Lodgify n'expose pas les tâches dans son API. Il envoie en revanche un e-mail de notification à chaque tâche.
 n8n lit la boîte OVH, extrait la tâche et l'envoie à l'appli.

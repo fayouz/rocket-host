@@ -171,9 +171,9 @@ export async function linkRocketAccount(event: H3Event | null, claims: Record<st
   }
   const now = new Date().toISOString()
   if (!r) {
-    if (!cfg.autoCreate) throw await refuse('Aucun compte LoussaHousing pour cette adresse e-mail (demande à un administrateur de t\'en créer un)')
+    if (!cfg.autoCreate) throw await refuse('Aucun compte Rocket Host pour cette adresse e-mail (demande à un administrateur de t\'en créer un)')
     const newRole = role ?? cfg.defaultRole
-    if (!newRole) throw await refuse('Aucun rôle LoussaHousing pour tes groupes Rocket Auth')
+    if (!newRole) throw await refuse('Aucun rôle Rocket Host pour tes groupes Rocket Auth')
     if (!email) throw await refuse('Rocket Auth n\'a pas transmis d\'adresse e-mail')
     const base = String(claims.preferred_username || email.split('@')[0]).replace(/[^\w.-]/g, '').slice(0, 60) || 'utilisateur'
     let username = base
@@ -185,7 +185,7 @@ export async function linkRocketAccount(event: H3Event | null, claims: Record<st
     await db.sql`UPDATE app_user SET role = ${role} WHERE id = ${r.id}` // les groupes Rocket Auth font foi quand ils donnent un role
     r.role = role
   }
-  if (!Number(r.active)) throw await refuse('Compte LoussaHousing désactivé')
+  if (!Number(r.active)) throw await refuse('Compte Rocket Host désactivé')
   await db.sql`INSERT INTO rocket_auth_link (sub, user_id, linked_at, last_sid) VALUES (${sub}, ${r.id}, ${now}, ${claims.sid ?? null}) ON CONFLICT(sub) DO UPDATE SET user_id = excluded.user_id, last_sid = excluded.last_sid`
   await db.sql`UPDATE app_user SET failed_count = 0, locked_until = NULL, last_login_at = ${now} WHERE id = ${r.id}`
   return r

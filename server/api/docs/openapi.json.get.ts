@@ -25,7 +25,7 @@ export default defineEventHandler(() => {
   return {
     openapi: '3.0.3',
     info: {
-      title: 'LoussaHousing — API interne',
+      title: 'Rocket Host — API interne',
       version: '1.0.0',
       description: 'Générée automatiquement depuis la table des permissions (`server/utils/policy.ts`). Rôles : administrateur, gestionnaire, comptable (lecture), ménage. Refus par défaut : toute route non listée est refusée. Les non-administrateurs ne voient que leurs logements autorisés.',
     },

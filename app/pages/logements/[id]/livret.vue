@@ -3,7 +3,7 @@
     <h2 class="section-title !mt-0">Livret Accueil</h2>
     <template v-if="pms">
       <PmsLivretCard :logement-id="String(route.params.id)" />
-      <p class="text-xs text-muted">Ci-dessous : l'ancien livret local de LoussaHousing (lien /g/ propre à l'appli), conservé tant que la bascule n'est pas terminée.</p>
+      <p class="text-xs text-muted">Ci-dessous : l'ancien livret local de Rocket Host (lien /g/ propre à l'appli), conservé tant que la bascule n'est pas terminée.</p>
     </template>
     <UTabs v-model="tab" :items="tabs" :content="false" />
 

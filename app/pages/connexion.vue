@@ -1,7 +1,7 @@
 <template>
   <div class="mx-auto mt-10 max-w-sm">
     <div class="mb-4 text-center">
-      <h1 class="text-2xl font-semibold">LoussaHousing</h1>
+      <h1 class="text-2xl font-semibold">Rocket Host</h1>
       <p class="text-sm text-muted">Connexion</p>
     </div>
     <UCard>
