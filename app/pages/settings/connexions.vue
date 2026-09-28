@@ -15,7 +15,7 @@
 
     <!-- Briques Rocket : applis / middlewares de la suite, branchees par adresse + jeton d'application -->
     <template v-if="tab === 'briques'">
-      <p class="text-sm text-muted">Applications de la suite Rocket. Rocket Mailer et Rocket Cloud passent par Rocket PMS ; Rocket Auth (connexion unique) se règle dans l'environnement du serveur.</p>
+      <p class="text-sm text-muted">Applications de la suite Rocket. Rocket Cloud passe par Rocket PMS ; Rocket Mailer peut aussi être branché en direct pour les boîtes e-mail (partagées et perso) ; Rocket Auth (connexion unique) se règle dans l'environnement du serveur.</p>
       <div class="grid gap-4 lg:grid-cols-2">
         <UCard v-for="g in groupsOf(BRICKS)" :key="g.key">
           <template #header>
@@ -38,6 +38,7 @@
               </UFormField>
             </template>
             <p v-if="g.key === 'mail'" class="text-xs text-muted"><NuxtLink to="/settings/imap" class="underline">Serveur, identifiant et règles de la boîte</NuxtLink></p>
+            <UButton v-if="g.key === 'mailer'" size="xs" icon="i-lucide-plus" label="Ajouter une boîte e-mail" to="/settings/imap?assistant=1" />
             <p v-if="g.key === 'homey'" class="text-xs text-muted">Adresse du Homey et mode (local/cloud) : réglages du logement › <NuxtLink :to="domotiqueLink" class="underline">Domotique</NuxtLink>.</p>
           </div>
         </UCard>
@@ -80,6 +81,8 @@
               </UFormField>
             </template>
             <p v-if="g.key === 'mail'" class="text-xs text-muted"><NuxtLink to="/settings/imap" class="underline">Serveur, identifiant et règles de la boîte</NuxtLink></p>
+            <p v-if="g.key === 'mailoauth'" class="text-xs text-muted">Adresses de retour à déclarer : <code>{{ origin }}/api/mail/oauth/google/callback</code> et <code>{{ origin }}/api/mail/oauth/microsoft/callback</code>.</p>
+            <UButton v-if="g.key === 'mail' || g.key === 'mailoauth'" size="xs" icon="i-lucide-plus" label="Ajouter une boîte e-mail" to="/settings/imap?assistant=1" />
             <p v-if="g.key === 'homey'" class="text-xs text-muted">Adresse du Homey et mode (local/cloud) : réglages du logement › <NuxtLink :to="domotiqueLink" class="underline">Domotique</NuxtLink>.</p>
           </div>
         </UCard>
@@ -112,8 +115,8 @@ const tab = computed({
   get: () => (route.query.onglet === 'directes' ? 'directes' : 'briques'),
   set: v => navigateTo({ query: { ...route.query, onglet: v } }, { replace: true }),
 })
-const BRICKS = ['pms', 'place', 'clean', 'stock', 'cast']
-const DIRECT = ['direct', 'homey', 'mail', 'webhook']
+const BRICKS = ['pms', 'mailer', 'place', 'clean', 'stock', 'cast']
+const DIRECT = ['direct', 'homey', 'mail', 'mailoauth', 'webhook']
 const groupsOf = (keys: string[]) => (data.value?.groups ?? []).filter(g => keys.includes(g.key)).sort((a, b) => keys.indexOf(a.key) - keys.indexOf(b.key))
 const { data: pms } = await useFetch('/api/pms/status', { key: 'pms-status' })
 const pmsOn = computed(() => !!pms.value?.configured)
@@ -126,6 +129,7 @@ function brickStatus(key: string): { label: string; color: 'success' | 'error' |
 const { data: lg } = useNuxtData<{ logements: { id: number }[] }>('logements')
 const domotiqueLink = computed(() => (lg.value?.logements?.[0] ? `/logements/${lg.value.logements[0].id}/domotique` : '/logements'))
 const form = reactive<Record<string, string>>({})
+const origin = useRequestURL().origin
 const error = ref('')
 const newName = ref(''), newValue = ref('')
 watchEffect(() => { for (const e of data.value?.entries ?? []) if (e.kind === 'setting') form[e.name] = String((e as any).value ?? '') })
