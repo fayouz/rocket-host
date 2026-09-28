@@ -8,7 +8,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "check:policy": "node scripts/check-policy.mjs",
-    "check:rocket-auth": "node --experimental-strip-types --no-warnings scripts/check-rocket-auth.mjs"
+    "check:rocket-auth": "node --experimental-strip-types --no-warnings scripts/check-rocket-auth.mjs",
+    "check:smart-dashboard": "node --experimental-strip-types --no-warnings scripts/check-smart-dashboard.mjs"
   },
   "dependencies": {
     "@iconify-json/simple-icons": "^1.2.97",

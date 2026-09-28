@@ -6,6 +6,9 @@ Branche `feature/signup-link` : la page `/connexion` affiche « Créer un compte
 ## Renommé en Rocket Host (2026-09-28)
 Branche `feature/rocket-host` : le produit s'appelle Rocket Host (dépôt `fayouz/rocket-host`). LoussaHousing reste le nom de l'activité de Faez, premier client. Identifiant client Rocket Auth `loussahousing`, domaines `loussahousing.*`, fichiers de base et variables d'environnement inchangés (compatibilité).
 
+## Tableau de bord intelligent (2026-09-28)
+Branche `feature/smart-dashboard` : cartes ajoutées à l'accueil existant (inchangé) qui croisent Rocket PMS, Place, Clean, Stock et Cast (route `GET /api/dashboard/smart`), alertes croisées, finances du mois et prévision 30 jours. Détail : `docs/rocket-host-dashboard.md`.
+
 ## V1 — socle (début du projet)
 Tableau de bord Nuxt lisant Lodgify : page **Aujourd'hui** (arrivées, départs, turnovers) et **Rentabilité** (revenus et occupation par mois).
 

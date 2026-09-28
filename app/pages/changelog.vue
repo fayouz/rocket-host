@@ -28,6 +28,17 @@ interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
     date: '28 sept. 2026',
+    title: 'Tableau de bord intelligent',
+    icon: 'i-lucide-layout-dashboard',
+    points: [
+      'Accueil inchangé, enrichi de cartes quand Rocket PMS est branché : arrivées à préparer d\'aujourd\'hui et demain croisés avec le ménage (Rocket Clean), le linge, les accès (Rocket Place), l\'écran TV (Rocket Cast) et le paiement',
+      'Alertes croisées triées par urgence : ménage non terminé moins de 2 h avant l\'arrivée, accès non envoyé, écran hors ligne, départ sans ménage, stock bas, linge manquant, réservation modifiée, brique injoignable',
+      'Finances du mois en contexte : revenus et occupation par logement et par canal, coût des ménages, consommation du stock, prévision sur 30 jours',
+      'Chaque brique est facultative (ROCKET_PLACE_URL, ROCKET_CLEAN_URL, ROCKET_STOCK_URL, ROCKET_CAST_URL) : une brique en panne n\'empêche jamais l\'affichage ; rafraîchissement toutes les 5 minutes',
+    ],
+  },
+  {
+    date: '28 sept. 2026',
     title: 'Renommé en Rocket Host',
     icon: 'i-lucide-tag',
     points: [

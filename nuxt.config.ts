@@ -20,6 +20,16 @@ export default defineNuxtConfig({
     pmsApiToken: process.env.PMS_API_TOKEN || '',
     // Compte Rocket PMS au nom duquel partent les e-mails (Rocket Mailer exige un utilisateur) : X-Impersonate-User
     pmsImpersonateUser: process.env.PMS_IMPERSONATE_USER || '',
+    // Tableau de bord intelligent : clients directs des briques (facultatifs, adresse vide = brique masquee).
+    // Jetons d'application de chaque brique, jamais renvoyes au navigateur. Voir docs/rocket-host-dashboard.md.
+    rocketPlaceUrl: process.env.ROCKET_PLACE_URL || '',
+    rocketPlaceToken: process.env.ROCKET_PLACE_TOKEN || '',
+    rocketCleanUrl: process.env.ROCKET_CLEAN_URL || '',
+    rocketCleanToken: process.env.ROCKET_CLEAN_TOKEN || '',
+    rocketStockUrl: process.env.ROCKET_STOCK_URL || '',
+    rocketStockToken: process.env.ROCKET_STOCK_TOKEN || '',
+    rocketCastUrl: process.env.ROCKET_CAST_URL || '',
+    rocketCastToken: process.env.ROCKET_CAST_TOKEN || '',
     // Adresses des interfaces web des briques (facultatif) : liens « géré dans Rocket PMS/Place » du menu Administration
     public: {
       pmsFrontUrl: process.env.PMS_FRONT_URL || '',

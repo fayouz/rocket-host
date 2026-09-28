@@ -48,6 +48,10 @@
       </div>
     </UCard>
 
+    <!-- Cartes Rocket (tableau de bord intelligent) : seulement quand Rocket PMS est branche ; chaque carte n'apparait
+         que si sa donnee ou sa brique est disponible. Le reste de l'accueil est inchange. -->
+    <DashboardSmartCards v-if="pmsOn" />
+
     <div v-if="revenueByMonth.length" class="grid gap-6 lg:grid-cols-2">
       <UCard>
         <template #header>
@@ -126,7 +130,11 @@
 </template>
 
 <script setup lang="ts">
+import DashboardSmartCards from '~/components/dashboard/SmartCards.vue'
 const { user, can } = useAuth()
+// Meme cle que le menu (layouts/default.vue) : un seul appel a /api/pms/status.
+const { data: pms } = await useFetch('/api/pms/status', { key: 'pms-status' })
+const pmsOn = computed(() => !!pms.value?.configured)
 const nowLabel = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
 const quickActions = computed(() => [[
   can('A') && { label: 'Nouvel utilisateur', icon: 'i-lucide-user-plus', to: '/settings/utilisateurs' },

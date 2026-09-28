@@ -1,0 +1,82 @@
+# Tableau de bord intelligent
+
+L'accueil de Rocket Host (`/`, `app/pages/index.vue`) reste l'accueil historique, inchangé (en-tête, KPI du jour,
+revenus, vue d'ensemble, la journée, contacts, timeline). Quand Rocket PMS est branché (`PMS_API_URL`), des **cartes**
+qui croisent les briques Rocket s'ajoutent juste sous la bande des KPI du jour, dans la grille existante :
+
+- rangée 1 : « Arrivées à préparer » (2/3, badges ménage / linge / accès / écran / paiement) + « Alertes » (1/3) ;
+- rangée 2 : « Finances du mois » (2/3, revenus, occupation, ménages, conso. stock, 30 prochains jours, canaux)
+  + « Briques » (1/3, état et temps de réponse de chaque brique, bouton Rafraîchir).
+
+Chaque carte n'apparaît que si sa donnée ou sa brique est disponible (pas d'arrivée = pas de carte, aucune alerte = pas
+de carte). Sans PMS, aucune carte n'est ajoutée.
+
+## Configuration
+
+Chaque brique est facultative : adresse vide = brique masquée (aucun appel, aucune colonne, aucune alerte).
+Les jetons sont des jetons d'application de chaque brique, jamais renvoyés au navigateur.
+
+```
+PMS_API_URL=…            PMS_API_TOKEN=rpm_…     # obligatoire pour ce tableau de bord
+ROCKET_PLACE_URL=…       ROCKET_PLACE_TOKEN=rpl_…
+ROCKET_CLEAN_URL=…       ROCKET_CLEAN_TOKEN=rcl_…
+ROCKET_STOCK_URL=…       ROCKET_STOCK_TOKEN=rst_…
+ROCKET_CAST_URL=…        ROCKET_CAST_TOKEN=rct_…
+```
+
+## Architecture
+
+- `server/utils/bricks/http.ts` : appel commun (délai 4 s par appel, 6 s pour le PMS ; réponse plafonnée à 2 Mo ;
+  erreur typée `BrickError`). Aucun auto-import Nuxt : la configuration est passée en paramètre.
+- `server/utils/bricks/{pms,place,clean,stock,cast}.ts` : clients en lecture seule.
+- `server/utils/bricks/smart.ts` : `collectSmartDashboard(configs, { now, allowed })`, appels en parallèle ; chaque
+  appel passe par `guard()` : en cas d'échec la brique est marquée en panne, sa donnée est vide, une alerte
+  « brique injoignable » est ajoutée, le reste continue.
+- `GET /api/dashboard/smart` (rôles admin et gestionnaire, filtré par les logements autorisés et `?properties=`).
+- `app/components/dashboard/SmartCards.vue` (`<DashboardSmartCards>`, inséré dans `pages/index.vue`) : bouton
+  Rafraîchir (carte Briques) + rafraîchissement automatique toutes les 5 minutes (onglet visible), « Source : » sur
+  chaque carte.
+
+La correspondance logement ↔ lieu vient de `GET /api/place-links` du PMS (`placeId` par logement, identifiant partagé
+par Place, Clean et Stock). Repli sur `/api/properties` (sans lieu) si Place est injoignable côté PMS.
+
+## Données et règles
+
+| Colonne / widget | Source | Règle |
+|---|---|---|
+| Arrivées / départs | PMS `/api/properties/{id}/bookings` | aujourd'hui et demain (fuseau Europe/Paris), réservations annulées exclues ; heure = checkIn (16:00 par défaut) / checkOut (11:00) |
+| Ménage | Clean `/api/cleanings?date=` (veille, jour, lendemain) | tâche du lieu la veille ou le jour de l'arrivée, la plus proche avant l'heure d'arrivée : fait / en cours / en retard / à faire / aucun |
+| Linge | Clean `/api/linen/readiness?place=&date=&days=2` (un appel par lieu) + `/api/linen/alerts` | statut `ready` / `tight` / `missing` de l'arrivée retrouvée par sa référence (`booking:<id>`) ou son jour, `unknown` si Clean ne la connaît pas ; **404 = colonne masquée** (module linge, branche `feature/linen`) |
+| Accès | PMS (`access` de la réservation) puis Place `/api/places/{id}/access-grants` (externalRef `booking:<id>`) | `created` = envoyé, `planned` ou dates modifiées = à envoyer, `error` = erreur |
+| Écran | Cast `/api/screens` | écrans dont `placeId` (Rocket Cast ≥ 0.2) est le lieu du logement ; repli pour les écrans sans lieu : champ *location* ou nom contenant l'uuid du lieu, l'uuid PMS ou le nom du logement |
+| Paiement | PMS `/bookings/{id}/pricing` (`due`, `paid`) | colonne masquée si aucune valeur ; un échec ne marque pas le PMS en panne |
+| Départs | Clean | ménage planifié le jour du départ : oui / non |
+| Finances du mois | PMS bilan (`months[m].revenue/nights`), repli : réservations au prorata des nuits | occupation = nuits / jours du mois ; canaux d'après `source` des réservations |
+| Coût des ménages | Clean `/api/cleanings/export?type=rental&from=&to=` (centimes) | total et par lieu, part des revenus |
+| Consommation stock | Stock `/api/export/consumption?usage=rental&from=&to=` | `totalCost` du mois |
+| Prévision 30 jours | PMS | réservations confirmées arrivant dans les 30 jours : total, nuits |
+
+Alertes (triées : critique, attention, info ; puis par heure) : ménage non terminé moins de 2 h avant l'arrivée
+(critique), aucun ménage / ménage en retard avant une arrivée, accès non envoyé la veille (attention) ou le jour même /
+en erreur (critique), écran hors ligne avec arrivée aujourd'hui, départ sans ménage, stock bas ou vide au lieu d'une
+arrivée, linge manquant (critique le jour même) ou juste (kits en défaut dans le détail), alertes du module linge (lot de
+blanchisserie en retard, pertes du mois, kits des 7 prochains jours sans doublon), réservation modifiée après planification du ménage (drapeau
+`conflict` de Rocket Clean), brique injoignable (critique pour le PMS). Chaque alerte renvoie à l'onglet du logement.
+
+## Vérifier
+
+```
+npm run check:smart-dashboard   # 13 cas avec fetch simulé (pannes, délai, taille, linge, 404 linge, écran lié, périmètre)
+npm run check:policy
+```
+
+Démo locale : configuration `rocket-host-demo` de `.claude/launch.json` (PMS 8700, Place 8900, Clean 9000, Stock 9100,
+Cast 8600, jetons de démo de chaque brique).
+
+## Limites connues
+
+- Linge : le module linge de Rocket Clean n'est livré que sur la branche `feature/linen` ; sans lui la colonne est masquée.
+- Démo : les lieux « Le port » (`0192f7c4-0000-7000-8000-000000000001`) et « Les vignes » (`…0002`) ont des ids fixes
+  partagés par Place, Clean, Stock, Linen, PMS et Cast.
+- Lecture seule : aucune action (envoyer un code, planifier un ménage) depuis ce tableau de bord ; les liens mènent aux
+  pages existantes.
