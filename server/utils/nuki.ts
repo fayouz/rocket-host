@@ -38,9 +38,9 @@ let cache: { at: number; data: Lock[] | null } = { at: 0, data: null }
 export async function loadLocks() {
   if (pmsEnabled()) return pmsLocks() // Rocket PMS actif : serrures lues via PMS / Rocket Place, Nuki n'est plus appele en direct
   const cfg = useRuntimeConfig()
-  const demo = cfg.demo === '1' || !cfg.nukiApiToken
+  const demo = cfg.demo === '1' || !getSecret('NUKI_API_TOKEN')
   if (!cache.data || Date.now() - cache.at > 60 * 1000) {
-    cache = { at: Date.now(), data: demo ? demoLocks : await fetchLocks(cfg.nukiApiToken) }
+    cache = { at: Date.now(), data: demo ? demoLocks : await fetchLocks(getSecret('NUKI_API_TOKEN')) }
   }
   const links = await getLockLinks()
   return { demo, locks: cache.data!.map(l => ({ ...l, propertyId: links[l.id] ?? l.propertyId })) }
@@ -50,10 +50,10 @@ export async function loadLocks() {
 // Necessite un jeton avec le droit smartlock.auth. Reponse 204 : la creation est asynchrone.
 export async function createKeypadCode(lockId: number, name: string, code: string, from: string, until: string) {
   const cfg = useRuntimeConfig()
-  if (cfg.demo === '1' || !cfg.nukiApiToken) throw createError({ statusCode: 400, statusMessage: 'Mode démo : rien n’est envoyé à Nuki' })
+  if (cfg.demo === '1' || !getSecret('NUKI_API_TOKEN')) throw createError({ statusCode: 400, statusMessage: 'Mode démo : rien n’est envoyé à Nuki' })
   const res = await fetch(`${BASE}/smartlock/${lockId}/auth`, {
     method: 'PUT',
-    headers: { Authorization: `Bearer ${cfg.nukiApiToken}`, 'content-type': 'application/json' },
+    headers: { Authorization: `Bearer ${getSecret('NUKI_API_TOKEN')}`, 'content-type': 'application/json' },
     body: JSON.stringify({ name, type: 13, code: Number(code), allowedFromDate: from, allowedUntilDate: until }),
   })
   if (!res.ok) {

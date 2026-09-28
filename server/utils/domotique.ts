@@ -31,7 +31,7 @@ export function parseDomoConfig(b: Record<string, unknown>, current: DomoConfig)
     let u: URL
     try { u = new URL(url) } catch { throw bad('Adresse invalide (ex. http://192.168.1.20)') }
     if (!/^https?:$/.test(u.protocol)) throw bad('Adresse invalide : http ou https seulement')
-    if (u.username || u.password) throw bad('Pas d\'identifiant dans l\'adresse : la clé d\'API va dans .env')
+    if (u.username || u.password) throw bad('Pas d\'identifiant dans l\'adresse : la clé d\'API se saisit dans Réglages › Connexions')
     url = u.origin
   }
   const homeyId = b.homeyId === undefined ? current.homeyId : String(b.homeyId).trim()

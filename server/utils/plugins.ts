@@ -3,7 +3,7 @@
 // (afficher des infos, lancer des actions manuelles, recuperer des documents). Un connecteur = un plugin configure pour
 // un logement ; un logement peut en avoir plusieurs, y compris du meme plugin (ex. deux Homey).
 //
-// Secrets : jamais en base ni dans le navigateur. Un champ secret contient le NOM d'une variable de .env (prefixe CONNECTOR_
+// Secrets : jamais dans le navigateur. Un champ secret contient le NOM d'un secret chiffre en base (Reglages > Connexions) (prefixe CONNECTOR_
 // obligatoire, pour qu'un connecteur ne puisse jamais lire les autres secrets de l'appli comme la cle Lodgify).
 
 export type Capability = 'info' | 'actions' | 'documents'
@@ -24,7 +24,7 @@ export interface RemoteDocument { externalId: string; filename: string; data?: B
 export interface ConnectorContext {
   connectorId: number; logementId: number
   config: Record<string, string>
-  secret: (fieldKey: string) => string // valeur de la variable .env designee par le champ (erreur claire si absente)
+  secret: (fieldKey: string) => string // valeur du secret designe par le champ (erreur claire si absente)
 }
 
 export interface PluginDef {
@@ -42,12 +42,12 @@ export interface PluginDef {
 
 export const SECRET_VAR = /^CONNECTOR_[A-Z0-9_]{1,60}$/
 
-// Valeur d'une variable secrete de .env designee par son nom (jamais renvoyee au navigateur)
+// Valeur d'un secret de connecteur designe par son nom (CONNECTOR_…) (jamais renvoyee au navigateur)
 export function readSecretVar(name: string, label: string) {
   if (!name) throw createError({ statusCode: 400, statusMessage: `« ${label} » : aucune variable indiquée` })
   if (!SECRET_VAR.test(name)) throw createError({ statusCode: 400, statusMessage: `« ${label} » : le nom doit commencer par CONNECTOR_ (lettres majuscules, chiffres, _)` })
-  const v = process.env[name]
-  if (!v) throw createError({ statusCode: 400, statusMessage: `Variable ${name} absente de .env (ajoute-la puis redémarre l'appli)` })
+  const v = getSecret(name) // secret chiffre en base (Reglages > Connexions), repli .env pendant la migration
+  if (!v) throw createError({ statusCode: 400, statusMessage: `Secret ${name} non renseigné (Réglages › Connexions › Secrets des connecteurs)` })
   return v
 }
 

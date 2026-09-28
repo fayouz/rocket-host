@@ -186,7 +186,7 @@ export const DOC_PAGES: DocPage[] = [
         id: 'secrets',
         title: 'Jetons et clés',
         paragraphs: [
-          'Aucun secret n\'est saisi dans l\'appli. Tu ajoutes toi-même le jeton ou la clé dans le fichier .env sous un nom commençant par CONNECTOR_ (ex. CONNECTOR_MON_SERVICE), puis tu redémarres l\'appli ; le connecteur n\'indique que ce nom et affiche s\'il est bien présent. Un secret n\'est jamais envoyé en http vers Internet (https obligatoire, sauf sur le réseau local).',
+          'Le connecteur n\'indique que le NOM du secret, commençant par CONNECTOR_ (ex. CONNECTOR_MON_SERVICE) ; sa valeur se saisit dans Réglages › Connexions › Secrets des connecteurs, où elle est chiffrée en base et jamais réaffichée (4 derniers caractères seulement). Le connecteur affiche s\'il est bien renseigné. Un secret n\'est jamais envoyé en http vers Internet (https obligatoire, sauf sur le réseau local).',
         ],
       },
     ],

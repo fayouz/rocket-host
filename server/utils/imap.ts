@@ -1,7 +1,7 @@
 // Lecture d'une boite e-mail en IMAP pour recuperer les factures recues en piece jointe.
 // - Lecture seule : la boite est ouverte en lecture seule, aucun message n'est marque lu, deplace ni supprime.
 // - Seuls les messages dont l'expediteur (et l'objet, si precise) correspond a une regle sont telecharges.
-// - Le mot de passe vient de .env (IMAP_PASSWORD) : jamais en base, jamais renvoye au navigateur.
+// - Le mot de passe est un secret chiffre en base (IMAP_PASSWORD, Reglages > Connexions), jamais renvoye au navigateur.
 // - Les pieces jointes passent par importDocument : sans doublon (identifiant du message + nom du fichier, ou meme contenu).
 import { createHash } from 'node:crypto'
 import { ImapFlow } from 'imapflow'
@@ -39,14 +39,14 @@ export async function getImapRules(): Promise<ImapRule[]> {
 export const connect = (cfg: ImapConfig) => new ImapFlow({
   host: cfg.host, port: cfg.port, secure: cfg.secure,
   ...(cfg.secure ? {} : { doSTARTTLS: true }), // sans TLS implicite : STARTTLS obligatoire, jamais de mot de passe en clair
-  auth: { user: cfg.user, pass: useRuntimeConfig().imapPassword },
+  auth: { user: cfg.user, pass: getSecret('IMAP_PASSWORD') },
   logger: false, tls: { rejectUnauthorized: true },
   connectionTimeout: 20_000, greetingTimeout: 20_000, socketTimeout: 120_000,
 } as any)
 
 export const errText = (e: any) => String(e?.responseText || e?.message || e).replace(/\s+/g, ' ').slice(0, 200)
 export const need = (cfg: ImapConfig) =>
-  !useRuntimeConfig().imapPassword ? 'IMAP_PASSWORD absent de .env' : !cfg.host || !cfg.user ? 'serveur ou identifiant non renseigné' : null
+  !hasSecret('IMAP_PASSWORD') ? 'mot de passe de la boîte non renseigné (Réglages › Connexions)' : !cfg.host || !cfg.user ? 'serveur ou identifiant non renseigné' : null
 
 // Test de connexion : ne lit aucun message (compte seulement les correspondances de chaque regle)
 export async function testImap() {

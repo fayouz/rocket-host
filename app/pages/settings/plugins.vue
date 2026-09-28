@@ -34,8 +34,8 @@
       </UCard>
     </div>
     <p class="text-xs text-muted">
-      Pour brancher un service qui n'a pas de plugin dédié, utilise « Service web » (n'importe quelle API web). Les secrets (jetons, clés) ne sont
-      jamais saisis dans l'appli : tu les ajoutes toi-même dans <code>.env</code> sous un nom commençant par <code>CONNECTOR_</code>.
+      Pour brancher un service qui n'a pas de plugin dédié, utilise « Service web » (n'importe quelle API web). Les secrets (jetons, clés) se
+      saisissent dans <NuxtLink to="/settings/connexions" class="underline">Réglages › Connexions</NuxtLink> sous un nom commençant par <code>CONNECTOR_</code> (chiffrés, jamais réaffichés).
     </p>
   </div>
 </template>

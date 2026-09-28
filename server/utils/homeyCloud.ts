@@ -1,6 +1,6 @@
 // Homey en mode CLOUD (OAuth2 avec le compte Athom). Procedure officielle : autorisation -> code -> jeton d'acces (1 h) + jeton de renouvellement
 // -> jeton de delegation -> connexion au Homey (URL distante) -> jeton de session.
-// L'identifiant et le secret de l'application restent dans .env ; le jeton de renouvellement est dans .data/homey-oauth.json (droits 0600, hors git,
+// L'identifiant (reglage) et le secret (chiffre en base) de l'application se saisissent dans Reglages > Connexions ; le jeton de renouvellement est dans .data/homey-oauth.json (droits 0600, hors git,
 // jamais envoye au navigateur). Aucun jeton ne figure dans les erreurs ni les journaux.
 import { randomBytes } from 'node:crypto'
 import { chmod, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
@@ -14,7 +14,7 @@ interface Stored { refreshToken: string; accessToken: string; expiresAt: number;
 export interface HomeyInfo { id: string; name: string; remoteUrl: string }
 
 const fail = (statusCode: number, statusMessage: string) => createError({ statusCode, statusMessage })
-const cfg = () => useRuntimeConfig()
+const cfg = () => ({ homeyClientId: getSetting('HOMEY_CLIENT_ID'), homeyClientSecret: getSecret('HOMEY_CLIENT_SECRET'), homeyRedirectUri: getSetting('HOMEY_REDIRECT_URI') })
 export const cloudConfigured = () => !!(cfg().homeyClientId && cfg().homeyClientSecret)
 
 async function readStore(): Promise<Stored | null> {
@@ -69,7 +69,7 @@ async function tokenRequest(params: Record<string, string>, what: string) {
 // Echange du code recu apres l'autorisation contre les jetons, puis enregistrement.
 // Le serveur reel attend response_type=code a l'autorisation (la doc parle d'authorization_type) : on envoie aussi bien `code` que `authorization_code` a l'echange.
 export async function completeAuthorization(code: string, redirect: string) {
-  if (!cloudConfigured()) throw fail(400, 'Application Homey non configurée (HOMEY_CLIENT_ID / HOMEY_CLIENT_SECRET dans .env)')
+  if (!cloudConfigured()) throw fail(400, 'Application Homey non configurée (identifiant et secret à saisir dans Réglages › Connexions)')
   const t = await tokenRequest({ grant_type: 'authorization_code', code, authorization_code: code, redirect_uri: redirect }, 'échange du code')
   if (!t.refreshToken) throw fail(502, 'Le cloud Homey n\'a pas fourni de jeton de renouvellement')
   await writeStore({ ...t, connectedAt: new Date().toISOString() })

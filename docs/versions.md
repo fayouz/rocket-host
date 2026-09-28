@@ -1,5 +1,8 @@
 # Versions de Rocket Host
 
+## Secrets en base (2026-09-28)
+Branche `feature/secrets-in-db` : jetons, clés, mots de passe et adresses des intégrations (Lodgify, Nuki, IMAP/SMTP, Homey, Rocket PMS/Place/Clean/Stock/Cast, webhook n8n, `CONNECTOR_*`) quittent `.env` : saisis dans **Administration › Connexions**, chiffrés en base (AES-256-GCM, clé maître `ROCKET_SECRETS_KEY`, seule restée dans l'environnement avec l'infrastructure). Jamais renvoyés au navigateur (« ••••1234 »). Import `npm run secrets:import-env`, rotation `npm run secrets:rotate`, contrôle `npm run check:secrets`. Détail : `docs/secrets.md`.
+
 ## Lien d'inscription (2026-09-28)
 Branche `feature/signup-link` : la page `/connexion` affiche « Créer un compte · choisir une offre » et « Voir les offres », vers la page d'inscription en libre-service de **Rocket Console** (`${ROCKET_CONSOLE_PUBLIC_URL}/inscription` : choix de l'offre avec devis, compte en essai, vérification de l'e-mail). Liens masqués si `ROCKET_CONSOLE_PUBLIC_URL` est vide (variable publique, surchargeable par `NUXT_PUBLIC_ROCKET_CONSOLE_PUBLIC_URL`). Les comptes, offres et abonnements restent gérés par Rocket Console ; Rocket Host ne fait que pointer vers elle.
 
@@ -23,7 +26,7 @@ documents par logement et bilan annuel ; **explorateur de fichiers** façon Find
 
 **Sécurité** :
 - Protection **contre les requêtes venant d'un autre site (CSRF)** : toute écriture dont l'origine n'est pas l'appli est refusée (403) ; les appels de n8n (serveur à serveur) passent. Vérifiée : trois cas refusés, usage normal et n8n intacts.
-- Secrets uniquement dans `.env` (jamais en base ni renvoyés au navigateur) ; jetons secrets pour n8n et pour les pages ménage ; rien de personnel dans git.
+- Secrets uniquement dans `.env` (jamais en base ni renvoyés au navigateur) — remplacé depuis par les secrets chiffrés en base (`docs/secrets.md`) ; jetons secrets pour n8n et pour les pages ménage ; rien de personnel dans git.
 - Fichiers déposés : types autorisés, contenu vérifié, taille limitée, noms générés ; e-mails affichés en texte seul.
 - Déploiement : Traefik (HTTPS, mot de passe, limitation de débit sur les pages publiques), filtre d'accès à Docker en lecture seule.
 

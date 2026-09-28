@@ -3,14 +3,17 @@
 import { collectSmartDashboard, type BrickConfigs } from '../../utils/bricks/smart.ts'
 
 export default defineEventHandler(async (event) => {
-  const c = useRuntimeConfig()
-  const cfg = (url: unknown, token: unknown, extra: object = {}) => (url ? { url: String(url), token: String(token || ''), timeoutMs: 4000, ...extra } : undefined)
+  // Adresses (reglages) et jetons (secrets chiffres) : Reglages > Connexions
+  const cfg = (name: string, extra: object = {}) => {
+    const url = getSetting(`${name}_URL`)
+    return url ? { url, token: getSecret(`${name}_TOKEN`), timeoutMs: 4000, ...extra } : undefined
+  }
   const cfgs: BrickConfigs = {
-    pms: cfg(c.pmsApiUrl, c.pmsApiToken, { timeoutMs: 6000 }),
-    place: cfg(c.rocketPlaceUrl, c.rocketPlaceToken),
-    clean: cfg(c.rocketCleanUrl, c.rocketCleanToken),
-    stock: cfg(c.rocketStockUrl, c.rocketStockToken),
-    cast: cfg(c.rocketCastUrl, c.rocketCastToken),
+    pms: (() => { const url = getSetting('PMS_API_URL'); return url ? { url, token: getSecret('PMS_API_TOKEN'), timeoutMs: 6000 } : undefined })(),
+    place: cfg('ROCKET_PLACE'),
+    clean: cfg('ROCKET_CLEAN'),
+    stock: cfg('ROCKET_STOCK'),
+    cast: cfg('ROCKET_CAST'),
   }
   setResponseHeader(event, 'Cache-Control', 'no-store, private')
   return collectSmartDashboard(cfgs, { allowed: await effectivePropertyIds(event) })

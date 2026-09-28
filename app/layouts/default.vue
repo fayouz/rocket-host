@@ -104,7 +104,7 @@ const adminGroups = computed((): NavGroup[] => [
     label: 'Administration',
     brick: { name: 'Rocket PMS', icon: 'i-lucide-rocket', status: pmsStatus.value },
     items: [
-      { label: 'Connexion', icon: 'i-lucide-plug', to: '/settings/plugins' },
+      { label: 'Connexions (URL, jetons, secrets)', icon: 'i-lucide-plug', to: '/settings/connexions' },
       { label: 'Réservations / Lodgify', icon: 'i-lucide-calendar-days', to: lgPage('reservations') },
       { label: 'Livret & écran TV', icon: 'i-lucide-tv', to: '/settings/welcomescreen', badge: managed('PMS') },
       { label: 'Bilan', icon: 'i-lucide-calculator', to: lgPage('bilan') },

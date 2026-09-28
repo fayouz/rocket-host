@@ -108,7 +108,7 @@
           <span v-else class="self-center text-sm text-muted">L'adresse est fournie par le cloud Homey.</span>
           <div v-if="form.homeyMode === 'cloud'" class="space-y-2 text-sm sm:col-span-2">
             <template v-if="!data.cloud.clientConfigured">
-              <p class="text-muted"><b>1.</b> Ajoute <code>HOMEY_CLIENT_ID=…</code> et <code>HOMEY_CLIENT_SECRET=…</code> (ton application Homey) dans <code>.env</code>, puis redémarre. Ne les colle jamais dans le chat.</p>
+              <p class="text-muted"><b>1.</b> Renseigne l'identifiant et le secret de ton application Homey dans <NuxtLink to="/settings/connexions" class="underline">Réglages › Connexions</NuxtLink> (Domotique). Ne les colle jamais dans le chat.</p>
               <p class="text-muted"><b>2.</b> Dans les outils développeur de Homey, déclare cette adresse de retour : <code class="select-all break-all">{{ data.cloud.redirectUri }}</code></p>
             </template>
             <template v-else-if="!data.cloud.connected">
@@ -127,8 +127,8 @@
             </template>
           </div>
           <p v-else class="text-sm text-muted sm:col-span-2">
-            <template v-if="data.keyPresent"><UIcon name="i-lucide-check" class="align-middle text-success" /> Clé d'API détectée dans <code>.env</code> (sa valeur n'est jamais affichée).</template>
-            <template v-else>Clé d'API absente : crée-la dans Homey (Réglages → Clés d'API, droits minimaux : lire et commander les appareils), puis ajoute <code>HOMEY_API_KEY=…</code> dans <code>.env</code> et redémarre. Ne la colle jamais dans le chat.</template>
+            <template v-if="data.keyPresent"><UIcon name="i-lucide-check" class="align-middle text-success" /> Clé d'API enregistrée (chiffrée, jamais affichée) : <NuxtLink to="/settings/connexions" class="underline">Réglages › Connexions</NuxtLink>.</template>
+            <template v-else>Clé d'API absente : crée-la dans Homey (Réglages → Clés d'API, droits minimaux : lire et commander les appareils), puis colle-la dans <NuxtLink to="/settings/connexions" class="underline">Réglages › Connexions</NuxtLink> (Domotique). Ne la colle jamais dans le chat.</template>
           </p>
           <p v-if="form.homeyMode === 'cloud' && data.cloud.connected && !form.homeyId" class="text-sm text-warning sm:col-span-2">Choisis le Homey de ce logement puis enregistre : sans association, aucun appareil n'est lu ni commandé.</p>
           <p v-if="error" class="text-sm text-error sm:col-span-2">{{ error }}</p>

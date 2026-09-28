@@ -13,7 +13,7 @@
         <UInput :model-value="config[f.key] ?? ''" class="w-full font-mono" :placeholder="f.placeholder" @update:model-value="set(f.key, String($event).toUpperCase())" />
         <UBadge
           v-if="config[f.key] && secrets[f.key] !== undefined" :color="secrets[f.key] ? 'success' : 'warning'" variant="subtle" class="shrink-0"
-          :label="secrets[f.key] ? 'présente dans .env' : 'absente de .env'"
+          :label="secrets[f.key] ? 'secret renseigné' : 'à renseigner dans Réglages › Connexions'"
         />
       </div>
       <UInput v-else :model-value="config[f.key] ?? ''" class="w-full" :type="f.type === 'url' ? 'url' : 'text'" :placeholder="f.placeholder" @update:model-value="set(f.key, String($event))" />

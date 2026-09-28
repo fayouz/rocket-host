@@ -8,7 +8,7 @@ export const forgetThread = (threadUid: string) => cache.delete(threadUid)
 async function sentMessages(threadUid: string): Promise<SentMessage[]> {
   const hit = cache.get(threadUid)
   if (hit && Date.now() - hit.at < 5 * 60 * 1000) return hit.msgs
-  const t = await lodgifyCall(`/messaging/${threadUid}`, useRuntimeConfig().lodgifyApiKey).catch(() => null)
+  const t = await lodgifyCall(`/messaging/${threadUid}`, getSecret('LODGIFY_API_KEY')).catch(() => null)
   const msgs: SentMessage[] = (t?.messages || [])
     .filter((m: any) => m.type === 'Owner')
     // Dates Lodgify sans fuseau : on les lit comme UTC

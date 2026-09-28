@@ -15,11 +15,9 @@
           <UButton icon="i-lucide-mail-search" label="Relever maintenant" :loading="busy === 'run'" :disabled="!data.passwordSet || !data.rules.length" @click="run" />
         </div>
       </div>
-      <p v-if="!data.passwordSet" class="mt-3 text-sm text-warning">
-        ⚠ Mot de passe manquant. Ajoute-le toi-même dans le fichier <code>.env</code> (ligne <code>IMAP_PASSWORD=…</code>) puis redémarre l'appli :
-        il n'est jamais saisi ni affiché ici, ni stocké en base.
-      </p>
-      <p v-else class="mt-3 text-sm text-success">✓ Mot de passe défini dans <code>.env</code>.</p>
+      <div class="mt-3">
+        <SecretField label="Mot de passe de la boîte (IMAP et SMTP)" :status="data.password" help="Chiffré en base, jamais réaffiché (4 derniers caractères seulement)." @save="savePassword" />
+      </div>
       <p class="mt-1 text-sm text-muted">
         Dernier relevé : {{ data.config.lastRunAt ? when(data.config.lastRunAt) : 'jamais' }}<template v-if="data.config.lastResult"> — {{ data.config.lastResult }}</template>
       </p>
@@ -68,7 +66,7 @@
     <h3 class="section-title">Envoi (SMTP)</h3>
     <UCard>
       <p class="mb-3 text-sm text-muted">
-        Sert au bouton « Nouveau message » de l'écran E-mails. Même adresse et même mot de passe que la lecture (<code>IMAP_PASSWORD</code> dans <code>.env</code>).
+        Sert au bouton « Nouveau message » de l'écran E-mails. Même adresse et même mot de passe que la lecture (saisi plus haut, chiffré en base).
         Chaque message part seulement quand tu cliques sur « Envoyer », et une copie est rangée dans « Envoyés ».
       </p>
       <div class="grid gap-3 sm:grid-cols-2">
@@ -194,6 +192,11 @@ async function saveConfig() {
   try { await $fetch('/api/imap/config', { method: 'PUT', body: { provider: cfg.provider, enabled: cfg.enabled, host: cfg.host, port: cfg.port, secure: cfg.secure, user: cfg.user, folder: cfg.folder, intervalMin: cfg.intervalMin, sinceDays: cfg.sinceDays, syncMail: cfg.syncMail, mailDays: cfg.mailDays, smtpHost: cfg.smtpHost, smtpPort: cfg.smtpPort, smtpSecure: cfg.smtpSecure, fromName: cfg.fromName } }); await refresh() }
   catch (e) { fail(e) }
   busy.value = null
+}
+async function savePassword(v: string | null) {
+  if (v === null && !confirm('Effacer le mot de passe de la boîte ? La lecture et l\'envoi s\'arrêteront.')) return
+  error.value = ''
+  try { await $fetch('/api/settings/connexions', { method: 'PUT', body: { secrets: { IMAP_PASSWORD: v } } }); await refresh() } catch (e) { fail(e) }
 }
 async function test() {
   busy.value = 'test'; error.value = ''; result.value = null

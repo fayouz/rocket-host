@@ -28,6 +28,17 @@ interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
     date: '28 sept. 2026',
+    title: 'Secrets et connexions dans l\'appli',
+    icon: 'i-lucide-key-round',
+    points: [
+      'Nouvelle page Administration › Connexions : adresses et jetons de Rocket PMS, Place, Clean, Stock et Cast, mot de passe de la boîte e-mail, clés Homey, Lodgify, Nuki, jeton du webhook et secrets des connecteurs',
+      'Plus besoin de modifier .env ni de redémarrer : les secrets sont chiffrés en base (AES-256-GCM) avec une seule clé maître gardée sur le serveur',
+      'Jamais réaffichés : seuls les 4 derniers caractères apparaissent (« ••••1234 »), avec « Remplacer » et « Effacer » ; chaque modification est notée dans le journal d\'audit (sans la valeur)',
+      'Migration sans coupure : les anciennes valeurs de .env restent lues tant qu\'elles ne sont pas importées (npm run secrets:import-env)',
+    ],
+  },
+  {
+    date: '28 sept. 2026',
     title: 'Tableau de bord intelligent',
     icon: 'i-lucide-layout-dashboard',
     points: [

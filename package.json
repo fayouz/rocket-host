@@ -9,7 +9,10 @@
     "postinstall": "nuxt prepare",
     "check:policy": "node scripts/check-policy.mjs",
     "check:rocket-auth": "node --experimental-strip-types --no-warnings scripts/check-rocket-auth.mjs",
-    "check:smart-dashboard": "node --experimental-strip-types --no-warnings scripts/check-smart-dashboard.mjs"
+    "check:smart-dashboard": "node --experimental-strip-types --no-warnings scripts/check-smart-dashboard.mjs",
+    "check:secrets": "node --experimental-strip-types --no-warnings scripts/check-secrets.mjs",
+    "secrets:import-env": "node --env-file-if-exists=.env --experimental-strip-types --no-warnings scripts/secrets-import-env.mjs",
+    "secrets:rotate": "node --env-file-if-exists=.env --experimental-strip-types --no-warnings scripts/secrets-rotate.mjs"
   },
   "dependencies": {
     "@iconify-json/simple-icons": "^1.2.97",

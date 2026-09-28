@@ -1,5 +1,5 @@
 // Adaptateur Homey Pro : acces LOCAL (cle d'API, en-tete Authorization: Bearer) ou CLOUD (OAuth, voir homeyCloud.ts).
-// La cle vient uniquement de .env (HOMEY_API_KEY) ; elle n'apparait ni dans les erreurs, ni dans les journaux, ni dans les reponses.
+// La cle est un secret chiffre en base (HOMEY_API_KEY, Reglages > Connexions) ; elle n'apparait ni dans les erreurs, ni dans les journaux, ni dans les reponses.
 // Routes utilisees (specification HTTP officielle de Homey) : GET /api/manager/devices/device, PUT .../capability/:id (commande,
 // reservee au widget domotique du voyageur, voir server/utils/guestDevices.ts pour la liste blanche et les bornes de securite).
 export interface HomeyDevice {
@@ -14,8 +14,8 @@ async function homeyRequest(cfg: DomoConfig, path: string, init?: { method?: str
   const cloud = cfg.homeyMode === 'cloud'
   const local = () => {
     if (!cfg.homeyUrl) throw fail(400, 'Adresse de Homey non renseignée')
-    const key = useRuntimeConfig().homeyApiKey
-    if (!key) throw fail(400, 'Clé d\'API absente : ajoute HOMEY_API_KEY dans .env puis redémarre')
+    const key = getSecret('HOMEY_API_KEY')
+    if (!key) throw fail(400, 'Clé d\'API absente : renseigne-la dans Réglages › Connexions (Domotique)')
     return { base: cfg.homeyUrl, token: key, id: '' }
   }
   const call = async (t: { base: string; token: string }) => {
