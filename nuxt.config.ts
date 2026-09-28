@@ -30,5 +30,5 @@ export default defineNuxtConfig({
   nitro: { experimental: { database: true } },
   // Anciennes pages Codes, Serrures et Timeline : sous chaque logement (et timeline commune dans Aujourd'hui) ; Stock : dans Reglages
   routeRules: { '/codes': { redirect: '/logements' }, '/locks': { redirect: '/logements' }, '/timeline': { redirect: '/' }, '/stock': { redirect: '/settings/stock' } },
-  app: { head: { title: 'LoussaHousing', htmlAttrs: { lang: 'fr' } } },
+  app: { head: { title: 'Rocket Host', htmlAttrs: { lang: 'fr' } } },
 })

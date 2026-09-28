@@ -1,6 +1,6 @@
 <template>
   <div>
-    <UHeader title="LoussaHousing" to="/" class="print:hidden" :ui="{ container: 'max-w-none' }">
+    <UHeader title="Rocket Host" to="/" class="print:hidden" :ui="{ container: 'max-w-none' }">
       <UNavigationMenu :items="links" />
       <template #right>
         <UButton color="neutral" variant="outline" icon="i-lucide-search" label="Rechercher…" class="hidden sm:flex" @click="searchOpen = true">

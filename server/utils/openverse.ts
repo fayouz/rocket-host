@@ -6,7 +6,7 @@ export async function searchBackgrounds(query: string): Promise<BackgroundCandid
   const q = query.trim().slice(0, 100)
   if (!q) return []
   const url = `https://api.openverse.org/v1/images/?${new URLSearchParams({ q, license: 'cc0,pdm', page_size: '15', mature: 'false' })}`
-  const r = await fetch(url, { headers: { 'User-Agent': 'LoussaHousing/1.0 (welcomescreen backgrounds)' } })
+  const r = await fetch(url, { headers: { 'User-Agent': 'RocketHost/1.0 (welcomescreen backgrounds)' } })
   if (!r.ok) throw createError({ statusCode: 502, statusMessage: `Openverse ${r.status}` })
   const j = await r.json() as any
   const results = Array.isArray(j.results) ? j.results : []

@@ -1,4 +1,4 @@
-# Où déployer LoussaHousing
+# Où déployer Rocket Host
 
 Recherche du 2026-09-21, complétée le 2026-09-22. **Prérequis rempli** : la gestion des utilisateurs (`docs/plan-gestion-utilisateurs.md`) est construite (comptes, rôles, mot de passe oublié).
 

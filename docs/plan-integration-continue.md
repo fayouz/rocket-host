@@ -4,7 +4,7 @@ Statut : **brouillon à fignoler** (2026-09-21). Rien n'est mis en place.
 
 ## 1. Constat
 
-- Dépôt GitHub **privé** `fayouz/host-management` ; une branche par version (`v2`, …) mergée dans `main` (mémoire du projet).
+- Dépôt GitHub **privé** `fayouz/rocket-host` ; une branche par version (`v2`, …) mergée dans `main` (mémoire du projet).
 - **Aucune CI** : pas de dossier `.github`, aucun test, aucun lint, aucune vérification de types (les scripts se limitent à `dev`, `build`, `preview`).
 - Seule barrière existante : le `Dockerfile` (Node 24) fait `npm ci` puis `npm run build` ; un build cassé échoue donc au déploiement, pas avant.
 - **Jamais lancés jusqu'ici** : `nuxt build` et la vérification de types (les changements récents ont été testés à la main sur l'appli qui tourne). L'état réel est inconnu tant qu'on n'a pas fait la mesure de départ (étape 0).

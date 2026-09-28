@@ -1,6 +1,6 @@
 # Rocket Auth : connexion unique (étape 1 du plan Rocket)
 
-LoussaHousing devient un **client OpenID Connect** de Rocket Auth (`fayouz`/rocket-middleware/rocket-auth).
+Rocket Host devient un **client OpenID Connect** de Rocket Auth (`fayouz`/rocket-middleware/rocket-auth).
 Désactivé tant que `ROCKET_AUTH_URL` est vide : la connexion locale fonctionne exactement comme avant.
 
 ## Fonctionnement
@@ -14,7 +14,7 @@ Désactivé tant que `ROCKET_AUTH_URL` est vide : la connexion locale fonctionne
 - **Rôles** : groupe `ROCKET_AUTH_ADMIN_GROUP` (défaut `rocket-admins`) → administrateur ; autres groupes par `ROCKET_AUTH_ROLE_GROUPS`
   (`gestionnaire=lh-gestion|gestion,comptable=lh-compta,menage=lh-menage` ; le rôle le plus fort l'emporte). Si un groupe donne un rôle, il remplace
   le rôle local à chaque connexion ; sinon le rôle local est gardé. Compte créé sans groupe reconnu : `ROCKET_AUTH_DEFAULT_ROLE`, sinon refus.
-  Les logements autorisés restent gérés dans LoussaHousing (Réglages > Utilisateurs).
+  Les logements autorisés restent gérés dans Rocket Host (Réglages > Utilisateurs).
 - **Déconnexion** : une session ouverte par Rocket Auth renvoie vers `end_session_endpoint` (`/oauth/logout`, *RP-initiated*) avec
   `post_logout_redirect_uri` = `/connexion?logged_out=1` (ou `ROCKET_AUTH_POST_LOGOUT_URI`).
 - **Back-channel logout** : `POST /api/auth/rocket/backchannel` (`logout_token`, `typ` `logout+jwt`, signature, émetteur, audience, événement, pas de nonce, `jti` non rejoué).
@@ -39,14 +39,14 @@ Désactivé tant que `ROCKET_AUTH_URL` est vide : la connexion locale fonctionne
 **Secret client** : la règle « aucune clé d'intégration dans `.env` » vise les intégrations ; ce secret est l'identité propre de l'appli auprès de Rocket Auth.
 Il reste dans `.env` pour l'instant et **passera dans le coffre de secrets du compte en phase 2**.
 
-## Déclarer LoussaHousing dans Rocket Auth
+## Déclarer Rocket Host dans Rocket Auth
 Interface Rocket Auth : Administration → Clients OAuth (confidentiel, application de confiance, scopes `openid profile email groups`, flux `authorization_code`).
-En démo, une ligne de `DEMO_OAUTH_CLIENTS` (`clientId|Nom|secret|redirect|post-logout|homeUrl|icône|backchannel`), par exemple pour LoussaHousing sur le port 3000 :
+En démo, une ligne de `DEMO_OAUTH_CLIENTS` (`clientId|Nom|secret|redirect|post-logout|homeUrl|icône|backchannel`), par exemple pour Rocket Host sur le port 3000 :
 
 ```
-loussahousing|LoussaHousing|demo-loussahousing-client-secret|http://localhost:3000/api/auth/rocket/callback|http://localhost:3000/connexion?logged_out=1|http://localhost:3000|i-lucide-house|http://host.docker.internal:3000/api/auth/rocket/backchannel
+loussahousing|Rocket Host|demo-loussahousing-client-secret|http://localhost:3000/api/auth/rocket/callback|http://localhost:3000/connexion?logged_out=1|http://localhost:3000|i-lucide-house|http://host.docker.internal:3000/api/auth/rocket/backchannel
 ```
-(adresse de back-channel joignable depuis le conteneur Rocket Auth). Côté LoussaHousing : `ROCKET_AUTH_URL=http://localhost:8100`, `ROCKET_AUTH_CLIENT_ID=loussahousing`,
+(adresse de back-channel joignable depuis le conteneur Rocket Auth). Côté Rocket Host : `ROCKET_AUTH_URL=http://localhost:8100`, `ROCKET_AUTH_CLIENT_ID=loussahousing`,
 `ROCKET_AUTH_CLIENT_SECRET=demo-loussahousing-client-secret`.
 
 ## Vérifications

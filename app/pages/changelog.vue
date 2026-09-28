@@ -3,7 +3,7 @@
     <div class="space-y-2 text-center">
       <UBadge color="primary" variant="subtle" label="Nouveautés" />
       <h1 class="text-3xl font-bold">Ce qui a changé</h1>
-      <p class="text-muted">L'historique des évolutions de LoussaHousing, dans l'ordre.</p>
+      <p class="text-muted">L'historique des évolutions de Rocket Host, dans l'ordre.</p>
     </div>
 
     <UTimeline
@@ -28,12 +28,22 @@ interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
     date: '28 sept. 2026',
+    title: 'Renommé en Rocket Host',
+    icon: 'i-lucide-tag',
+    points: [
+      'L\'application s\'appelle désormais Rocket Host (titre, menu, pages de connexion, e-mails, documentation, API)',
+      'LoussaHousing reste le nom de l\'activité et des données : c\'est le premier client de Rocket Host',
+      'Dépôt GitHub renommé fayouz/rocket-host ; identifiant client Rocket Auth « loussahousing » et variables d\'environnement inchangés',
+    ],
+  },
+  {
+    date: '28 sept. 2026',
     title: 'Connexion unique avec Rocket Auth',
     icon: 'i-lucide-rocket',
     points: [
       'Bouton « Se connecter avec Rocket Auth » sur la page de connexion (OpenID Connect, code + PKCE), actif seulement si ROCKET_AUTH_URL est renseigné',
       'Compte associé par adresse e-mail (création facultative), rôle administrateur et autres rôles d\'après les groupes Rocket Auth',
-      'Déconnexion aussi chez Rocket Auth ; une déconnexion faite ailleurs dans la suite ferme les sessions LoussaHousing (back-channel logout)',
+      'Déconnexion aussi chez Rocket Auth ; une déconnexion faite ailleurs dans la suite ferme les sessions Rocket Host (back-channel logout)',
       'Sélecteur des applications de la suite Rocket dans l\'en-tête ; connexion locale gardée pendant la transition (ROCKET_LOCAL_LOGIN)',
     ],
   },
@@ -42,7 +52,7 @@ const entries: Entry[] = [
     title: 'Menu Administration rangé par brique',
     icon: 'i-lucide-layout-list',
     points: [
-      'Le menu Administration est regroupé par brique : Rocket PMS, Rocket Place, Rocket Mailer, Rocket Cloud, puis LoussaHousing (local)',
+      'Le menu Administration est regroupé par brique : Rocket PMS, Rocket Place, Rocket Mailer, Rocket Cloud, puis Rocket Host (local)',
       'Chaque brique affiche son état (connecté, via PMS, démo, off, local)',
       'Quand Rocket PMS est branché, les pages locales remplacées (lieux, stock, livret, e-mail) indiquent « géré dans Rocket PMS/Place », avec un lien si PMS_FRONT_URL / PLACE_FRONT_URL sont renseignés',
       'Aucune page supprimée ; le journal d\'audit a son propre lien',

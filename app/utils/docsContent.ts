@@ -20,7 +20,7 @@ export const DOC_PAGES: DocPage[] = [
   {
     slug: 'introduction',
     title: 'Introduction',
-    description: 'Ce que fait LoussaHousing et comment ce manuel est organisé.',
+    description: 'Ce que fait Rocket Host et comment ce manuel est organisé.',
     group: 'Prise en main',
     icon: 'i-lucide-house',
     sections: [
@@ -28,7 +28,7 @@ export const DOC_PAGES: DocPage[] = [
         id: 'a-quoi-ca-sert',
         title: 'À quoi ça sert',
         paragraphs: [
-          'LoussaHousing centralise la gestion de tes logements en location courte durée : réservations (synchronisées depuis Lodgify), codes de porte (Nuki), ménage, stock, e-mails, documents, rentabilité, et les pages voyageur (livret d\'accueil, écran TV).',
+          'Rocket Host centralise la gestion de tes logements en location courte durée : réservations (synchronisées depuis Lodgify), codes de porte (Nuki), ménage, stock, e-mails, documents, rentabilité, et les pages voyageur (livret d\'accueil, écran TV).',
           'L\'objectif : éviter de jongler entre Lodgify, Nuki, ta boîte mail et un tableur pour savoir qui arrive, qui part, si le ménage est fait et si le stock tient.',
         ],
       },

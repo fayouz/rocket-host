@@ -75,7 +75,7 @@ adb shell dpm set-device-owner com.ksmpartners.fullykiosk/.AdminReceiver
 
 Fully Kiosk expose bien une **API REST locale** (HTTP, protégée par mot de passe) — `loadUrl`, `restartApp`,
 `reboot`, `getDeviceInfo`, `screenshot`. Mais elle n'est joignable que depuis le **même réseau local** que la TV, et
-le serveur LoussaHousing (Mac mini) n'est pas forcément sur ce réseau : Gaston est à Villenave-d'Ornon, Le ponant à
+le serveur Rocket Host (Mac mini) n'est pas forcément sur ce réseau : Gaston est à Villenave-d'Ornon, Le ponant à
 Bègles — deux réseaux différents, sans VPN/UniFi entre eux à ce jour. Appeler cette API depuis le serveur n'est donc
 **pas possible en l'état**.
 

@@ -4,7 +4,7 @@
       <template #header="{ collapsed }">
         <NuxtLink to="/" class="flex items-center gap-2 px-0.5" :class="{ 'justify-center': collapsed }">
           <UIcon name="i-lucide-house" class="size-6 shrink-0 text-primary" />
-          <span v-if="!collapsed" class="truncate font-bold">LoussaHousing</span>
+          <span v-if="!collapsed" class="truncate font-bold">Rocket Host</span>
         </NuxtLink>
       </template>
 
@@ -136,7 +136,7 @@ const adminGroups = computed((): NavGroup[] => [
   },
   {
     label: '',
-    brick: { name: 'LoussaHousing (local)', icon: 'i-lucide-house' },
+    brick: { name: 'Rocket Host (local)', icon: 'i-lucide-house' },
     items: [
       { label: 'Utilisateurs & rôles', icon: 'i-lucide-users', to: '/settings/utilisateurs' },
       { label: 'Journal d\'audit', icon: 'i-lucide-scroll-text', to: '/settings/utilisateurs?tab=journal' },
