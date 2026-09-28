@@ -100,7 +100,7 @@
             <UBadge color="primary" variant="subtle" :label="logementId ? 'Mails du logement' : bookingId ? `Réservation n°${bookingId}` : `Contact n°${contactId}`" />
             <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" label="Retirer ce filtre" @click="clearTarget" />
           </p>
-          <div class="grid gap-4" :class="selected ? 'xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_17rem]' : 'xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]'">
+          <div class="grid gap-4" :class="selected ? 'xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_17rem]' : ''">
             <div :class="selected ? 'hidden xl:block' : ''" class="min-w-0 space-y-2">
               <UCard v-for="m in items" :key="m.id" :class="selected?.id === m.id ? 'ring-2 ring-primary' : 'cursor-pointer'" @click="open(m)">
                 <div class="flex items-baseline justify-between gap-2">

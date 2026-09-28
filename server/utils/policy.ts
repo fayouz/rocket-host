@@ -229,6 +229,7 @@ export const PAGES: [string, string][] = [
   ['/logements/:id/stock', 'AGM'], ['/logements/:id/qr', 'A'], ['/logements/:id/fichiers', 'AGC'], ['/logements/:id/documents', 'AGC'], ['/logements/:id/bilan', 'AGC'],
   ['/logements/:id/domotique', 'AG'],
   ['/logements/:id/reglement', 'AG'], ['/logements/:id/livret', 'AG'], ['/logements/:id/mails', 'A'], ['/logements/:id/connecteurs', 'A'], ['/logements/:id/contacts', 'A'],
+  ['/reservations', 'AG'], ['/menage', 'AG'], // vues « Tous les logements » du menu Au quotidien (donnees filtrees par perimetre)
   ['/documents', 'AGC'], ['/contacts', 'A'], ['/mail', 'A'], ['/profit', 'A'],
   ['/settings', 'A'], ['/settings/utilisateurs', 'A'], ['/settings/imap', 'A'], ['/settings/connexions', 'A'], ['/settings/imports', 'A'], ['/settings/plugins', 'A'], ['/settings/stock', 'A'], ['/settings/welcomescreen', 'A'], ['/docs-api', 'A'], ['/changelog', 'A'],
   ['/docs', 'A'], ['/docs/:slug', 'A'],
