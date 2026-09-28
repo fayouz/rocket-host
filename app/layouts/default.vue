@@ -10,7 +10,13 @@
 
       <template #default="{ collapsed }">
         <div v-for="group in groups" :key="group.label" class="mb-1">
-          <p v-if="!collapsed && group.label" class="px-2.5 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-dimmed">{{ group.label }}</p>
+          <div v-if="!collapsed && group.switcher" class="px-2.5 pb-1 pt-3">
+            <USelectMenu v-model="choice" :items="switcherItems" value-key="value" :search-input="false" size="sm" class="w-full" aria-label="Logement affiché" @update:model-value="onSwitch">
+              <template #leading><span v-if="choiceHex" class="inline-block size-2 rounded-full" :style="{ backgroundColor: choiceHex }" /><UIcon v-else name="i-lucide-building-2" class="size-4 text-muted" /></template>
+              <template #item-leading="{ item }"><span v-if="item.hex" class="inline-block size-2 rounded-full" :style="{ backgroundColor: item.hex }" /><UIcon v-else-if="item.value === 'all'" name="i-lucide-building-2" class="size-4 text-muted" /><span v-else class="inline-block size-2 rounded-full bg-muted" /></template>
+            </USelectMenu>
+          </div>
+          <p v-else-if="!collapsed && group.label" class="px-2.5 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-dimmed">{{ group.label }}</p>
           <div v-if="!collapsed && group.brick" class="flex items-center justify-between gap-2 px-2.5 pb-1 pt-2">
             <span class="flex items-center gap-1.5 text-xs font-medium text-muted"><UIcon :name="group.brick.icon" class="size-3.5" />{{ group.brick.name }}</span>
             <UBadge v-if="group.brick.status" size="sm" variant="subtle" :color="group.brick.status.color" :label="group.brick.status.label" />
@@ -88,7 +94,7 @@ const userMenu = computed(() => [[{ label: user.value?.username ?? '', type: 'la
 
 interface NavItem { label: string; icon?: string; to?: string; target?: string; badge?: string; type?: 'trigger'; defaultOpen?: boolean; children?: NavItem[] }
 type BadgeColor = 'success' | 'warning' | 'error' | 'neutral' | 'info'
-interface NavGroup { label: string; brick?: { name: string; icon: string; status?: { label: string; color: BadgeColor } }; items: NavItem[] }
+interface NavGroup { label: string; switcher?: boolean; brick?: { name: string; icon: string; status?: { label: string; color: BadgeColor } }; items: NavItem[] }
 
 // Etat des briques : Rocket PMS (et Place/Mailer/Cloud, joints a travers lui) d'apres /api/pms/status
 const { data: pms } = await useFetch('/api/pms/status', { key: 'pms-status' })
@@ -111,8 +117,7 @@ const brickPills = computed((): { label: string; color: BadgeColor }[] => [
 ])
 // Reglages avances : replies dans un seul sous-menu replie par defaut (Administration), admins seulement. Pages inchangees.
 const adminChildren = computed((): NavItem[] => [
-  { label: 'Connexions & intégrations', to: '/settings/connexions' },
-  { label: 'Plugins / connecteurs', to: '/settings/plugins' },
+  { label: 'Connexions & intégrations', to: '/settings/connexions' }, // briques Rocket + connexions directes (plugins inclus)
   { label: 'Domotique', to: lgPage('domotique') },
   { label: 'Boîte e-mail (IMAP/SMTP)', to: '/settings/imap' },
   { label: 'Logements & lieux', to: '/settings', badge: managed('Place') },
@@ -124,17 +129,41 @@ const adminChildren = computed((): NavItem[] => [
   { label: 'Nouveautés', to: '/changelog' },
   { label: 'Manuel', to: '/docs' },
 ])
+// Selecteur de logement (« Au quotidien ») : choix global memorise, reflete dans l'URL des ecrans quotidiens
+const route = useRoute()
+const { choice, logements, linkFor, screenOf } = useLogementChoice()
+const switcherItems = computed(() => [
+  { label: 'Tous les logements', value: 'all', hex: null as string | null },
+  ...logements.value.map(l => ({ label: l.name, value: String(l.id), hex: logementColorHex(l.color) })),
+])
+const choiceHex = computed(() => switcherItems.value.find(i => i.value === choice.value)?.hex ?? null)
+// Changer de logement sur un ecran quotidien garde le meme ecran et change juste de logement
+function onSwitch(v: string) {
+  const screen = screenOf(route.path)
+  if (screen) navigateTo(linkFor(screen, v))
+}
+// Arriver sur un ecran quotidien d'un logement (lien, historique) aligne le selecteur ; ?logement= sur les vues globales aussi
+watch(() => [route.path, route.query.logement], () => {
+  const m = route.path.match(/^\/logements\/(\d+)\//)
+  if (m && screenOf(route.path) && route.query.logement !== 'tous') choice.value = m[1]!
+  else if (!m && screenOf(route.path) && !route.query.logement) choice.value = 'all' // vue globale = « Tous les logements »
+  else if (!m && screenOf(route.path) && route.query.logement) {
+    choice.value = String(route.query.logement)
+    if (choice.value !== 'all') navigateTo(linkFor(screenOf(route.path)!), { replace: true })
+  }
+}, { immediate: true })
 // Groupes de la sidebar : un intitule en majuscules par groupe (vide pour le premier, comme Aujourd'hui seul en tete)
 const groups = computed(() => ([
   { label: '', items: [can('AG') && { label: 'Aujourd\'hui', icon: 'i-lucide-layout-dashboard', to: '/' }].filter(Boolean) },
   {
-    label: 'Au quotidien',
+    // Intitule remplace par le selecteur de logement : les entrees ouvrent l'ecran du logement choisi (ou la vue globale)
+    label: 'Au quotidien', switcher: true,
     items: [
-      can('AG') && { label: 'Réservations', icon: 'i-lucide-calendar-days', to: lgPage('reservations') },
-      can('AGM') && { label: 'Ménage & linge', icon: 'i-lucide-sparkles', to: lgPage('timeline') },
-      can('AG') && { label: 'Accès & serrures', icon: 'i-lucide-key-round', to: lgPage('serrures') },
-      can('AGM') && { label: 'Stock & courses', icon: 'i-lucide-package', to: '/settings/stock', badge: managed('Place') },
-      can('AG') && { label: 'Écrans & livret', icon: 'i-lucide-tv', to: '/settings/welcomescreen', badge: managed('PMS') },
+      can('AG') && { label: 'Réservations', icon: 'i-lucide-calendar-days', to: linkFor('reservations') },
+      can('AGM') && { label: 'Ménage & linge', icon: 'i-lucide-sparkles', to: linkFor('menage') },
+      can('AG') && { label: 'Accès & serrures', icon: 'i-lucide-key-round', to: linkFor('serrures') },
+      can('AGM') && { label: 'Stock & courses', icon: 'i-lucide-package', to: linkFor('stock'), badge: managed('Place') },
+      can('AG') && { label: 'Écrans & livret', icon: 'i-lucide-tv', to: linkFor('ecrans'), badge: managed('PMS') },
     ].filter(Boolean),
   },
   {

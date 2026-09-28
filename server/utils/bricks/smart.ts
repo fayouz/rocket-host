@@ -239,7 +239,7 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
     }
   }
   for (const b of Object.keys(bricks) as BrickName[]) {
-    if (bricks[b].configured && !bricks[b].ok) alerts.push({ level: b === 'pms' ? 'critical' : 'warning', code: 'brick_unreachable', brick: b, at: '', link: '/settings/plugins', title: `${bricks[b].name} injoignable`, detail: bricks[b].error || '' })
+    if (bricks[b].configured && !bricks[b].ok) alerts.push({ level: b === 'pms' ? 'critical' : 'warning', code: 'brick_unreachable', brick: b, at: '', link: '/settings/connexions?onglet=briques', title: `${bricks[b].name} injoignable`, detail: bricks[b].error || '' })
   }
   alerts.sort((a, c) => LEVEL_RANK[a.level] - LEVEL_RANK[c.level] || (a.at || '9').localeCompare(c.at || '9'))
 

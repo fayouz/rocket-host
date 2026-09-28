@@ -219,7 +219,8 @@ const filteredItems = computed(() => {
   return [...items].sort((a, b) => sortAsc.value ? a.arrival.localeCompare(b.arrival) : b.arrival.localeCompare(a.arrival))
 })
 // Reservation selectionnee (colonne de droite) : par defaut celle en cours, sinon la premiere de la liste filtree (la plus recente/proche)
-const selected = ref<number | null>(null)
+// ?booking=<id> (depuis la vue « Tous les logements ») : ouvre directement cette reservation
+const selected = ref<number | null>(Number(route.query.booking) || null)
 watchEffect(() => {
   if (selected.value !== null && filteredItems.value.some(b => b.id === selected.value)) return
   const items = filteredItems.value

@@ -36,6 +36,10 @@ const entries: Entry[] = [
       '« Administration » repliée par défaut en un seul sous-menu (connexions, utilisateurs, imports, aide…) pour les admins',
       'Doublons supprimés : Documents et Mon compte n\'apparaissent plus qu\'une fois (Mon compte reste dans le menu utilisateur)',
       'Pastilles d\'état des briques (PMS, Place, Mailer, Cloud) en bas de la sidebar, vers Connexions',
+      'Sélecteur de logement à la place du titre « Au quotidien » : « Tous les logements » ou un logement (pastille de couleur), mémorisé ; changer de logement garde le même écran',
+      'Nouvelles vues « Tous les logements » : Réservations (colonne et filtre Logement) et Ménage & linge (frise commune) ; Accès & serrures ouvre le premier logement avec une indication',
+      'E-mails : sans message ouvert, la liste occupe toute la largeur',
+      'Connexions & intégrations réunit Plugins / connecteurs : onglets « Briques Rocket » (PMS, Place, Clean, Stock, Cast, Mailer/Cloud/Auth) et « Connexions directes » (Lodgify, Nuki, Homey, boîte e-mail, webhook n8n, plugins) ; l\'ancienne adresse des plugins y renvoie',
     ],
   },
   {

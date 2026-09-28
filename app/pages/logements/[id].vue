@@ -4,6 +4,8 @@
       <h1 class="text-xl font-semibold">{{ logement.name }}</h1>
       <p class="text-sm text-muted">{{ logement.lodgifyName ? `Lodgify : ${logement.lodgifyName}` : 'Non associé à Lodgify' }}</p>
     </div>
+    <UAlert v-if="route.query.logement === 'tous'" class="mb-4 print:hidden" color="info" variant="subtle" icon="i-lucide-info"
+            title="Pas de vue « Tous les logements » pour cet écran" description="Affichage du premier logement. Choisis un logement dans le sélecteur du menu pour en voir un autre." />
     <UNavigationMenu orientation="horizontal" highlight :items="menu" class="mb-6 print:hidden" />
     <div class="min-w-0">
       <NuxtPage />
