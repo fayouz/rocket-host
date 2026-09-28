@@ -83,3 +83,12 @@ L'appli a maintenant sa propre page de connexion (`docs/plan-gestion-utilisateur
 `SESSION_SECRET` est facultatif (sinon une clé est générée dans le volume, `.data/session-secret`). **Le mot de passe Traefik (`ADMIN_USERS`) a été retiré le 2026-09-23** : l'appli protège déjà tout elle-même (comptes, rôles, refus par défaut sur toute route hors pages publiques à jeton) — la double authentification n'apportait plus rien. Les pages du ménage (QR) et les appels de n8n ne demandent pas de connexion (jetons).
 
 Les comptes se gèrent ensuite dans **Réglages > Utilisateurs** (invitations par lien à usage unique). Pour envoyer l'invitation par e-mail, configure d'abord **Réglages > E-mail** ; sinon copie le lien à la main. `LH_MAIL_DRYRUN=1` (tests uniquement) construit les messages sans les envoyer.
+
+## Images Docker
+
+Image unique (Nuxt/Nitro) `ghcr.io/fayouz/rocket-host`, publiee par la CI (`.github/workflows/ci.yml`, workflow reutilisable `docker-images.yml` de rocket-core) **uniquement** sur tag `vX.Y.Z` et lancement manuel (Actions → CI → Run workflow).
+
+- Tags : `vX.Y.Z`, `X.Y.Z`, `X.Y`, `latest` (dernier tag) et `sha-<commit>` ; multi-arch `linux/amd64` + `linux/arm64` (serveur Oracle ARM compris) ; labels OCI, SBOM et provenance.
+- PR et branches : build `linux/amd64` de validation, jamais pousse.
+- Image **privee** (depot prive, visibilite par defaut a garder). Plan GitHub Free : 500 Mo de stockage et 1 Go/mois de transfert pour les paquets prives ; supprimer les anciennes versions `sha-…`. Pour tirer l'image : `docker login ghcr.io` avec un jeton `read:packages`.
+- Exemple : `compose.prod.yaml` (l'appli seule, labels Traefik en commentaire) ; dans `docker-compose.yml`, remplacer `build: .` par `image: ghcr.io/fayouz/rocket-host:vX.Y.Z` pour ne plus construire sur le serveur.
