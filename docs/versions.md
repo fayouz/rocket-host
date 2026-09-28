@@ -1,5 +1,8 @@
 # Versions de Rocket Host
 
+## Lien d'inscription (2026-09-28)
+Branche `feature/signup-link` : la page `/connexion` affiche « Créer un compte · choisir une offre » et « Voir les offres », vers la page d'inscription en libre-service de **Rocket Console** (`${ROCKET_CONSOLE_PUBLIC_URL}/inscription` : choix de l'offre avec devis, compte en essai, vérification de l'e-mail). Liens masqués si `ROCKET_CONSOLE_PUBLIC_URL` est vide (variable publique, surchargeable par `NUXT_PUBLIC_ROCKET_CONSOLE_PUBLIC_URL`). Les comptes, offres et abonnements restent gérés par Rocket Console ; Rocket Host ne fait que pointer vers elle.
+
 ## Renommé en Rocket Host (2026-09-28)
 Branche `feature/rocket-host` : le produit s'appelle Rocket Host (dépôt `fayouz/rocket-host`). LoussaHousing reste le nom de l'activité de Faez, premier client. Identifiant client Rocket Auth `loussahousing`, domaines `loussahousing.*`, fichiers de base et variables d'environnement inchangés (compatibilité).
 
