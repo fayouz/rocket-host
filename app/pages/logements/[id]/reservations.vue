@@ -164,7 +164,10 @@
         </template>
       </UCard>
 
-      <UCard :ui="{ body: 'p-0 sm:p-0' }">
+      <!-- Rocket PMS actif : livret du séjour (lien, QR, envoi) et e-mails Rocket Mailer de la réservation -->
+      <PmsBookingPanel v-if="pms" :logement-id="String(route.params.id)" :booking-id="current.id" :guest="current.guest" />
+
+      <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
         <template #header><b>Aperçu du livret</b></template>
         <div v-if="livretLink" class="livret-preview-frame overflow-hidden bg-black">
           <iframe :src="livretPreviewLink" class="livret-preview-iframe" title="Aperçu du livret" />
@@ -183,6 +186,7 @@
 
 <script setup lang="ts">
 const route = useRoute()
+const pms = useState<boolean>('pms', () => false)
 const [{ data }, { data: livretData }] = await Promise.all([
   useFetch(() => `/api/logements/${route.params.id}/reservations`),
   // Aperçu du livret (welcomescreen), en encart : même token que l'onglet Livret Accueil.

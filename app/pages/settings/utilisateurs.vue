@@ -99,10 +99,10 @@
 type Role = 'admin' | 'gestionnaire' | 'comptable' | 'menage'
 const { user: me } = useAuth()
 const { data, refresh } = await useFetch('/api/users')
-const tab = ref('comptes')
+const tab = ref(useRoute().query.tab === 'journal' ? 'journal' : 'comptes') // ?tab=journal : lien « Journal d'audit » du menu
 const tabs = [{ label: 'Comptes', icon: 'i-lucide-users', value: 'comptes' }, { label: 'Journal', icon: 'i-lucide-scroll-text', value: 'journal' }]
 const audit = ref<{ id: number; at: string; username: string; action: string; detail: string; ip: string }[]>([])
-watch(tab, async (t) => { if (t === 'journal') audit.value = (await $fetch<{ entries: typeof audit.value }>('/api/audit')).entries })
+watch(tab, async (t) => { if (t === 'journal') audit.value = (await $fetch<{ entries: typeof audit.value }>('/api/audit')).entries }, { immediate: true })
 
 const roleLabel: Record<string, string> = { admin: 'Administrateur', gestionnaire: 'Gestionnaire', comptable: 'Comptable', menage: 'Ménage' }
 const roleHelp: Record<string, string> = {

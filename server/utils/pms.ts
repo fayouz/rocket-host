@@ -280,3 +280,110 @@ export async function pmsSetStockLevel(lodgifyPropertyId: number | null | undefi
     method: 'PATCH', headers: { 'content-type': 'application/merge-patch+json' }, body: JSON.stringify({ level }),
   })
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Tranche 2 (feature/pms-v2) : livret d'accueil + écran TV, e-mails Rocket Mailer, bilan, ménages Rocket Place.
+// Toujours derriere pmsEnabled(). Envois (livret, e-mail) uniquement sur clic confirme, jamais en tache de fond.
+// ---------------------------------------------------------------------------------------------------------------------
+
+// Lance une 404 propre quand le PMS n'est pas actif (les routes /pms-* n'ont alors pas de sens)
+export function requirePms() {
+  if (!pmsEnabled()) throw createError({ statusCode: 404, statusMessage: 'Rocket PMS non actif' })
+}
+
+const originOf = (u: unknown) => { try { return new URL(String(u)).origin } catch { return '' } }
+
+// Livret du logement vu par le PMS : liens TV, date de maj, visites des 30 derniers jours, lien vers l'éditeur PMS
+/** En-tête pour agir au nom d'un utilisateur du PMS (e-mails via Rocket Mailer) ; vide si PMS_IMPERSONATE_USER n'est pas défini. */
+function asUser(): Record<string, string> {
+  const user = String(useRuntimeConfig().pmsImpersonateUser || '')
+  return user ? { 'X-Impersonate-User': user } : {}
+}
+
+export async function pmsWelcomeBook(lodgifyPropertyId: number | null | undefined) {
+  const uuid = await pmsPropertyId(lodgifyPropertyId)
+  const [book, stats] = await Promise.all([
+    call(`/api/properties/${uuid}/welcome-book`),
+    call(`/api/properties/${uuid}/welcome-book/stats?days=30`).catch(() => null),
+  ])
+  const front = originOf(book?.tvUrl)
+  const content = book?.content && typeof book.content === 'object' ? book.content : {}
+  return {
+    tvUrl: String(book?.tvUrl || ''),
+    editorUrl: front ? `${front}/properties/${uuid}?tab=livret` : '',
+    updatedAt: typeof book?.updatedAt === 'string' ? book.updatedAt : null,
+    languages: Array.isArray(book?.languages) ? book.languages.map(String) : [],
+    // aperçu en lecture des rubriques texte (l'édition se fait dans Rocket PMS)
+    sections: Object.entries(content).filter(([, v]) => typeof v === 'string' && v.trim()).map(([k, v]) => ({ key: k, text: String(v).slice(0, 2000) })),
+    visits: stats ? { days: Number(stats.days || 30), total: Number(stats.total || 0), links: (stats.links || []).map((l: any) => ({ link: String(l.link), bookingId: l.bookingId == null ? null : Number(l.bookingId), guest: l.guest ? String(l.guest) : null, total: Number(l.total || 0), lastDay: String(l.lastDay || '') })) } : null,
+  }
+}
+
+// Lien voyageur d'une reservation (page /g/<token> du front PMS) + message par defaut
+export async function pmsGuestLink(lodgifyPropertyId: number | null | undefined, bookingId: number) {
+  const r = await pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/guest-link`)
+  return { url: String(r?.url || ''), message: String(r?.message || ''), validFrom: r?.from ? String(r.from) : null, validUntil: r?.until ? String(r.until) : null }
+}
+
+// Envoi du lien au voyageur : uniquement sur clic confirme (messageId du navigateur, envoi idempotent cote PMS)
+export async function pmsSendGuestLink(lodgifyPropertyId: number | null | undefined, bookingId: number, body: { channel: string; messageId: string; text?: string; lang?: string }) {
+  return pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/guest-link/send`, {
+    method: 'POST', headers: { 'content-type': 'application/json', ...asUser() }, body: JSON.stringify(body),
+  })
+}
+
+// E-mails Rocket Mailer rattaches a la reservation (par adresse du voyageur ou numero de reservation dans l'objet)
+export async function pmsBookingEmails(lodgifyPropertyId: number | null | undefined, bookingId: number) {
+  const r = await pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/emails`, { headers: asUser() })
+  return {
+    demo: !!r?.demo, available: r?.available !== false, reason: r?.reason ? String(r.reason) : null, guestEmail: r?.guestEmail ? String(r.guestEmail) : null,
+    conversations: (r?.conversations || []).map((c: any) => ({ id: String(c.id), subject: String(c.subject || ''), lastMessageAt: String(c.lastMessageAt || ''), snippet: String(c.snippet || ''), messageCount: Number(c.messageCount || 0), status: String(c.status || ''), matchedBy: String(c.matchedBy || '') })),
+  }
+}
+
+export async function pmsBookingEmailThread(lodgifyPropertyId: number | null | undefined, bookingId: number, conversationId: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(conversationId)) throw createError({ statusCode: 400, statusMessage: 'Conversation invalide' })
+  const r = await pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/emails/${conversationId}`, { headers: asUser() })
+  return {
+    subject: String(r?.conversation?.subject || ''),
+    messages: (r?.messages || []).map((m: any) => ({ key: String(m.key), from: m.from === 'host' ? 'host' : 'guest', at: String(m.at || ''), subject: String(m.subject || ''), text: String(m.text || ''), status: String(m.status || ''), fromAddress: String(m.fromAddress || '') })),
+  }
+}
+
+export async function pmsSendBookingEmail(lodgifyPropertyId: number | null | undefined, bookingId: number, body: { subject: string; text: string; messageId: string }) {
+  return pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/emails`, {
+    method: 'POST', headers: { 'content-type': 'application/json', ...asUser() }, body: JSON.stringify(body),
+  })
+}
+
+// Bilan annuel calcule par le PMS (revenus Lodgify + depenses saisies/importees dans Rocket PMS)
+export async function pmsBilan(lodgifyPropertyId: number | null | undefined, year: number) {
+  const uuid = await pmsPropertyId(lodgifyPropertyId)
+  const r = await call(`/api/properties/${uuid}/bilan?year=${year}`)
+  const n = (v: unknown) => Number(v ?? 0) || 0
+  return {
+    year: n(r?.year) || year, years: (r?.years || []).map(Number), demo: !!r?.demo, currency: String(r?.currency || 'EUR'),
+    revenue: n(r?.revenue), nights: n(r?.nights), stays: n(r?.stays), occupancy: n(r?.occupancy), daysConsidered: n(r?.daysConsidered), since: r?.since ? String(r.since) : null,
+    chargesTotal: n(r?.chargesTotal), otherIncome: n(r?.otherIncome), result: n(r?.result),
+    months: (r?.months || []).map((m: any) => ({ label: String(m.label || ''), revenue: n(m.revenue), nights: n(m.nights), charges: n(m.charges), income: n(m.income), result: n(m.result) })),
+    categories: (r?.categories || []).map((c: any) => ({ key: String(c.key), label: String(c.label || ''), kind: String(c.kind || ''), total: n(c.total), count: n(c.count) })),
+    items: (r?.items || []).map((e: any) => ({ id: String(e.id), date: String(e.date || ''), amount: n(e.amount), categoryLabel: String(e.categoryLabel || ''), kind: String(e.kind || ''), note: e.note ? String(e.note) : '', source: e.source ? String(e.source) : '' })),
+    editorUrl: '',
+  }
+}
+
+export async function pmsBilanCsv(lodgifyPropertyId: number | null | undefined, year: number): Promise<{ body: string; disposition: string }> {
+  const { url, token } = config()
+  const res = await fetch(`${url}/api/properties/${await pmsPropertyId(lodgifyPropertyId)}/bilan.csv?year=${year}`, { headers: { Authorization: `Bearer ${token}` } })
+  if (!res.ok) throw createError({ statusCode: 502, statusMessage: `Rocket PMS ${res.status} sur le bilan CSV` })
+  const body = await res.text()
+  if (body.length > MAX_BYTES) throw createError({ statusCode: 502, statusMessage: 'Bilan CSV trop volumineux' })
+  return { body, disposition: res.headers.get('content-disposition') || `attachment; filename="bilan-${year}.csv"` }
+}
+
+// Menages (taches Rocket Place creees par le PMS apres chaque depart), lus dans la timeline du PMS (lecture seule).
+// Le PMS n'expose pas encore le lien secret /m/<token> de Rocket Place : pas de lien direct pour l'instant.
+export async function pmsCleanings(lodgifyPropertyId: number | null | undefined) {
+  const r = await pmsCall(lodgifyPropertyId, '/timeline?past=14&future=60')
+  return (r?.events || []).filter((e: any) => e.kind === 'cleaning').map((e: any) => ({ at: String(e.at), title: String(e.title || 'Ménage'), description: String(e.description || '') }))
+}

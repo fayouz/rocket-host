@@ -1,5 +1,6 @@
 <template>
   <div v-if="data" class="space-y-2">
+    <BrickHint brick="place" description="Lieux et serrures : la référence est dans Rocket Place (via Rocket PMS)." />
     <h2 class="section-title !mt-0">Logements</h2>
     <UCard v-for="l in data.logements" :key="l.id">
       <UFormField :label="l.lodgifyName ? `Associé à Lodgify : ${l.lodgifyName}` : 'Non associé à Lodgify'" class="w-full">

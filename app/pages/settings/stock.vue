@@ -1,5 +1,6 @@
 <template>
   <div v-if="data" class="space-y-2">
+    <BrickHint brick="place" description="Le stock des lieux est tenu dans Rocket Place." />
     <h2 class="section-title !mt-0 print:hidden">À racheter</h2>
     <div class="space-y-2 print:hidden">
       <UCard v-for="s in data.shopping" :key="s.itemId">

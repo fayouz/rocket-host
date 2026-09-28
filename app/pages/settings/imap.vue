@@ -1,5 +1,6 @@
 <template>
   <div v-if="data" class="space-y-3">
+    <BrickHint brick="pms" description="Les e-mails voyageurs passent par Rocket Mailer via Rocket PMS ; cette boîte locale reste utilisée pour l'e-mail de gestion." />
     <h2 class="section-title !mt-0">E-mail (IMAP)</h2>
     <p class="text-sm text-muted">
       L'appli lit ta boîte en <b>lecture seule</b> (aucun message n'est marqué lu, déplacé ni supprimé) et n'ouvre que les e-mails dont l'expéditeur correspond à une règle ci-dessous.

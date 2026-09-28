@@ -1,5 +1,7 @@
 <template>
-  <div v-if="data" class="space-y-3">
+  <!-- Rocket PMS actif : bilan calculé par le PMS (revenus + dépenses du PMS) -->
+  <PmsBilan v-if="pms" :logement-id="String(route.params.id)" />
+  <div v-else-if="data" class="space-y-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="section-title !mt-0">Bilan {{ data.year }}</h2>
       <div class="flex items-center gap-2">
@@ -79,7 +81,8 @@
 <script setup lang="ts">
 const route = useRoute()
 const year = ref<number>(new Date().getFullYear())
-const { data } = await useFetch(() => `/api/logements/${route.params.id}/bilan`, { query: { year } })
+const pms = useState<boolean>('pms', () => false)
+const { data } = await useFetch(() => `/api/logements/${route.params.id}/bilan`, { query: { year }, immediate: !pms.value })
 const maxMonth = computed(() => Math.max(0, ...(data.value?.months ?? []).map(m => m.revenue)))
 const eur = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
 const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })

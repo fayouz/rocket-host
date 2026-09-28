@@ -1,5 +1,6 @@
 <template>
   <div v-if="data" class="max-w-2xl space-y-3">
+    <BrickHint brick="pms" description="Livret et écran TV : l'éditeur de référence est dans Rocket PMS." />
     <h2 class="section-title !mt-0">Livret & écran TV</h2>
     <p class="text-sm text-muted">Fond par défaut pour le livret d'accueil et l'écran TV de tous les logements. Chaque logement peut le garder, le remplacer par son propre fond, ou forcer l'absence de fond (page de son livret).</p>
 

@@ -11,6 +11,10 @@
       <template #default="{ collapsed }">
         <div v-for="group in groups" :key="group.label" class="mb-1">
           <p v-if="!collapsed && group.label" class="px-2.5 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-dimmed">{{ group.label }}</p>
+          <div v-if="!collapsed && group.brick" class="flex items-center justify-between gap-2 px-2.5 pb-1 pt-2">
+            <span class="flex items-center gap-1.5 text-xs font-medium text-muted"><UIcon :name="group.brick.icon" class="size-3.5" />{{ group.brick.name }}</span>
+            <UBadge v-if="group.brick.status" size="sm" variant="subtle" :color="group.brick.status.color" :label="group.brick.status.label" />
+          </div>
           <UNavigationMenu :collapsed="collapsed" :items="group.items" orientation="vertical" tooltip popover />
         </div>
       </template>
@@ -78,7 +82,77 @@ const userMenu = computed(() => [[{ label: user.value?.username ?? '', type: 'la
   { label: 'Se déconnecter', icon: 'i-lucide-log-out', onSelect: logout },
 ]])
 
-interface NavItem { label: string; icon?: string; to?: string; type?: 'trigger'; defaultOpen?: boolean; children?: NavItem[] }
+interface NavItem { label: string; icon?: string; to?: string; target?: string; badge?: string; type?: 'trigger'; defaultOpen?: boolean; children?: NavItem[] }
+type BadgeColor = 'success' | 'warning' | 'error' | 'neutral' | 'info'
+interface NavGroup { label: string; brick?: { name: string; icon: string; status?: { label: string; color: BadgeColor } }; items: NavItem[] }
+
+// Etat des briques : Rocket PMS (et Place/Mailer/Cloud, joints a travers lui) d'apres /api/pms/status
+const { data: pms } = await useFetch('/api/pms/status', { key: 'pms-status' })
+const front = useRuntimeConfig().public
+const pmsOn = computed(() => !!pms.value?.configured)
+const pmsStatus = computed((): { label: string; color: BadgeColor } => demo.value && !pmsOn.value ? { label: 'démo', color: 'warning' }
+  : !pmsOn.value ? { label: 'off', color: 'neutral' } : pms.value?.ok ? { label: 'connecté', color: 'success' } : { label: 'erreur', color: 'error' })
+const viaPms = computed((): { label: string; color: BadgeColor } => pmsOn.value ? { ...pmsStatus.value, label: pms.value?.ok ? 'via PMS' : 'erreur' } : pmsStatus.value)
+// Pages propres a un logement : on ouvre le premier logement (sinon la liste)
+const firstLg = computed(() => lg.value?.logements?.[0]?.id)
+const lgPage = (tab: string) => (firstLg.value ? `/logements/${firstLg.value}/${tab}` : '/logements')
+const ext = (url: string, label: string): NavItem[] => (url ? [{ label, icon: 'i-lucide-external-link', to: url, target: '_blank' }] : [])
+const managed = (label: string) => (pmsOn.value ? label : undefined)
+const adminGroups = computed((): NavGroup[] => [
+  {
+    label: 'Administration',
+    brick: { name: 'Rocket PMS', icon: 'i-lucide-rocket', status: pmsStatus.value },
+    items: [
+      { label: 'Connexion', icon: 'i-lucide-plug', to: '/settings/plugins' },
+      { label: 'Réservations / Lodgify', icon: 'i-lucide-calendar-days', to: lgPage('reservations') },
+      { label: 'Livret & écran TV', icon: 'i-lucide-tv', to: '/settings/welcomescreen', badge: managed('PMS') },
+      { label: 'Bilan', icon: 'i-lucide-calculator', to: lgPage('bilan') },
+      { label: 'E-mails voyageurs', icon: 'i-lucide-send', to: lgPage('mails') },
+      ...ext(front.pmsFrontUrl, 'Ouvrir Rocket PMS'),
+    ],
+  },
+  {
+    label: '',
+    brick: { name: 'Rocket Place', icon: 'i-lucide-map-pin', status: viaPms.value },
+    items: [
+      { label: 'Lieux', icon: 'i-lucide-building-2', to: '/settings', badge: managed('Place') },
+      { label: 'Serrures & accès', icon: 'i-lucide-key-round', to: lgPage('serrures') },
+      { label: 'Domotique / connecteurs', icon: 'i-lucide-cpu', to: lgPage('domotique') },
+      { label: 'Ménage', icon: 'i-lucide-sparkles', to: lgPage('timeline') },
+      { label: 'Stock', icon: 'i-lucide-package', to: '/settings/stock', badge: managed('Place') },
+      ...ext(front.placeFrontUrl, 'Ouvrir Rocket Place'),
+    ],
+  },
+  {
+    label: '',
+    brick: { name: 'Rocket Mailer', icon: 'i-lucide-mail', status: pmsOn.value ? viaPms.value : { label: 'local', color: 'info' } },
+    items: [{ label: 'Boîte e-mail (IMAP/SMTP)', icon: 'i-lucide-inbox', to: '/settings/imap' }],
+  },
+  {
+    label: '',
+    brick: { name: 'Rocket Cloud', icon: 'i-lucide-cloud', status: pmsOn.value ? viaPms.value : { label: 'local', color: 'info' } },
+    items: [{ label: 'Documents / explorateur', icon: 'i-lucide-folder-tree', to: '/documents' }],
+  },
+  {
+    label: '',
+    brick: { name: 'LoussaHousing (local)', icon: 'i-lucide-house' },
+    items: [
+      { label: 'Utilisateurs & rôles', icon: 'i-lucide-users', to: '/settings/utilisateurs' },
+      { label: 'Journal d\'audit', icon: 'i-lucide-scroll-text', to: '/settings/utilisateurs?tab=journal' },
+      { label: 'Plugins / connecteurs', icon: 'i-lucide-blocks', to: '/settings/plugins' },
+      { label: 'Imports', icon: 'i-lucide-file-down', to: '/settings/imports' },
+      {
+        label: 'Autres réglages', icon: 'i-lucide-settings', type: 'trigger', defaultOpen: false,
+        children: [
+          { label: 'Mon compte (thème : palette en haut à droite)', to: '/mon-compte' },
+          { label: 'API (Swagger)', to: '/docs-api' },
+          { label: 'Nouveautés', to: '/changelog' },
+          { label: 'Manuel', to: '/docs' },
+        ],
+      },
+    ],
+  },
+])
 // Groupes de la sidebar : un intitule en majuscules par groupe (vide pour le premier, comme Aujourd'hui seul en tete)
 const groups = computed(() => ([
   { label: '', items: [can('AG') && { label: 'Aujourd\'hui', icon: 'i-lucide-layout-dashboard', to: '/' }].filter(Boolean) },
@@ -98,27 +172,10 @@ const groups = computed(() => ([
       can('A') && { label: 'Rentabilité', icon: 'i-lucide-line-chart', to: '/profit' },
     ].filter(Boolean),
   },
-  {
-    label: 'Administration',
-    items: [
-      can('A') && {
-        label: 'Réglages', icon: 'i-lucide-settings', to: '/settings', type: 'trigger' as const, defaultOpen: false,
-        children: [
-          { label: 'Logements et serrures', to: '/settings' },
-          { label: 'Utilisateurs', to: '/settings/utilisateurs' },
-          { label: 'Stock', to: '/settings/stock' },
-          { label: 'Livret & écran TV', to: '/settings/welcomescreen' },
-          { label: 'Imports', to: '/settings/imports' },
-          { label: 'Plugins', icon: 'i-lucide-blocks', to: '/settings/plugins' },
-          { label: 'E-mail (IMAP)', to: '/settings/imap' },
-          { label: 'API (Swagger)', to: '/docs-api' },
-          { label: 'Nouveautés', icon: 'i-lucide-sparkles', to: '/changelog' },
-          { label: 'Manuel', icon: 'i-lucide-book-marked', to: '/docs' },
-        ],
-      },
-    ].filter(Boolean),
-  },
-] as { label: string; items: NavItem[] }[]).filter(g => g.items.length))
+  // Administration regroupee par brique logicielle (Rocket PMS, Place, Mailer, Cloud, puis le local). Pages inchangees ;
+  // quand Rocket PMS est branche, les pages locales remplacees affichent « géré dans Rocket PMS/Place » (BrickHint).
+  ...(can('A') ? adminGroups.value : []),
+] as NavGroup[]).filter(g => g.items.length))
 
 // Recherche (⌘K) : jusqu'aux logements et aux sous-pages Réglages, pas de contenu (juste sauter d'une page à l'autre)
 const searchGroups = computed(() => [{
