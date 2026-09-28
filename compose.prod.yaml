@@ -1,0 +1,37 @@
+# Exemple de production avec l'image publiee par la CI (ghcr.io, tags v*) : pas de build, pas de code source.
+#   docker login ghcr.io -u <utilisateur>   # jeton read:packages (image privee)
+#   docker compose -f compose.prod.yaml up -d
+# Deploiement complet (Traefik, HTTPS, n8n) : docker-compose.yml et docs/deploiement.md.
+# Epingler une version (IMAGE_TAG=vX.Y.Z) plutot que latest.
+name: rocket-host
+
+services:
+  app:
+    image: ghcr.io/fayouz/rocket-host:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Paris
+      NUXT_LODGIFY_API_KEY: ${LODGIFY_API_KEY:-}
+      NUXT_NUKI_API_TOKEN: ${NUKI_API_TOKEN:-}
+      NUXT_WEBHOOK_TOKEN: ${WEBHOOK_TOKEN:?WEBHOOK_TOKEN manquant dans .env}
+      NUXT_IMAP_PASSWORD: ${IMAP_PASSWORD:-}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET manquant dans .env}
+      NUXT_HOMEY_API_KEY: ${HOMEY_API_KEY:-}
+      NUXT_HOMEY_CLIENT_ID: ${HOMEY_CLIENT_ID:-}
+      NUXT_HOMEY_CLIENT_SECRET: ${HOMEY_CLIENT_SECRET:-}
+      NUXT_HOMEY_REDIRECT_URI: ${HOMEY_REDIRECT_URI:-}
+    volumes:
+      # Base SQLite
+      - appdata:/app/.data
+    ports:
+      - "127.0.0.1:3000:3000"
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.app.rule=Host(`app.example.org`)
+    #   - traefik.http.routers.app.entrypoints=websecure
+    #   - traefik.http.routers.app.tls.certresolver=le
+    #   - traefik.http.services.app.loadbalancer.server.port=3000
+
+volumes:
+  appdata:

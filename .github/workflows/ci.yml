@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'release/**', 'hotfix/**', 'ci/**', 'claude/**']
+    tags: ['v*']
+  pull_request:
+  # Lancement manuel : publie l'image de la reference choisie (tag ou branche).
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    name: Docker image
+    # Publiee sur ghcr.io UNIQUEMENT pour les tags v* et les lancements manuels (amd64 + arm64, SBOM, provenance) ;
+    # PR et branches : build amd64 de validation, jamais pousse.
+    permissions:
+      contents: read
+      packages: write
+    # TODO: epingler sur le prochain tag de rocket-core une fois fayouz/rocket-core#6 (docker-images.yml) publie.
+    uses: fayouz/rocket-core/.github/workflows/docker-images.yml@v0.3.1
+    with:
+      images: '[{"component": "app", "context": ".", "image": "ghcr.io/fayouz/rocket-host"}]'
+      # Les tests de fumee api/front des briques ne s'appliquent pas a l'image Nitro unique.
+      smoke: false
