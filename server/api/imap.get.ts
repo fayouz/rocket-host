@@ -3,7 +3,8 @@ export default defineEventHandler(async () => {
   const logements = await ensureLogements()
   return {
     config: await getImapConfig(),
-    passwordSet: !!useRuntimeConfig().imapPassword,
+    passwordSet: hasSecret('IMAP_PASSWORD'),
+    password: secretStatus('IMAP_PASSWORD'), // presence + indice seulement
     rules: await getImapRules(),
     running: isImapRunning(),
     providers: MAIL_PROVIDERS.map(({ mx, ...p }) => ({ ...p, smtp: SMTP_PRESETS[p.key] ?? null })),

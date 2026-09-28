@@ -57,10 +57,10 @@
 
     <h2 class="section-title">Comment brancher un workflow</h2>
     <UCard>
-      <p v-if="!data.webhookConfigured" class="mb-2 text-sm text-error">⚠ Le jeton <code>WEBHOOK_TOKEN</code> n'est pas défini dans <code>.env</code> : les imports sont refusés.</p>
+      <p v-if="!data.webhookConfigured" class="mb-2 text-sm text-error">⚠ Le jeton <code>WEBHOOK_TOKEN</code> n'est pas renseigné (<NuxtLink to="/settings/connexions" class="underline">Réglages › Connexions</NuxtLink>) : les imports sont refusés.</p>
       <p class="text-sm text-muted">
         Un workflow n8n envoie ses documents à <code>POST /api/import/documents</code> et ses lignes de relevé à <code>POST /api/import/transactions</code>,
-        avec l'en-tête <code>Authorization: Bearer &lt;WEBHOOK_TOKEN&gt;</code> (le jeton est dans <code>.env</code>, jamais affiché ici).
+        avec l'en-tête <code>Authorization: Bearer &lt;WEBHOOK_TOKEN&gt;</code> (le jeton se saisit dans Réglages › Connexions ; il n'est jamais réaffiché).
         Une <b>source</b> par plateforme (airbnb, booking…) ; un <b>externalId</b> évite les doublons si le workflow réessaie.
         Détails et exemples : <code>docs/imports-n8n.md</code>.
       </p>

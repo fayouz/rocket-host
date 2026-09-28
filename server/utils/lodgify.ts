@@ -62,7 +62,8 @@ export function lastSyncAt(): string | null { return cache.at ? new Date(cache.a
 export async function loadData() {
   const cfg = useRuntimeConfig()
   const usePms = pmsEnabled() // PMS_API_URL renseigne : logements + reservations viennent de Rocket PMS plutot que de Lodgify en direct
-  const demo = !usePms && (cfg.demo === '1' || !cfg.lodgifyApiKey)
+  const apiKey = getSecret('LODGIFY_API_KEY')
+  const demo = !usePms && (cfg.demo === '1' || !apiKey)
   if (!cache.data || Date.now() - cache.at > 5 * 60 * 1000) {
     cache = {
       at: Date.now(),
@@ -70,7 +71,7 @@ export async function loadData() {
         ? await pmsLoadData()
         : demo
           ? { properties: demoProperties, bookings: demoBookings }
-          : { properties: await fetchProperties(cfg.lodgifyApiKey), bookings: await fetchBookings(cfg.lodgifyApiKey) },
+          : { properties: await fetchProperties(apiKey), bookings: await fetchBookings(apiKey) },
     }
   }
   const aliases = await getAliases()

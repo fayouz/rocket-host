@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     link: typeof q.link === 'string' ? q.link : undefined, booking: num(q.booking), contact: num(q.contact), logement: num(q.logement), limit: num(q.limit), offset: Number(q.offset) || 0,
   })
   return {
-    ...r, folders, syncing: isMailSyncing(), passwordSet: !!useRuntimeConfig().imapPassword,
+    ...r, folders, syncing: isMailSyncing(), passwordSet: hasSecret('IMAP_PASSWORD'),
     sync: { enabled: cfg.syncMail, days: cfg.mailDays, at: cfg.mailSyncedAt, result: cfg.mailResult },
   }
 })

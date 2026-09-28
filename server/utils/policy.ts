@@ -183,6 +183,8 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['GET', '/api/g/:token', 'P', 'Page publique du livret d\'accueil (lien secret)', '', 'Public (jeton)'],
   ['GET', '/api/tv/:token', 'P', 'Page TV plein ecran (meme lien secret) : accueil du voyageur du jour + livret', '', 'Public (jeton)'],
   // --- Reglages generaux du livret/ecran TV (V3)
+  ['GET', '/api/settings/connexions', 'A', 'Reglages > Connexions : adresses des briques/integrations et ETAT des secrets (indice 4 caracteres, jamais la valeur)', '', 'Reglages'],
+  ['PUT', '/api/settings/connexions', 'A', 'Enregistrer adresses et secrets (ecriture seule, chiffres AES-256-GCM ; null = effacer)', '', 'Reglages', '{ settings?: { NOM: valeur }, secrets?: { NOM: valeur|null } }'],
   ['GET', '/api/settings/welcomescreen', 'A', 'Reglages generaux du fond par defaut', '', 'Reglages'],
   ['PUT', '/api/settings/welcomescreen', 'A', 'Activer/desactiver l\'animation par defaut', '', 'Reglages', '{ animated }'],
   ['POST', '/api/settings/welcomescreen/background', 'A', 'Deposer le fond par defaut (multipart)', '', 'Reglages'],
@@ -228,7 +230,7 @@ export const PAGES: [string, string][] = [
   ['/logements/:id/domotique', 'AG'],
   ['/logements/:id/reglement', 'AG'], ['/logements/:id/livret', 'AG'], ['/logements/:id/mails', 'A'], ['/logements/:id/connecteurs', 'A'], ['/logements/:id/contacts', 'A'],
   ['/documents', 'AGC'], ['/contacts', 'A'], ['/mail', 'A'], ['/profit', 'A'],
-  ['/settings', 'A'], ['/settings/utilisateurs', 'A'], ['/settings/imap', 'A'], ['/settings/imports', 'A'], ['/settings/plugins', 'A'], ['/settings/stock', 'A'], ['/settings/welcomescreen', 'A'], ['/docs-api', 'A'], ['/changelog', 'A'],
+  ['/settings', 'A'], ['/settings/utilisateurs', 'A'], ['/settings/imap', 'A'], ['/settings/connexions', 'A'], ['/settings/imports', 'A'], ['/settings/plugins', 'A'], ['/settings/stock', 'A'], ['/settings/welcomescreen', 'A'], ['/docs-api', 'A'], ['/changelog', 'A'],
   ['/docs', 'A'], ['/docs/:slug', 'A'],
   ['/mon-compte', 'AGCM'],
 ]

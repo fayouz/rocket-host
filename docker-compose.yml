@@ -48,17 +48,22 @@ services:
     restart: unless-stopped
     environment:
       TZ: Europe/Paris
-      NUXT_LODGIFY_API_KEY: ${LODGIFY_API_KEY:-}
-      NUXT_NUKI_API_TOKEN: ${NUKI_API_TOKEN:-}
-      NUXT_WEBHOOK_TOKEN: ${WEBHOOK_TOKEN:?WEBHOOK_TOKEN manquant dans .env}
-      NUXT_IMAP_PASSWORD: ${IMAP_PASSWORD:-}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
       SESSION_SECRET: ${SESSION_SECRET:-}
+      # Cle maitre des secrets en base (docs/secrets.md) : openssl rand -base64 32, A SAUVEGARDER hors du serveur
+      ROCKET_SECRETS_KEY: ${ROCKET_SECRETS_KEY:?ROCKET_SECRETS_KEY manquant dans .env}
+      ROCKET_SECRETS_KEY_OLD: ${ROCKET_SECRETS_KEY_OLD:-}
+      NUXT_DEMO: ${DEMO:-}
+      # --- MIGRATION SEULEMENT (docs/secrets.md) : lus en repli tant qu'ils ne sont pas importes en base
+      # (docker compose exec app node --experimental-strip-types scripts/secrets-import-env.mjs), puis a supprimer avec les lignes de .env.
+      NUXT_LODGIFY_API_KEY: ${LODGIFY_API_KEY:-}
+      NUXT_NUKI_API_TOKEN: ${NUKI_API_TOKEN:-}
+      NUXT_WEBHOOK_TOKEN: ${WEBHOOK_TOKEN:-}
+      NUXT_IMAP_PASSWORD: ${IMAP_PASSWORD:-}
       NUXT_HOMEY_API_KEY: ${HOMEY_API_KEY:-}
       NUXT_HOMEY_CLIENT_ID: ${HOMEY_CLIENT_ID:-}
       NUXT_HOMEY_CLIENT_SECRET: ${HOMEY_CLIENT_SECRET:-}
       NUXT_HOMEY_REDIRECT_URI: ${HOMEY_REDIRECT_URI:-}
-      NUXT_DEMO: ${DEMO:-}
     volumes:
       - appdata:/app/.data
     labels:

@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
 
   const res = await fetch(`https://api.lodgify.com/v1/reservation/booking/${bookingId}/messages`, {
     method: 'POST',
-    headers: { 'X-ApiKey': useRuntimeConfig().lodgifyApiKey, 'content-type': 'application/json', accept: 'application/json' },
+    headers: { 'X-ApiKey': getSecret('LODGIFY_API_KEY'), 'content-type': 'application/json', accept: 'application/json' },
     body: JSON.stringify([{ type: 'Owner', message: escapeHtml(text).replace(/\n/g, '<br/>'), send_notification: true, message_id: body.messageId }]),
   })
   if (!res.ok) throw createError({ statusCode: 502, statusMessage: `Lodgify a refusé l'envoi (${res.status})` })

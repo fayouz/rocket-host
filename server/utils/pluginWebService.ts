@@ -110,7 +110,7 @@ export const webServicePlugin: PluginDef = {
       { label: 'Aucune', value: 'none' }, { label: 'Jeton (Bearer)', value: 'bearer' }, { label: 'En-tête personnalisé', value: 'header' }, { label: 'Identifiant:mot de passe (Basic)', value: 'basic' },
     ] },
     { key: 'authHeader', label: 'Nom de l\'en-tête', type: 'text', placeholder: 'X-Api-Key', showIf: { key: 'authType', values: ['header'] } },
-    { key: 'secretVar', label: 'Variable .env du secret', type: 'secret', placeholder: 'CONNECTOR_MON_SERVICE', help: 'Nom de la variable que tu ajoutes toi-même dans .env (jamais la valeur ici).', showIf: { key: 'authType', values: ['bearer', 'header', 'basic'] } },
+    { key: 'secretVar', label: 'Nom du secret', type: 'secret', placeholder: 'CONNECTOR_MON_SERVICE', help: 'Nom du secret (CONNECTOR_…) dont tu saisis la valeur dans Réglages › Connexions (jamais la valeur ici).', showIf: { key: 'authType', values: ['bearer', 'header', 'basic'] } },
     { key: 'infoPath', label: 'Informations : chemin (GET, JSON)', type: 'text', placeholder: '/status' },
     { key: 'actions', label: 'Actions manuelles (une par ligne)', type: 'textarea', placeholder: 'Relancer | POST | /jobs/sync', help: 'Format : Libellé | MÉTHODE | /chemin. Chaque action demande confirmation.' },
     { key: 'documentsPath', label: 'Documents : chemin de la liste (GET, JSON)', type: 'text', placeholder: '/invoices', help: 'Doit renvoyer une liste [{ "url": "…", "name": "…", "id": "…", "date": "AAAA-MM-JJ" }].' },

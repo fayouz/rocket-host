@@ -1,5 +1,5 @@
 // Envoi d'e-mails (SMTP) depuis l'adresse configuree, avec copie dans le dossier « Envoyes » de la boite.
-// Mot de passe : celui de la boite (.env, IMAP_PASSWORD). Chaque envoi vient d'un clic de l'utilisateur dans l'interface.
+// Mot de passe : celui de la boite (secret IMAP_PASSWORD, Reglages > Connexions). Chaque envoi vient d'un clic de l'utilisateur dans l'interface.
 import nodemailer from 'nodemailer'
 import MailComposer from 'nodemailer/lib/mail-composer'
 import { connect, errText, getImapConfig, need } from './imap'
@@ -7,7 +7,7 @@ import { syncFolderTree } from './mailFolders'
 
 const transport = (cfg: Awaited<ReturnType<typeof getImapConfig>>) => nodemailer.createTransport({
   host: cfg.smtpHost, port: cfg.smtpPort, secure: cfg.smtpSecure, requireTLS: !cfg.smtpSecure, // STARTTLS obligatoire si pas de TLS direct
-  auth: { user: cfg.user, pass: useRuntimeConfig().imapPassword },
+  auth: { user: cfg.user, pass: getSecret('IMAP_PASSWORD') },
   connectionTimeout: 20_000, greetingTimeout: 20_000, socketTimeout: 60_000, tls: { rejectUnauthorized: true },
 })
 

@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const nights = Math.max(0, Math.round((+new Date(b.departure) - +new Date(b.arrival)) / 864e5))
   if (demo) return { currency: 'EUR', total: b.total, paid: 0, due: b.total, nights, lines: [{ kind: 'RoomRate', label: 'Nuitées', amount: b.total }] }
 
-  const r = await lodgifyCall(`/reservations/bookings/${bookingId}`, useRuntimeConfig().lodgifyApiKey)
+  const r = await lodgifyCall(`/reservations/bookings/${bookingId}`, getSecret('LODGIFY_API_KEY'))
   const q = r?.quote ?? {}
   const items = [...(q.room_type_items ?? []).flatMap((i: any) => i.prices ?? []), ...(q.addon_items ?? []).flatMap((i: any) => i.prices ?? [i]), ...(q.other_items ?? []).flatMap((i: any) => i.prices ?? [i])]
   const lines = items

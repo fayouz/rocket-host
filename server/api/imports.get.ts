@@ -20,6 +20,6 @@ export default defineEventHandler(async () => {
     sources,
     unassignedTransactions: unassigned.map(u => ({ source: String(u.source), count: Number(u.n), total: Number(u.total) })),
     log: log.map(l => ({ id: Number(l.id), at: String(l.at), source: String(l.source), type: String(l.type), status: String(l.status), detail: String(l.detail) })),
-    webhookConfigured: !!useRuntimeConfig().webhookToken,
+    webhookConfigured: hasSecret('WEBHOOK_TOKEN'),
   }
 })

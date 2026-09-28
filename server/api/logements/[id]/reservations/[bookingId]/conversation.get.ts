@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   if (pmsEnabled()) {
     messages.push(...await pmsConversation(lg.lodgifyPropertyId, bookingId)) // fil lu via Rocket PMS
   } else if (!demo && b.threadUid) {
-    const t = await lodgifyCall(`/messaging/${b.threadUid}`, useRuntimeConfig().lodgifyApiKey)
+    const t = await lodgifyCall(`/messaging/${b.threadUid}`, getSecret('LODGIFY_API_KEY'))
     for (const m of t?.messages || []) {
       messages.push({
         key: `l${m.id}`, kind: 'lodgify', from: m.type === 'Owner' ? 'host' : 'guest',

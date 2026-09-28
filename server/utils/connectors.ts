@@ -26,7 +26,7 @@ export async function getConnector(idParam: unknown): Promise<ConnectorRow> {
 
 const parseConfig = (row: ConnectorRow) => { try { return JSON.parse(row.config_json) as Record<string, string> } catch { return {} } }
 
-// Contexte passe au plugin : configuration + acces aux secrets (.env) designes par les champs secrets
+// Contexte passe au plugin : configuration + acces aux secrets (chiffres en base) designes par les champs secrets
 export function contextOf(row: ConnectorRow): ConnectorContext {
   const plugin = getPlugin(row.plugin_id)
   const config = parseConfig(row)
@@ -51,7 +51,7 @@ export async function cleanConfig(plugin: PluginDef, raw: unknown, ctx: { logeme
   return plugin.validate ? plugin.validate(out, ctx) : out
 }
 
-// Vue navigateur : configuration (sans aucun secret : seulement le nom de variable et s'il est renseigne dans .env)
+// Vue navigateur : configuration (sans aucun secret : seulement le nom de variable et s'il est renseigne)
 export function connectorView(row: ConnectorRow) {
   const plugin = getPlugin(row.plugin_id)
   const config = parseConfig(row)
@@ -59,7 +59,7 @@ export function connectorView(row: ConnectorRow) {
   return {
     id: row.id, logementId: Number(row.logement_id), pluginId: row.plugin_id, name: row.name, enabled: !!Number(row.enabled),
     config,
-    secrets: Object.fromEntries(plugin.fields.filter(f => f.type === 'secret' && config[f.key]).map(f => [f.key, !!process.env[config[f.key]!]])),
+    secrets: Object.fromEntries(plugin.fields.filter(f => f.type === 'secret' && config[f.key]).map(f => [f.key, hasSecret(config[f.key]!)])),
     actions: plugin.actions ? plugin.actions(ctx) : [],
     lastRunAt: row.last_run_at, lastResult: row.last_result, updatedAt: row.updated_at,
   }

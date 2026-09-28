@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   const cfg = await getDomoConfig(lg.id)
   const { bookings, demo } = await loadData()
   const mine = bookings.filter(b => b.propertyId === lg.lodgifyPropertyId)
-  const keyPresent = !!useRuntimeConfig().homeyApiKey
+  const keyPresent = hasSecret('HOMEY_API_KEY')
   const cloud = { ...(await cloudStatus()), redirectUri: redirectUri(event) }
   return {
     demo, logement: { id: lg.id, name: lg.name }, config: cfg, limits: LIMITS, keyPresent,

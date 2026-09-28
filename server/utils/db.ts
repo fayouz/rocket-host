@@ -59,7 +59,7 @@ export async function initDb() {
   await addColumn('ALTER TABLE fs_node ADD COLUMN sha256 TEXT')
   await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS fs_node_external ON fs_node (source, external_id) WHERE external_id IS NOT NULL')
   // Connecteurs : un plugin de la bibliotheque (server/utils/connectors.ts) configure pour un logement. config_json ne contient
-  // jamais de secret (seulement des noms de variables .env CONNECTOR_...).
+  // jamais de secret (seulement des noms de secrets CONNECTOR_..., valeurs chiffrees dans la table secret).
   await db.exec(`CREATE TABLE IF NOT EXISTS connector (
     id INTEGER PRIMARY KEY AUTOINCREMENT, logement_id INTEGER NOT NULL, plugin_id TEXT NOT NULL, name TEXT NOT NULL,
     config_json TEXT NOT NULL DEFAULT '{}', enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
@@ -138,7 +138,7 @@ export async function initDb() {
   await db.exec('CREATE INDEX IF NOT EXISTS audit_log_at ON audit_log (at)')
   // Rocket Auth (SSO) : lien entre l'identifiant du compte Rocket Auth (sub) et le compte local (voir docs/rocket-auth.md)
   await db.exec('CREATE TABLE IF NOT EXISTS rocket_auth_link (sub TEXT PRIMARY KEY, user_id INTEGER NOT NULL, linked_at TEXT NOT NULL, last_sid TEXT)')
-  // Domotique par logement (Homey Pro) : connexion (la cle d'API reste dans .env : HOMEY_API_KEY) et regle de prechauffage.
+  // Domotique par logement (Homey Pro) : connexion (la cle d'API est un secret chiffre : HOMEY_API_KEY) et regle de prechauffage.
   // Phase de preparation : la regle sert a SIMULER, aucune commande n'est envoyee.
   await db.exec(`CREATE TABLE IF NOT EXISTS domotique_config (
     logement_id INTEGER PRIMARY KEY, homey_mode TEXT NOT NULL DEFAULT 'local', homey_url TEXT NOT NULL DEFAULT '',
@@ -162,7 +162,7 @@ export async function initDb() {
     tx_date TEXT NOT NULL, kind TEXT NOT NULL, amount REAL NOT NULL, currency TEXT NOT NULL DEFAULT 'EUR',
     booking_ref TEXT, label TEXT NOT NULL DEFAULT '', imported_at TEXT NOT NULL, UNIQUE (source, external_id))`)
   await db.exec('CREATE TABLE IF NOT EXISTS import_log (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, source TEXT NOT NULL, type TEXT NOT NULL, status TEXT NOT NULL, detail TEXT NOT NULL DEFAULT \'\')')
-  // Lecture d'une boite e-mail en IMAP (Reglages > E-mail) : configuration SANS mot de passe (il reste dans .env : IMAP_PASSWORD),
+  // Lecture d'une boite e-mail en IMAP (Reglages > E-mail) : configuration SANS mot de passe (secret chiffre IMAP_PASSWORD, table secret),
   // regles "expediteur -> source / categorie / logement" et etat du dernier releve.
   await db.exec(`CREATE TABLE IF NOT EXISTS imap_config (
     id INTEGER PRIMARY KEY CHECK (id = 1), enabled INTEGER NOT NULL DEFAULT 0, host TEXT NOT NULL DEFAULT 'ssl0.ovh.net', port INTEGER NOT NULL DEFAULT 993,

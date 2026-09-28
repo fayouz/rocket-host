@@ -1,4 +1,4 @@
-// Client pour l'API Rocket PMS (fayouz/rocket-pms), optionnel : actif seulement si PMS_API_URL est renseigne dans .env.
+// Client pour l'API Rocket PMS (fayouz/rocket-pms), optionnel : actif seulement si PMS_API_URL est renseigne (Reglages > Connexions).
 // Tant qu'il est absent, l'appli fonctionne exactement comme avant (Lodgify + Nuki en direct, voir lodgify.ts et nuki.ts).
 // Authentification : jeton d'application Rocket Core ("Authorization: Bearer rpm_..."), cree dans Rocket PMS > Applications.
 //
@@ -9,8 +9,7 @@ import type { Booking, Lock, Property } from './types'
 const MAX_BYTES = 5 * 1024 * 1024 // reponse plafonnee, comme les autres clients (lodgify.ts, nuki.ts)
 
 function config() {
-  const cfg = useRuntimeConfig()
-  return { url: String(cfg.pmsApiUrl || '').replace(/\/+$/, ''), token: String(cfg.pmsApiToken || '') }
+  return { url: getSetting('PMS_API_URL').replace(/\/+$/, ''), token: getSecret('PMS_API_TOKEN') }
 }
 
 // Vrai si PMS_API_URL est renseigne : bascule le reste de l'appli sur Rocket PMS plutot que Lodgify/Nuki en direct.
@@ -20,7 +19,7 @@ export function pmsEnabled(): boolean {
 
 async function call(path: string, init?: RequestInit): Promise<any> {
   const { url, token } = config()
-  if (!url) throw createError({ statusCode: 500, statusMessage: 'Rocket PMS non configuré (PMS_API_URL absent de .env)' })
+  if (!url) throw createError({ statusCode: 500, statusMessage: 'Rocket PMS non configuré (adresse vide dans Réglages › Connexions)' })
   const res = await fetch(url + path, {
     ...init,
     headers: { Authorization: `Bearer ${token}`, accept: 'application/json', ...(init?.headers || {}) },
@@ -296,7 +295,7 @@ const originOf = (u: unknown) => { try { return new URL(String(u)).origin } catc
 // Livret du logement vu par le PMS : liens TV, date de maj, visites des 30 derniers jours, lien vers l'éditeur PMS
 /** En-tête pour agir au nom d'un utilisateur du PMS (e-mails via Rocket Mailer) ; vide si PMS_IMPERSONATE_USER n'est pas défini. */
 function asUser(): Record<string, string> {
-  const user = String(useRuntimeConfig().pmsImpersonateUser || '')
+  const user = getSetting('PMS_IMPERSONATE_USER')
   return user ? { 'X-Impersonate-User': user } : {}
 }
 
