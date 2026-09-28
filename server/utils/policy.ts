@@ -66,6 +66,7 @@ const RAW: [string, string, string, string, Scope, string, string?][] = [
   ['PUT', '/api/logements/:id/domotique/guest-devices', 'AG', 'Choisir les appareils et bornes de temperature pour le voyageur', 'logement', 'Domotique', '{ devices: [{deviceId, deviceName, deviceClass, minTemp?, maxTemp?}] }'],
   // --- Vues agregees
   ['GET', '/api/today', 'AG', 'Journee : arrivees, departs, menages (filtre selon les logements autorises)', 'handler', 'Vues agregees'],
+  ['GET', '/api/dashboard/smart', 'AG', 'Tableau de bord intelligent : arrivees/departs croises avec Clean, Place, Stock, Cast, alertes et finances (filtre selon les logements autorises)', 'handler', 'Vues agregees', '?properties='],
   ['GET', '/api/timeline', 'AG', 'Chronologie de tous les logements autorises', 'handler', 'Vues agregees'],
   ['GET', '/api/profit', 'A', 'Rentabilite (tous logements)', '', 'Vues agregees'],
   ['GET', '/api/locks', 'A', 'Toutes les serrures Nuki', '', 'Vues agregees'],
