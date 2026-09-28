@@ -8,9 +8,10 @@ export function useAuth() {
     try { user.value = (await requestFetch<{ user: AuthUser | null }>('/api/auth/me')).user } catch { user.value = null }
   }
   async function logout() {
-    try { await $fetch('/api/auth/logout', { method: 'POST' }) } catch { /* déjà déconnecté */ }
+    let redirect: string | null = null
+    try { redirect = (await $fetch<{ redirect?: string | null }>('/api/auth/logout', { method: 'POST' })).redirect ?? null } catch { /* déjà déconnecté */ }
     user.value = null
-    window.location.assign('/connexion')
+    window.location.assign(redirect || '/connexion') // connexion Rocket Auth : fin de session chez Rocket Auth aussi
   }
   // Menus : masque ce que le role ne peut pas ouvrir. AFFICHAGE SEULEMENT : le serveur refuse de toute facon (server/utils/policy.ts).
   const letter = computed(() => ({ admin: 'A', gestionnaire: 'G', comptable: 'C', menage: 'M' } as const)[user.value?.role ?? 'menage'])

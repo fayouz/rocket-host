@@ -7,7 +7,8 @@
     "build": "node scripts/copy-swagger.mjs && nuxt build",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "check:policy": "node scripts/check-policy.mjs"
+    "check:policy": "node scripts/check-policy.mjs",
+    "check:rocket-auth": "node --experimental-strip-types --no-warnings scripts/check-rocket-auth.mjs"
   },
   "dependencies": {
     "@iconify-json/simple-icons": "^1.2.97",

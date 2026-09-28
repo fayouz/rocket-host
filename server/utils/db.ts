@@ -136,6 +136,8 @@ export async function initDb() {
   await db.exec(`CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, user_id INTEGER, username TEXT NOT NULL DEFAULT '', action TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '', ip TEXT NOT NULL DEFAULT '')`)
   await db.exec('CREATE INDEX IF NOT EXISTS audit_log_at ON audit_log (at)')
+  // Rocket Auth (SSO) : lien entre l'identifiant du compte Rocket Auth (sub) et le compte local (voir docs/rocket-auth.md)
+  await db.exec('CREATE TABLE IF NOT EXISTS rocket_auth_link (sub TEXT PRIMARY KEY, user_id INTEGER NOT NULL, linked_at TEXT NOT NULL, last_sid TEXT)')
   // Domotique par logement (Homey Pro) : connexion (la cle d'API reste dans .env : HOMEY_API_KEY) et regle de prechauffage.
   // Phase de preparation : la regle sert a SIMULER, aucune commande n'est envoyee.
   await db.exec(`CREATE TABLE IF NOT EXISTS domotique_config (
