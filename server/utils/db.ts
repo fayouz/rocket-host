@@ -175,6 +175,19 @@ export async function initDb() {
   await db.exec(`CREATE TABLE IF NOT EXISTS imap_rule (
     id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, sender TEXT NOT NULL, subject TEXT NOT NULL DEFAULT '', source TEXT NOT NULL,
     category TEXT NOT NULL DEFAULT 'autre_doc', logement_id INTEGER NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 1)`)
+  // Boites e-mail (assistant « Ajouter une boite e-mail ») : source local | google | microsoft | mailer-shared | mailer-personal.
+  // La boite « principale » (is_primary) est celle d'imap_config, lue par le releve, la synchro et l'envoi existants.
+  // Secrets par boite : MAILBOX_<id>_PASSWORD / MAILBOX_<id>_REFRESH_TOKEN (table secret, chiffres) ; la principale Locale garde IMAP_PASSWORD.
+  await db.exec(`CREATE TABLE IF NOT EXISTS mailbox_account (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT NOT NULL, label TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '',
+    is_primary INTEGER NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 0, config TEXT NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)`)
+  if (!imapCols.includes('auth_mailbox_id')) await addColumn('ALTER TABLE imap_config ADD COLUMN auth_mailbox_id INTEGER NOT NULL DEFAULT 0')
+  // Migration : la boite IMAP/SMTP deja configuree devient la premiere entree « Locale » (principale)
+  if (!Number(((await db.sql`SELECT COUNT(*) AS n FROM mailbox_account`).rows[0] as any).n)) {
+    const old = ((await db.sql`SELECT user FROM imap_config WHERE id = 1`).rows as any[])[0]
+    if (old?.user) await db.sql`INSERT INTO mailbox_account (source, label, email, is_primary, created_at) VALUES ('local', 'Boîte principale', ${String(old.user)}, 1, ${new Date().toISOString()})`
+  }
   // Mini CRM : contacts (comptable, artisans, assureur...), logements concernes (aucun lien = tous), historique des echanges
   await db.exec(`CREATE TABLE IF NOT EXISTS contact (
     id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, kind TEXT NOT NULL DEFAULT 'autre', company TEXT NOT NULL DEFAULT '',

@@ -119,7 +119,7 @@ const brickPills = computed((): { label: string; color: BadgeColor }[] => [
 const adminChildren = computed((): NavItem[] => [
   { label: 'Connexions & intégrations', to: '/settings/connexions' }, // briques Rocket + connexions directes (plugins inclus)
   { label: 'Domotique', to: lgPage('domotique') },
-  { label: 'Boîte e-mail (IMAP/SMTP)', to: '/settings/imap' },
+  { label: 'Boîtes e-mail', to: '/settings/imap' },
   { label: 'Logements & lieux', to: '/settings', badge: managed('Place') },
   ...ext(front.pmsFrontUrl, 'Ouvrir Rocket PMS (Lodgify)'),
   { label: 'Utilisateurs & rôles', to: '/settings/utilisateurs' },

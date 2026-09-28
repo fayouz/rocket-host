@@ -1,7 +1,36 @@
 <template>
   <div v-if="data" class="space-y-3">
     <BrickHint brick="pms" description="Les e-mails voyageurs passent par Rocket Mailer via Rocket PMS ; cette boîte locale reste utilisée pour l'e-mail de gestion." />
-    <h2 class="section-title !mt-0">E-mail (IMAP)</h2>
+    <!-- Liste des boites (assistant « Ajouter une boite e-mail ») ; la boite principale se regle en detail plus bas -->
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="section-title !my-0">Boîtes e-mail</h2>
+      <UButton icon="i-lucide-plus" label="Ajouter une boîte e-mail" data-add-mailbox @click="openWizard()" />
+    </div>
+    <UAlert v-if="oauthError" color="error" variant="subtle" icon="i-lucide-circle-x" :title="oauthError" />
+    <UCard :ui="{ body: 'p-0 sm:p-0' }">
+      <ul class="divide-y divide-default">
+        <li v-for="m in boxes?.mailboxes ?? []" :key="m.id" class="flex flex-wrap items-center justify-between gap-2 p-3">
+          <div class="min-w-0 text-sm">
+            <p class="flex flex-wrap items-center gap-2 font-medium">
+              {{ m.email || m.label }}
+              <UBadge size="sm" variant="subtle" :color="SOURCE[m.source]?.color ?? 'neutral'" :label="SOURCE[m.source]?.label ?? m.source" />
+              <UBadge v-if="m.primary" size="sm" variant="outline" color="neutral" label="principale" />
+            </p>
+            <p class="truncate text-xs text-muted">{{ m.status || 'Pas encore testée' }}</p>
+          </div>
+          <div class="flex items-center gap-1">
+            <USwitch v-if="!m.source.startsWith('mailer')" :model-value="m.enabled" :label="m.enabled ? 'Relevé actif' : 'Relevé désactivé'" @update:model-value="setEnabled(m.id, $event)" />
+            <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-plug-zap" label="Tester" :loading="busy === `t${m.id}`" @click="testBox(m.id)" />
+            <UButton v-if="!m.primary" size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="`Retirer ${m.email}`" @click="removeBox(m)" />
+          </div>
+        </li>
+        <li v-if="!boxes?.mailboxes?.length" class="p-3 text-sm text-muted">Aucune boîte : clique sur « Ajouter une boîte e-mail ».</li>
+      </ul>
+    </UCard>
+    <p class="text-xs text-muted">La boîte <b>principale</b> alimente le relevé des pièces jointes, l'écran E-mails et l'envoi ; les boîtes Rocket Mailer sont relevées par Mailer. Relevé désactivé à l'ajout.</p>
+    <MailboxWizard v-model:open="wizardOpen" :resume="resume" @saved="onSaved" />
+
+    <h2 class="section-title">Boîte principale — E-mail (IMAP)</h2>
     <p class="text-sm text-muted">
       L'appli lit ta boîte en <b>lecture seule</b> (aucun message n'est marqué lu, déplacé ni supprimé) et n'ouvre que les e-mails dont l'expéditeur correspond à une règle ci-dessous.
       Leurs pièces jointes (factures PDF…) sont classées dans les Documents, sans doublon.
@@ -142,6 +171,41 @@
 
 <script setup lang="ts">
 const { data, refresh } = await useFetch('/api/imap')
+const { data: boxes, refresh: refreshBoxes } = await useFetch('/api/mailboxes', { key: 'mailboxes' })
+const SOURCE: Record<string, { label: string; color: 'primary' | 'info' | 'success' | 'warning' | 'neutral' }> = {
+  'mailer-shared': { label: 'Mailer partagée', color: 'primary' }, 'mailer-personal': { label: 'Mailer perso', color: 'primary' },
+  google: { label: 'Google', color: 'info' }, microsoft: { label: 'Microsoft', color: 'info' }, local: { label: 'Locale', color: 'neutral' },
+}
+// Assistant : ouvert par le bouton, par ?assistant=1 (lien depuis Connexions) ou au retour OAuth (?assistant=google&boite=… / &erreur=…)
+const route = useRoute()
+const wizardOpen = ref(false)
+const resume = ref<{ provider: string; id?: number; error?: string } | null>(null)
+const oauthError = ref('')
+function openWizard(r: typeof resume.value = null) { resume.value = r; wizardOpen.value = true }
+onMounted(() => {
+  const q = route.query
+  if (!q.assistant) return
+  if (q.assistant === 'google' || q.assistant === 'microsoft') {
+    if (q.erreur) oauthError.value = String(q.erreur)
+    openWizard({ provider: String(q.assistant), id: q.boite ? Number(q.boite) : undefined, error: q.erreur ? String(q.erreur) : undefined })
+  } else openWizard()
+  navigateTo({ query: {} }, { replace: true })
+})
+async function onSaved() { await Promise.all([refreshBoxes(), refresh()]) }
+async function setEnabled(id: number, enabled: boolean) {
+  error.value = ''
+  try { await $fetch(`/api/mailboxes/${id}`, { method: 'PUT', body: { enabled } }); await onSaved(); cfg.enabled = !!data.value?.config.enabled } catch (e) { fail(e) }
+}
+async function testBox(id: number) {
+  busy.value = `t${id}`; error.value = ''
+  try { await $fetch(`/api/mailboxes/${id}/test`, { method: 'POST' }); await refreshBoxes() } catch (e) { fail(e) }
+  busy.value = null
+}
+async function removeBox(m: { id: number; email: string }) {
+  if (!confirm(`Retirer la boîte ${m.email} ? Ses secrets sont effacés ; rien n'est supprimé dans la boîte elle-même.`)) return
+  error.value = ''
+  try { await $fetch(`/api/mailboxes/${m.id}`, { method: 'DELETE' }); await refreshBoxes() } catch (e) { fail(e) }
+}
 const cfg = reactive({ ...(data.value?.config ?? { provider: 'ovh-mxplan', enabled: false, host: '', port: 993, secure: true, user: '', folder: 'INBOX', intervalMin: 15, sinceDays: 30 }) })
 const detected = ref<any>(null)
 const smtpResult = ref<any>(null)
