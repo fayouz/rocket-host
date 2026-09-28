@@ -37,9 +37,9 @@ par Place, Clean et Stock). Repli sur `/api/properties` (sans lieu) si Place est
 |---|---|---|
 | Arrivées / départs | PMS `/api/properties/{id}/bookings` | aujourd'hui et demain (fuseau Europe/Paris), réservations annulées exclues ; heure = checkIn (16:00 par défaut) / checkOut (11:00) |
 | Ménage | Clean `/api/cleanings?date=` (veille, jour, lendemain) | tâche du lieu la veille ou le jour de l'arrivée, la plus proche avant l'heure d'arrivée : fait / en cours / en retard / à faire / aucun |
-| Linge | Clean `/api/linen/readiness?place=&date=` | ready / tight / missing ; **404 = colonne masquée** (fonction pas encore livrée, branche `feature/linen`) |
+| Linge | Clean `/api/linen/readiness?place=&date=&days=2` (un appel par lieu) + `/api/linen/alerts` | statut `ready` / `tight` / `missing` de l'arrivée retrouvée par sa référence (`booking:<id>`) ou son jour, `unknown` si Clean ne la connaît pas ; **404 = colonne masquée** (module linge, branche `feature/linen`) |
 | Accès | PMS (`access` de la réservation) puis Place `/api/places/{id}/access-grants` (externalRef `booking:<id>`) | `created` = envoyé, `planned` ou dates modifiées = à envoyer, `error` = erreur |
-| Écran | Cast `/api/screens` | Cast ne connaît pas les lieux : un écran est rattaché si son champ *location* ou son nom contient l'uuid du lieu, l'uuid PMS ou le nom du logement |
+| Écran | Cast `/api/screens` | écrans dont `placeId` (Rocket Cast ≥ 0.2) est le lieu du logement ; repli pour les écrans sans lieu : champ *location* ou nom contenant l'uuid du lieu, l'uuid PMS ou le nom du logement |
 | Paiement | PMS `/bookings/{id}/pricing` (`due`, `paid`) | colonne masquée si aucune valeur ; un échec ne marque pas le PMS en panne |
 | Départs | Clean | ménage planifié le jour du départ : oui / non |
 | Finances du mois | PMS bilan (`months[m].revenue/nights`), repli : réservations au prorata des nuits | occupation = nuits / jours du mois ; canaux d'après `source` des réservations |
@@ -50,13 +50,14 @@ par Place, Clean et Stock). Repli sur `/api/properties` (sans lieu) si Place est
 Alertes (triées : critique, attention, info ; puis par heure) : ménage non terminé moins de 2 h avant l'arrivée
 (critique), aucun ménage / ménage en retard avant une arrivée, accès non envoyé la veille (attention) ou le jour même /
 en erreur (critique), écran hors ligne avec arrivée aujourd'hui, départ sans ménage, stock bas ou vide au lieu d'une
-arrivée, linge manquant (critique le jour même) ou juste, réservation modifiée après planification du ménage (drapeau
+arrivée, linge manquant (critique le jour même) ou juste (kits en défaut dans le détail), alertes du module linge (lot de
+blanchisserie en retard, pertes du mois, kits des 7 prochains jours sans doublon), réservation modifiée après planification du ménage (drapeau
 `conflict` de Rocket Clean), brique injoignable (critique pour le PMS). Chaque alerte renvoie à l'onglet du logement.
 
 ## Vérifier
 
 ```
-npm run check:smart-dashboard   # 11 cas avec fetch simulé (pannes, délai, taille, 404 linge, périmètre)
+npm run check:smart-dashboard   # 13 cas avec fetch simulé (pannes, délai, taille, linge, 404 linge, écran lié, périmètre)
 npm run check:policy
 ```
 
@@ -65,9 +66,8 @@ Cast 8600, jetons de démo de chaque brique).
 
 ## Limites connues
 
-- Linge : l'API de Rocket Clean n'est pas encore livrée ; le format lu est `{ status | readiness | level }`.
-- Écran : rattachement par texte (pas de lien lieu ↔ écran dans Cast).
-- Accès : en démo, les lieux Place / Clean / Stock ne partagent pas forcément les mêmes uuid que les `placeId` du PMS,
-  d'où « aucun » dans certaines colonnes.
+- Linge : le module linge de Rocket Clean n'est livré que sur la branche `feature/linen` ; sans lui la colonne est masquée.
+- Démo : les lieux « Le port » (`0192f7c4-0000-7000-8000-000000000001`) et « Les vignes » (`…0002`) ont des ids fixes
+  partagés par Place, Clean, Stock, Linen, PMS et Cast.
 - Lecture seule : aucune action (envoyer un code, planifier un ménage) depuis ce tableau de bord ; les liens mènent aux
   pages existantes.

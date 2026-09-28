@@ -34,12 +34,26 @@ function routes(over = {}) {
     [`clean/api/cleanings?date=${TODAY}`]: [{ id: 'c1', placeId: PL1, label: 'Ménage départ Bob', type: 'rental', scheduledAt: `${TODAY}T11:00:00+02:00`, status: 'in_progress', late: false, conflict: true }],
     [`clean/api/cleanings?date=${TOMORROW}`]: [{ id: 'c2', placeId: PL2, label: 'Ménage', type: 'rental', scheduledAt: `${TOMORROW}T10:00:00+02:00`, status: 'todo', late: false, conflict: false }],
     'clean/api/cleanings/export': { unit: 'cents', total: 12000, items: [{ placeId: PL1, cost: 8000 }, { placeId: PL2, cost: 4000 }] },
-    [`clean/api/linen/readiness?place=${PL1}&date=${TODAY}`]: { status: 'missing' },
-    [`clean/api/linen/readiness?place=${PL2}&date=${TOMORROW}`]: { status: 'ready' },
+    // forme reelle de Rocket Clean (module linge) : un appel par lieu, arrivees d'aujourd'hui et demain
+    [`clean/api/linen/readiness?place=${PL1}&date=${TODAY}&days=2`]: [{ placeId: PL1, placeName: 'Studio', arrivals: [
+      { from: `${TODAY}T15:00:00+02:00`, until: '2026-10-01T11:00:00+02:00', externalRef: 'booking:1', status: 'missing', kits: [{ kitName: 'Lit double', required: 1, needed: 1, available: 0, status: 'missing' }] },
+    ] }],
+    [`clean/api/linen/readiness?place=${PL2}&date=${TODAY}&days=2`]: [{ placeId: PL2, placeName: 'Loft', arrivals: [
+      { from: `${TOMORROW}T16:00:00+02:00`, until: '2026-10-05T11:00:00+02:00', externalRef: null, status: 'ready', kits: [] },
+    ] }],
+    'clean/api/linen/alerts': [
+      { type: 'kits', level: 'error', placeId: PL1, placeName: 'Studio', message: 'Kits propres insuffisants', at: `${TODAY}T15:00:00+02:00`, link: '/linge' },
+      { type: 'batch_overdue', level: 'error', placeId: PL2, placeName: 'Loft', message: 'Lot chez Blanc attendu le 26/09/2026, pas encore revenu.', at: '2026-09-26T00:00:00+02:00', link: '/linge/blanchisserie' },
+      { type: 'losses', level: 'warning', placeId: 'cccccccc-cccc-cccc-cccc-cccccccccccc', placeName: 'Autre', message: '2 pièce(s)', at: null, link: '/linge' },
+    ],
     [`stock/api/places/${PL1}/stock`]: [{ itemName: 'Café', level: 'empty' }, { itemName: 'Savon', level: 'ok' }],
     [`stock/api/places/${PL2}/stock`]: [],
     'stock/api/export/consumption': { totalCost: 42.5, items: [{}] },
-    'cast/api/screens': [{ id: 's1', name: 'TV salon', location: `Studio Lumière`, online: false, lastSeenAt: '2026-09-27T20:00:00Z' }],
+    'cast/api/screens': [
+      { id: 's1', name: 'TV salon', location: `Studio Lumière`, online: false, lastSeenAt: '2026-09-27T20:00:00Z' },
+      // rattache a un autre lieu : jamais retenu par le nom, meme s'il contient « Loft Canal »
+      { id: 's2', name: 'TV Loft Canal (ailleurs)', location: '', placeId: 'dddddddd-dddd-dddd-dddd-dddddddddddd', online: true, lastSeenAt: null },
+    ],
     ...over,
   }
 }
@@ -114,12 +128,38 @@ await ok('finances : bilan du mois, canaux, couts menage, consommation, previsio
 })
 
 await ok('linge absent de Rocket Clean (404) : colonne masquee, pas d\'alerte de panne', async () => {
-  const t = routes(); delete t[`clean/api/linen/readiness?place=${PL1}&date=${TODAY}`]; delete t[`clean/api/linen/readiness?place=${PL2}&date=${TOMORROW}`]
+  const t = routes(); delete t[`clean/api/linen/readiness?place=${PL1}&date=${TODAY}&days=2`]; delete t[`clean/api/linen/readiness?place=${PL2}&date=${TODAY}&days=2`]; delete t['clean/api/linen/alerts']
   mockFetch(t)
   const r = await collectSmartDashboard(CFG, { now: NOW })
   assert.equal(r.columns.linen, false)
   assert.ok(r.arrivals.every(a => a.linen === null))
   assert.ok(r.bricks.clean.ok)
+  assert.ok(!r.alerts.some(a => a.code.startsWith('linen_')))
+})
+
+await ok('linge : statut par arrivee (reference ou jour), kits dans l\'alerte, alertes linge croisees sans doublon', async () => {
+  mockFetch(routes())
+  const r = await collectSmartDashboard(CFG, { now: NOW })
+  assert.deepEqual(r.arrivals.map(a => a.linen), ['missing', 'ready'])
+  const missing = r.alerts.find(a => a.code === 'linen_missing')
+  assert.equal(missing.level, 'critical')
+  assert.match(missing.detail, /Lit double 0\/1/)
+  assert.ok(!r.alerts.some(a => a.code === 'linen_kits'), 'kits deja signales par l\'arrivee')
+  const batch = r.alerts.find(a => a.code === 'linen_batch_overdue')
+  assert.ok(batch && batch.link === '/logements/102/timeline' && batch.level === 'warning')
+  assert.ok(!r.alerts.some(a => a.code === 'linen_losses'), 'lieu hors perimetre ignore')
+  // arrivee inconnue de Rocket Clean : « unknown »
+  const t = routes(); t[`clean/api/linen/readiness?place=${PL2}&date=${TODAY}&days=2`] = [{ placeId: PL2, placeName: 'Loft', arrivals: [] }]
+  mockFetch(t)
+  assert.equal((await collectSmartDashboard(CFG, { now: NOW })).arrivals[1].linen, 'unknown')
+})
+
+await ok('ecran rattache au lieu (placeId de Rocket Cast) prioritaire sur le nom', async () => {
+  const t = routes(); t['cast/api/screens'] = [...t['cast/api/screens'], { id: 's3', name: 'Salon', location: '', placeId: PL2.toUpperCase(), online: true, lastSeenAt: null }]
+  mockFetch(t)
+  const r = await collectSmartDashboard(CFG, { now: NOW })
+  assert.deepEqual([r.arrivals[1].screen.status, r.arrivals[1].screen.name], ['online', 'Salon'])
+  assert.equal(r.arrivals[0].screen.name, 'TV salon', 'repli sur le nom pour les ecrans sans lieu')
 })
 
 await ok('une brique en panne ne casse rien (Clean injoignable)', async () => {

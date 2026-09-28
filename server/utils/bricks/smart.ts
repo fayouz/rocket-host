@@ -6,7 +6,7 @@
 import { BRICK_LABELS, BrickError, brickConfigured, type BrickConfig, type BrickName } from './http.ts'
 import { pmsAmountDue, pmsBilanOf, pmsBookingsOf, pmsLinks, type PmsBookingRow, type PmsLink } from './pms.ts'
 import { placeAccessGrants, type PlaceGrant } from './place.ts'
-import { cleanDay, cleanLinen, cleanRentalCosts, type CleanTask, type LinenLevel } from './clean.ts'
+import { cleanDay, cleanLinenAlerts, cleanLinenReadiness, cleanRentalCosts, linenFor, type CleanTask, type LinenAlert, type LinenArrival, type LinenLevel } from './clean.ts'
 import { stockLow, stockRentalConsumption } from './stock.ts'
 import { castScreens, screensFor, type CastScreen } from './cast.ts'
 
@@ -113,7 +113,8 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
   const placeIds = [...new Set(props.map(p => p.placeId).filter(Boolean))] as string[]
 
   // --- 2. Appels independants en parallele
-  const [bookingsBy, bilans, cleanDays, cleanCosts, stockCons, screens, grantsBy] = await Promise.all([
+  // Linge (module linge de Rocket Clean) : un appel par lieu (arrivees d'aujourd'hui et demain) + alertes ; 404 = module absent
+  const [bookingsBy, bilans, cleanDays, cleanCosts, stockCons, screens, grantsBy, linenBy, linenAlerts] = await Promise.all([
     Promise.all(props.map(p => guard('pms', () => pmsBookingsOf(cfgs.pms!, p.id), [] as PmsBookingRow[]))),
     Promise.all(props.map(p => guard('pms', () => pmsBilanOf(cfgs.pms!, p.id, y), null))),
     on('clean') ? Promise.all([yesterday, today, tomorrow].map(d => guard('clean', () => cleanDay(cfgs.clean!, d), null as CleanTask[] | null))) : Promise.resolve(null),
@@ -121,7 +122,12 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
     on('stock') ? guard('stock', () => stockRentalConsumption(cfgs.stock!, monthStart, monthEnd), null) : Promise.resolve(null),
     on('cast') ? guard('cast', () => castScreens(cfgs.cast!), null as CastScreen[] | null) : Promise.resolve(null),
     on('place') ? Promise.all(placeIds.map(id => guard('place', () => placeAccessGrants(cfgs.place!, id), null as PlaceGrant[] | null))) : Promise.resolve(null),
+    on('clean') ? Promise.all(placeIds.map(id => guard('clean', () => cleanLinenReadiness(cfgs.clean!, id, today, 2), null as LinenArrival[] | null))) : Promise.resolve(null),
+    on('clean') ? guard('clean', () => cleanLinenAlerts(cfgs.clean!), null as LinenAlert[] | null) : Promise.resolve(null),
   ])
+  // null (404) sur un lieu = module linge absent de cette version de Rocket Clean : colonne masquee
+  const linenAvailable = !!linenBy && linenBy.every(l => l !== null)
+  const linenOfPlace = new Map<string, LinenArrival[]>(linenAvailable ? placeIds.map((id, i) => [id, linenBy![i]!]) : [])
   const grantsOfPlace = new Map<string, PlaceGrant[] | null>(placeIds.map((id, i) => [id, grantsBy ? grantsBy[i]! : null]))
   const cleanTasks: CleanTask[] | null = cleanDays && cleanDays.some(Boolean) ? cleanDays.flatMap(d => d || []).filter(t => t.status !== 'cancelled') : null
 
@@ -165,25 +171,26 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
 
   // --- 4. Enrichissements par arrivee (paiement, linge, stock, ecran) en parallele
   const propOf = new Map(props.map(p => [p.id, p]))
-  let linenAvailable = on('clean')
+  const linenShort = new Map<string, string[]>()
   await Promise.all(arrivals.map(async (a) => {
     const p = propOf.get(a.key.split(':')[0]!)!
-    const [pay, linen, low] = await Promise.all([
+    if (linenAvailable && p.placeId) {
+      const l = linenFor(linenOfPlace.get(p.placeId) || [], a.bookingId, a.date)
+      a.linen = l ? l.status : 'unknown'
+      if (l?.short.length) linenShort.set(a.key, l.short)
+    }
+    const [pay, low] = await Promise.all([
       pmsAmountDue(cfgs.pms!, p.id, a.bookingId).catch(() => null), // montant facultatif : son absence ne signale pas le PMS en panne
-      on('clean') && p.placeId ? guard('clean', () => cleanLinen(cfgs.clean!, p.placeId!, a.date), 'unknown' as const) : Promise.resolve(undefined),
       on('stock') && p.placeId ? guard('stock', () => stockLow(cfgs.stock!, p.placeId!), null) : Promise.resolve(null),
     ])
     const bk = bookingsBy[props.indexOf(p)]!.find(b => b.id === a.bookingId)
     a.payment = pay ? { ...pay, total: bk?.total ?? 0 } : null
-    if (linen === null) linenAvailable = false // 404 : fonction linge absente de cette version de Rocket Clean
-    a.linen = linen ?? null
     a.stockLow = low
     if (screens) {
       const s = screensFor(screens, { placeId: p.placeId, propertyId: p.id, name: p.name })
       a.screen = s.length ? { status: s.every(x => x.online) ? 'online' : 'offline', name: s.map(x => x.name).join(', '), lastSeenAt: s[0]!.lastSeenAt } : { status: 'none', name: '', lastSeenAt: null }
     }
   }))
-  if (!linenAvailable) for (const a of arrivals) a.linen = null
 
   // --- 5. Alertes croisees
   const alerts: SmartAlert[] = []
@@ -206,7 +213,7 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
       const empty = a.stockLow.filter(s => s.level === 'empty')
       alerts.push({ level: empty.length ? 'warning' : 'info', code: 'stock_low', brick: 'stock', at, link: lg(a.propertyId, 'stock'), title: `Stock ${empty.length ? 'vide' : 'bas'} à ${a.propertyName} avant l'arrivée`, detail: a.stockLow.slice(0, 5).map(s => `${s.name} (${s.level === 'empty' ? 'vide' : 'bas'})`).join(', ') + (a.stockLow.length > 5 ? '…' : '') })
     }
-    if (a.linen === 'missing' || a.linen === 'tight') alerts.push({ level: a.linen === 'missing' ? (a.day === 'today' ? 'critical' : 'warning') : 'info', code: 'linen_' + a.linen, brick: 'clean', at, link: lg(a.propertyId, 'timeline'), title: `Linge ${a.linen === 'missing' ? 'manquant' : 'juste'} à ${a.propertyName}`, detail: `Arrivée ${when(a)}` })
+    if (a.linen === 'missing' || a.linen === 'tight') alerts.push({ level: a.linen === 'missing' ? (a.day === 'today' ? 'critical' : 'warning') : 'info', code: 'linen_' + a.linen, brick: 'clean', at, link: lg(a.propertyId, 'timeline'), title: `Linge ${a.linen === 'missing' ? 'manquant' : 'juste'} à ${a.propertyName}`, detail: `Arrivée ${when(a)}${linenShort.has(a.key) ? ` ; kits propres : ${linenShort.get(a.key)!.join(', ')}` : ''}` })
   }
   for (const d of departures) {
     if (d.cleaningPlanned === false) alerts.push({ level: d.day === 'today' ? 'warning' : 'info', code: 'departure_without_cleaning', brick: 'clean', at: `${d.date}T${d.time}`, link: lg(d.propertyId, 'timeline'), title: `Départ sans ménage à ${d.propertyName}`, detail: `${d.guest || 'Voyageur'} part ${when(d)}` })
@@ -217,6 +224,18 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
     for (const t of cleanTasks) {
       const p = byPlace.get(t.placeId)
       if (t.conflict && p) alerts.push({ level: 'warning', code: 'booking_changed', brick: 'clean', at: t.scheduledAt.slice(0, 16), link: lg(p.lodgifyPropertyId, 'timeline'), title: `Réservation modifiée après planification du ménage (${p.name})`, detail: `${t.label} du ${t.scheduledAt.slice(0, 10)} : vérifier la date` })
+    }
+  }
+  // Alertes du module linge de Rocket Clean (lots en retard, pertes du mois, kits des 7 prochains jours) sur les logements
+  // visibles ; les kits d'une arrivee d'aujourd'hui/demain sont deja signales ci-dessus (linen_missing / linen_tight).
+  if (linenAlerts) {
+    const byPlace = new Map(props.filter(p => p.placeId).map(p => [p.placeId!.toLowerCase(), p]))
+    const shown = new Set(arrivals.filter(a => a.linen === 'missing' || a.linen === 'tight').map(a => `${propOf.get(a.key.split(':')[0]!)!.placeId?.toLowerCase()}|${a.date}`))
+    for (const la of linenAlerts) {
+      const p = byPlace.get(la.placeId)
+      if (!p || (la.type === 'kits' && la.at && shown.has(`${la.placeId}|${la.at.slice(0, 10)}`))) continue
+      const title = la.type === 'batch_overdue' ? `Linge en retard chez la blanchisserie (${p.name})` : la.type === 'losses' ? `Linge perdu ou abîmé à ${p.name}` : `Linge à surveiller à ${p.name}`
+      alerts.push({ level: la.level === 'error' ? 'warning' : 'info', code: `linen_${la.type || 'alert'}`, brick: 'clean', at: la.at ? la.at.slice(0, 16) : '', link: lg(p.lodgifyPropertyId, 'timeline'), title, detail: la.message })
     }
   }
   for (const b of Object.keys(bricks) as BrickName[]) {
