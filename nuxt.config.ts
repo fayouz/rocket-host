@@ -18,6 +18,8 @@ export default defineNuxtConfig({
     // direct comme avant. jeton d'application Rocket Core ("rpm_..."), jamais renvoye au navigateur.
     pmsApiUrl: process.env.PMS_API_URL || '',
     pmsApiToken: process.env.PMS_API_TOKEN || '',
+    // Compte Rocket PMS au nom duquel partent les e-mails (Rocket Mailer exige un utilisateur) : X-Impersonate-User
+    pmsImpersonateUser: process.env.PMS_IMPERSONATE_USER || '',
   },
   // Mini base SQLite (fichier .data/db.sqlite3, ignore par git)
   nitro: { experimental: { database: true } },

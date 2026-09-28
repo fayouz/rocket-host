@@ -294,6 +294,12 @@ export function requirePms() {
 const originOf = (u: unknown) => { try { return new URL(String(u)).origin } catch { return '' } }
 
 // Livret du logement vu par le PMS : liens TV, date de maj, visites des 30 derniers jours, lien vers l'éditeur PMS
+/** En-tête pour agir au nom d'un utilisateur du PMS (e-mails via Rocket Mailer) ; vide si PMS_IMPERSONATE_USER n'est pas défini. */
+function asUser(): Record<string, string> {
+  const user = String(useRuntimeConfig().pmsImpersonateUser || '')
+  return user ? { 'X-Impersonate-User': user } : {}
+}
+
 export async function pmsWelcomeBook(lodgifyPropertyId: number | null | undefined) {
   const uuid = await pmsPropertyId(lodgifyPropertyId)
   const [book, stats] = await Promise.all([
@@ -322,13 +328,13 @@ export async function pmsGuestLink(lodgifyPropertyId: number | null | undefined,
 // Envoi du lien au voyageur : uniquement sur clic confirme (messageId du navigateur, envoi idempotent cote PMS)
 export async function pmsSendGuestLink(lodgifyPropertyId: number | null | undefined, bookingId: number, body: { channel: string; messageId: string; text?: string; lang?: string }) {
   return pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/guest-link/send`, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    method: 'POST', headers: { 'content-type': 'application/json', ...asUser() }, body: JSON.stringify(body),
   })
 }
 
 // E-mails Rocket Mailer rattaches a la reservation (par adresse du voyageur ou numero de reservation dans l'objet)
 export async function pmsBookingEmails(lodgifyPropertyId: number | null | undefined, bookingId: number) {
-  const r = await pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/emails`)
+  const r = await pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/emails`, { headers: asUser() })
   return {
     demo: !!r?.demo, available: r?.available !== false, reason: r?.reason ? String(r.reason) : null, guestEmail: r?.guestEmail ? String(r.guestEmail) : null,
     conversations: (r?.conversations || []).map((c: any) => ({ id: String(c.id), subject: String(c.subject || ''), lastMessageAt: String(c.lastMessageAt || ''), snippet: String(c.snippet || ''), messageCount: Number(c.messageCount || 0), status: String(c.status || ''), matchedBy: String(c.matchedBy || '') })),
@@ -337,7 +343,7 @@ export async function pmsBookingEmails(lodgifyPropertyId: number | null | undefi
 
 export async function pmsBookingEmailThread(lodgifyPropertyId: number | null | undefined, bookingId: number, conversationId: string) {
   if (!/^[0-9a-f-]{36}$/i.test(conversationId)) throw createError({ statusCode: 400, statusMessage: 'Conversation invalide' })
-  const r = await pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/emails/${conversationId}`)
+  const r = await pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/emails/${conversationId}`, { headers: asUser() })
   return {
     subject: String(r?.conversation?.subject || ''),
     messages: (r?.messages || []).map((m: any) => ({ key: String(m.key), from: m.from === 'host' ? 'host' : 'guest', at: String(m.at || ''), subject: String(m.subject || ''), text: String(m.text || ''), status: String(m.status || ''), fromAddress: String(m.fromAddress || '') })),
@@ -346,7 +352,7 @@ export async function pmsBookingEmailThread(lodgifyPropertyId: number | null | u
 
 export async function pmsSendBookingEmail(lodgifyPropertyId: number | null | undefined, bookingId: number, body: { subject: string; text: string; messageId: string }) {
   return pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/emails`, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    method: 'POST', headers: { 'content-type': 'application/json', ...asUser() }, body: JSON.stringify(body),
   })
 }
 

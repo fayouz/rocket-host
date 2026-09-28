@@ -85,3 +85,5 @@ Semer d'abord Rocket Place puis Rocket PMS : `DEMO_MODE=1 php bin/console app:de
 npx nuxi typecheck
 npm run check:policy
 ```
+
+- **E-mails et envoi du livret** : Rocket Mailer exige un utilisateur. Renseigner `PMS_IMPERSONATE_USER` (e-mail d’un compte Rocket PMS) ; LoussaHousing ajoute alors `X-Impersonate-User` sur ces seuls appels.
