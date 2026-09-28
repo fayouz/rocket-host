@@ -14,6 +14,9 @@ PMS_API_TOKEN=rpm_xxxxxxxx   # jeton d'application créé dans Rocket PMS > Appl
 
 Le jeton n'est jamais renvoyé au navigateur (comme les autres secrets de l'appli, voir `server/utils/pms.ts`).
 
+Facultatif : `PMS_FRONT_URL` (ex. http://localhost:3700) et `PLACE_FRONT_URL` ajoutent des liens « Ouvrir Rocket PMS/Place » dans le menu
+Administration (rangé par brique) et dans les rappels « géré dans Rocket PMS/Place » des pages locales remplacées.
+
 ## Ce qui est branché (première tranche)
 
 - `server/utils/pms.ts` : client typé (`pmsEnabled`, `pmsProperties`, `pmsBookings`, `pmsLoadData`, `pmsHealth`).

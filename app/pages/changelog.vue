@@ -28,6 +28,17 @@ interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
     date: '28 sept. 2026',
+    title: 'Menu Administration rangé par brique',
+    icon: 'i-lucide-layout-list',
+    points: [
+      'Le menu Administration est regroupé par brique : Rocket PMS, Rocket Place, Rocket Mailer, Rocket Cloud, puis LoussaHousing (local)',
+      'Chaque brique affiche son état (connecté, via PMS, démo, off, local)',
+      'Quand Rocket PMS est branché, les pages locales remplacées (lieux, stock, livret, e-mail) indiquent « géré dans Rocket PMS/Place », avec un lien si PMS_FRONT_URL / PLACE_FRONT_URL sont renseignés',
+      'Aucune page supprimée ; le journal d\'audit a son propre lien',
+    ],
+  },
+  {
+    date: '28 sept. 2026',
     title: 'Rocket PMS : livret, e-mails, bilan et ménages',
     icon: 'i-lucide-rocket',
     points: [

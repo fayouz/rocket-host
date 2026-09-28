@@ -20,6 +20,11 @@ export default defineNuxtConfig({
     pmsApiToken: process.env.PMS_API_TOKEN || '',
     // Compte Rocket PMS au nom duquel partent les e-mails (Rocket Mailer exige un utilisateur) : X-Impersonate-User
     pmsImpersonateUser: process.env.PMS_IMPERSONATE_USER || '',
+    // Adresses des interfaces web des briques (facultatif) : liens « géré dans Rocket PMS/Place » du menu Administration
+    public: {
+      pmsFrontUrl: process.env.PMS_FRONT_URL || '',
+      placeFrontUrl: process.env.PLACE_FRONT_URL || '',
+    },
   },
   // Mini base SQLite (fichier .data/db.sqlite3, ignore par git)
   nitro: { experimental: { database: true } },
