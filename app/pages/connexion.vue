@@ -19,12 +19,20 @@
         <UButton color="neutral" variant="link" block label="Mot de passe oublié ?" to="/mot-de-passe-oublie" />
       </form>
     </UCard>
+    <!-- Inscription en libre-service : geree par Rocket Console (masque si ROCKET_CONSOLE_PUBLIC_URL est vide) -->
+    <div v-if="signupUrl" class="mt-4 space-y-1 text-center">
+      <UButton color="neutral" variant="outline" block icon="i-lucide-user-plus" label="Créer un compte · choisir une offre" :to="signupUrl" external />
+      <UButton color="neutral" variant="link" size="sm" label="Voir les offres" :to="signupUrl" external />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({ layout: 'bare' })
 const route = useRoute()
+// Page d'inscription de Rocket Console (compte, offre, essai) : lien seulement si l'adresse publique est configuree
+const consoleUrl = String(useRuntimeConfig().public.rocketConsolePublicUrl || '').replace(/\/+$/, '')
+const signupUrl = consoleUrl ? `${consoleUrl}/inscription` : ''
 const username = ref('')
 const password = ref('')
 // Rocket Auth (connexion unique) : bouton affiche seulement si ROCKET_AUTH_URL est renseigne cote serveur

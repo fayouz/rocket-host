@@ -24,6 +24,8 @@ export default defineNuxtConfig({
     public: {
       pmsFrontUrl: process.env.PMS_FRONT_URL || '',
       placeFrontUrl: process.env.PLACE_FRONT_URL || '',
+      // Adresse publique de Rocket Console (facultatif) : lien « Créer un compte · choisir une offre » de la page de connexion
+      rocketConsolePublicUrl: process.env.ROCKET_CONSOLE_PUBLIC_URL || '',
     },
   },
   // Mini base SQLite (fichier .data/db.sqlite3, ignore par git)
