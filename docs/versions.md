@@ -26,6 +26,11 @@ Tranches branchées : logements + réservations, conversation, prix, serrures/co
 puis (branche `feature/pms-v2`) livret du séjour + écran TV, e-mails Rocket Mailer, bilan PMS et ménages Rocket Place en lecture ;
 menu Administration rangé par brique (Rocket PMS / Place / Mailer / Cloud / local) avec état de chaque brique et liens facultatifs `PMS_FRONT_URL` / `PLACE_FRONT_URL`.
 
+## Chantier en cours — Rocket Auth (connexion unique)
+Branche `feature/rocket-auth` : LoussaHousing client OpenID Connect de Rocket Auth (code + PKCE, jeton vérifié par JWKS, comptes associés par e-mail,
+rôles d'après les groupes, déconnexion chez Rocket Auth et back-channel logout, sélecteur d'applications de la suite). Débranché tant que `ROCKET_AUTH_URL`
+est vide ; connexion locale gardée pendant la transition. Voir `docs/rocket-auth.md`.
+
 ## V3 — plus tard
 Voir `docs/roadmap-v3.md` : livret d'accueil et écran TV inspirés de WelcomeScreen, séjour personnalisé, extras, avis, IA, suivi des clés par traceur.
 

@@ -28,6 +28,17 @@ interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
     date: '28 sept. 2026',
+    title: 'Connexion unique avec Rocket Auth',
+    icon: 'i-lucide-rocket',
+    points: [
+      'Bouton « Se connecter avec Rocket Auth » sur la page de connexion (OpenID Connect, code + PKCE), actif seulement si ROCKET_AUTH_URL est renseigné',
+      'Compte associé par adresse e-mail (création facultative), rôle administrateur et autres rôles d\'après les groupes Rocket Auth',
+      'Déconnexion aussi chez Rocket Auth ; une déconnexion faite ailleurs dans la suite ferme les sessions LoussaHousing (back-channel logout)',
+      'Sélecteur des applications de la suite Rocket dans l\'en-tête ; connexion locale gardée pendant la transition (ROCKET_LOCAL_LOGIN)',
+    ],
+  },
+  {
+    date: '28 sept. 2026',
     title: 'Menu Administration rangé par brique',
     icon: 'i-lucide-layout-list',
     points: [

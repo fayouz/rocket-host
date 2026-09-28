@@ -49,6 +49,7 @@
             <UDashboardSearchButton class="w-full max-w-sm bg-transparent ring-default" />
           </template>
           <template #right>
+            <SuiteAppSwitcher />
             <UBadge v-if="demo" color="warning" variant="subtle" label="Mode démo" />
             <!-- Cloche preparee pour un futur systeme de notifications (rien a afficher pour l'instant : desactivee) -->
             <UTooltip text="Notifications (bientôt disponible)">

@@ -69,7 +69,7 @@ export async function audit(event: H3Event | null, action: string, detail = '', 
 const ABSOLUTE_MS = 12 * 3600_000 // duree maximale d'une session
 const IDLE_MS = 2 * 3600_000 // expiration apres inactivite
 let secretCache: string | null = null
-async function sessionSecret() {
+export async function sessionSecret() {
   if (secretCache) return secretCache
   const fromEnv = process.env.SESSION_SECRET
   if (fromEnv && fromEnv.length >= 32) return (secretCache = fromEnv)
@@ -85,7 +85,7 @@ async function sessionSecret() {
 }
 async function session(event: H3Event) {
   const secure = getRequestURL(event, { xForwardedProto: true }).protocol === 'https:'
-  return useSession<{ uid?: number; sv?: number; iat?: number; seen?: number }>(event, {
+  return useSession<{ uid?: number; sv?: number; iat?: number; seen?: number; sso?: 1 }>(event, {
     password: await sessionSecret(), name: 'lh_session', maxAge: ABSOLUTE_MS / 1000, cookie: { httpOnly: true, sameSite: 'lax', secure, path: '/' },
   })
 }
@@ -110,13 +110,14 @@ export async function currentUser(event: H3Event): Promise<AuthUser | null> {
   return user
 }
 
-export async function startSession(event: H3Event, r: any) {
+export async function startSession(event: H3Event, r: any, extra: { sso?: 1 } = {}) {
   const s = await session(event)
   await s.clear()
   const now = Date.now()
-  await s.update({ uid: Number(r.id), sv: Number(r.session_version), iat: now, seen: now })
+  await s.update({ uid: Number(r.id), sv: Number(r.session_version), iat: now, seen: now, ...extra })
 }
-export async function endSession(event: H3Event) { await (await session(event)).clear() }
+export async function endSession(event: H3Event) { const s = await session(event); const sso = !!s.data.sso; await s.clear(); return { sso } }
+export const toAuthUser = (r: any) => toUser(r)
 
 // --- Connexion : limitation par adresse et verrouillage par compte ---
 const ipFails = new Map<string, number[]>()
@@ -127,6 +128,7 @@ export async function login(event: H3Event, usernameRaw: unknown, password: unkn
   const ip = String(getRequestIP(event, { xForwardedFor: true }) ?? 'inconnue')
   const recent = (ipFails.get(ip) ?? []).filter(t => Date.now() - t < IP_WINDOW)
   if (recent.length >= IP_MAX) throw createError({ statusCode: 429, statusMessage: 'Trop d\'essais depuis cette adresse : réessaie dans quelques minutes' })
+  if (!localLoginAllowed()) throw createError({ statusCode: 403, statusMessage: 'Connexion locale désactivée : utilise « Se connecter avec Rocket Auth »' })
   const username = typeof usernameRaw === 'string' ? usernameRaw.trim().slice(0, 80) : ''
   if (!username || typeof password !== 'string' || !password || password.length > 200) throw generic()
   const db = useDatabase()
