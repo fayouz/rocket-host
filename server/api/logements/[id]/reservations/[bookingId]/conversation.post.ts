@@ -16,6 +16,10 @@ export default defineEventHandler(async (event) => {
   const { bookings, demo } = await loadData()
   const b = bookings.find(x => x.id === bookingId && x.propertyId === lg.lodgifyPropertyId)
   if (!b) throw createError({ statusCode: 404, statusMessage: 'Réservation inconnue pour ce logement' })
+  if (pmsEnabled()) { // Rocket PMS actif : la reponse part via le PMS (meme messageId, meme idempotence)
+    await pmsReply(lg.lodgifyPropertyId, bookingId, text, body.messageId)
+    return { ok: true }
+  }
   if (demo) throw createError({ statusCode: 400, statusMessage: 'Envoi impossible en mode démo' })
 
   const res = await fetch(`https://api.lodgify.com/v1/reservation/booking/${bookingId}/messages`, {

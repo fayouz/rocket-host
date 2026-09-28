@@ -8,6 +8,7 @@ export default defineEventHandler(async (event) => {
   const { bookings, demo } = await loadData()
   const b = bookings.find(x => x.id === bookingId && x.propertyId === lg.lodgifyPropertyId)
   if (!b) throw createError({ statusCode: 404, statusMessage: 'Réservation inconnue pour ce logement' })
+  if (pmsEnabled()) return pmsPricing(lg.lodgifyPropertyId, bookingId)
   const nights = Math.max(0, Math.round((+new Date(b.departure) - +new Date(b.arrival)) / 864e5))
   if (demo) return { currency: 'EUR', total: b.total, paid: 0, due: b.total, nights, lines: [{ kind: 'RoomRate', label: 'Nuitées', amount: b.total }] }
 

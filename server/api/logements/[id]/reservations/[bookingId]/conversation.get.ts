@@ -16,7 +16,9 @@ export default defineEventHandler(async (event) => {
   if (!b) throw createError({ statusCode: 404, statusMessage: 'Réservation inconnue pour ce logement' })
   type Msg = { key: string; kind: 'lodgify' | 'mail'; from: 'host' | 'guest'; at: string; subject: string; text: string; status: string; mailId?: number; sender?: string; fromAddr?: string; toAddrs?: string }
   const messages: Msg[] = []
-  if (!demo && b.threadUid) {
+  if (pmsEnabled()) {
+    messages.push(...await pmsConversation(lg.lodgifyPropertyId, bookingId)) // fil lu via Rocket PMS
+  } else if (!demo && b.threadUid) {
     const t = await lodgifyCall(`/messaging/${b.threadUid}`, useRuntimeConfig().lodgifyApiKey)
     for (const m of t?.messages || []) {
       messages.push({

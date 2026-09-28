@@ -14,5 +14,9 @@ export default defineEventHandler(async (event) => {
       ? (!cloud.clientConfigured ? 'no-client' : !cloud.connected ? 'not-connected' : !cfg.homeyId ? 'no-homey' : 'untested')
       : !cfg.homeyUrl ? 'unconfigured' : !keyPresent ? 'no-key' : 'untested',
     actions: cfg.preheatEnabled ? simulate(mine, cfg) : [],
+    // Rocket PMS actif : connecteurs du lieu vus par Rocket Place, en lecture seule (null quand le PMS n'est pas configure)
+    pms: pmsEnabled()
+      ? await pmsDomotique(lg.lodgifyPropertyId).then(sections => ({ sections, error: null as string | null })).catch((e: any) => ({ sections: [] as PmsDomotiqueSection[], error: String(e?.statusMessage || e) }))
+      : null,
   }
 })

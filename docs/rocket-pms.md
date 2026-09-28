@@ -29,21 +29,32 @@ Les réservations qui viennent du PMS n'ont pas de `threadUid` (le fil de conver
 `GET /api/properties/{id}/bookings`) : le rattachement automatique des e-mails par fil de conversation ne fonctionne
 donc pas encore pour ces réservations. À corriger en même temps que la conversation (voir ci-dessous).
 
-## Prochaines tranches (non faites)
+## Tranches branchées ensuite (même drapeau `PMS_API_URL`)
 
-Chacune doit rester un ajout dans `server/utils/pms.ts`, activé par le même `pmsEnabled()`, jamais un changement de
-comportement quand le PMS n'est pas configuré :
+Tout passe par `server/utils/pms.ts` ; le logement est traduit de l'identifiant Lodgify vers l'uuid PMS (`pmsPropertyId`).
 
-1. **Conversation** (`GET`/`POST /api/properties/{id}/bookings/{bookingId}/conversation`) : lecture et réponse au
-   voyageur. Écriture uniquement sur clic explicite (comme aujourd'hui avec Lodgify), jamais en tâche de fond ni en test.
-2. **Prix d'une réservation** (`GET /api/properties/{id}/bookings/{bookingId}/pricing`).
-3. **Serrures et codes** (`GET /api/locks`, `GET /api/properties/{id}/locks`, `GET /api/properties/{id}/codes`,
-   `POST /api/codes/{bookingId}`) : plus délicat, car la planification des codes de LoussaHousing (`server/utils/codes.ts`)
-   a son propre état local (table `access_code`, statuts `planned/created/error`) et le lien serrure↔logement du PMS
-   utilise l'UUID Rocket PMS du logement, pas l'identifiant Lodgify utilisé partout ailleurs dans LoussaHousing. Il faut
-   d'abord décider où vit la source de vérité (LoussaHousing ou le PMS) avant de brancher l'écriture.
-4. **Domotique** (`GET /api/properties/{id}/domotique`) : infos des connecteurs du logement, en lecture.
-5. **Documents** (`/api/properties/{id}/documents`, Rocket Cloud) : à rapprocher de l'explorateur de fichiers existant.
+1. **Conversation** : `conversation.get.ts` lit le fil via `pmsConversation` (les e-mails rattachés restent locaux) ;
+   `conversation.post.ts` répond via `pmsReply`, uniquement sur le clic Envoyer (même `messageId`, envoi idempotent).
+2. **Prix** : `pricing.get.ts` renvoie `pmsPricing` (même format).
+3. **Serrures et codes** : décision prise, **la source de vérité est le PMS / Rocket Place** quand le PMS est actif.
+   `nuki.ts::loadLocks` → `pmsLocks`, `codes.ts::planCodes` → `pmsCodes`, `codes.ts::sendCode` → `pmsSendCode`
+   (écriture sur la serrure uniquement sur clic confirmé) ; la table locale `access_code` n'est alors ni lue ni écrite.
+   L'onglet Réservations affiche le code exposé par le PMS (`pmsAccessByBooking`).
+4. **Domotique** : `domotique.get.ts` ajoute `pms.sections` (connecteurs du lieu, lecture seule), affiché en tête de
+   l'onglet Domotique. La configuration Homey locale reste inchangée.
+5. **Documents** : `GET /api/logements/:id/pms-documents` (+ `/:itemId` pour télécharger) : bloc « Documents du lieu
+   (Rocket Place) » au-dessus de l'explorateur local, en lecture.
+6. **Stock** : `stock.get.ts` renvoie les niveaux du lieu (`pms: true`), modifiables via
+   `PUT /api/logements/:id/pms-stock/:levelId` ; le catalogue se gère dans Rocket Place.
+
+Côté serveurs, Rocket PMS et Rocket Place acceptent les jetons d'application sans usurpation (`X-Impersonate-User`
+absent) sur leurs routes métier seulement (voters `PMS_*` / `PLACE_*`), jamais sur l'administration.
+
+## Démo locale complète
+
+Configurations `.claude/launch.json` : `rocket-place-api` (8900), `rocket-pms-api` (8700), `loussahousing-demo` (3010,
+avec `PMS_API_URL=http://localhost:8700` et le jeton de démo `rpm_demo_rocket_pms_do_not_use_in_production`).
+Semer d'abord Rocket Place puis Rocket PMS : `DEMO_MODE=1 php bin/console app:demo:seed` dans chaque `backend/`.
 
 ## Vérifier après une modification
 
