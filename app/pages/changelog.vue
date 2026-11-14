@@ -28,6 +28,16 @@ interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
     date: '14 nov. 2026',
+    title: 'Finitions de l’interface',
+    icon: 'i-lucide-paintbrush',
+    points: [
+      'Serrures rangées dans l’onglet Domotique (Serrures / Appareils) ; menu « Accès & domotique »',
+      'Interface en français (recherche, thème), statuts de réservation traduits, « Historique » au lieu de « Timeline »',
+      'Bouton de déconnexion compact ; noms techniques des briques remplacés par les noms LoussaSuite',
+    ],
+  },
+  {
+    date: '14 nov. 2026',
     title: 'Nouveau nom : Espace Loussa, de la suite LoussaSuite',
     icon: 'i-lucide-badge-check',
     points: [
