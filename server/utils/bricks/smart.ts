@@ -1,4 +1,4 @@
-// Tableau de bord intelligent : agregation des briques Rocket (PMS, Place, Clean, Stock, Cast) en une seule reponse.
+// Tableau de bord intelligent : agregation des briques LoussaSuite (PMS, Place, Clean, Stock, Cast) en une seule reponse.
 // Pur (aucun auto-import Nuxt) : la route server/api/dashboard/smart.get.ts lui passe la configuration ; le script
 // scripts/check-smart-dashboard.mjs le teste avec un fetch simule.
 // Principes : appels en parallele, delai par brique (voir http.ts), chaque brique isolee (une brique en panne = une alerte
@@ -52,7 +52,7 @@ const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
 const isCancelled = (s: string) => /cancel|declin|annul/i.test(s)
 const isConfirmed = (s: string) => /booked|confirm|accept/i.test(s) || s === ''
 
-// Etat du menage a partir d'une tache Rocket Clean
+// Etat du menage a partir d'une tache Loussa Ménage
 function cleaningStatus(t: CleanTask | undefined): CleaningStatus {
   if (!t) return 'none'
   if (t.status === 'done') return 'done'
@@ -113,7 +113,7 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
   const placeIds = [...new Set(props.map(p => p.placeId).filter(Boolean))] as string[]
 
   // --- 2. Appels independants en parallele
-  // Linge (module linge de Rocket Clean) : un appel par lieu (arrivees d'aujourd'hui et demain) + alertes ; 404 = module absent
+  // Linge (module linge de Loussa Ménage) : un appel par lieu (arrivees d'aujourd'hui et demain) + alertes ; 404 = module absent
   const [bookingsBy, bilans, cleanDays, cleanCosts, stockCons, screens, grantsBy, linenBy, linenAlerts] = await Promise.all([
     Promise.all(props.map(p => guard('pms', () => pmsBookingsOf(cfgs.pms!, p.id), [] as PmsBookingRow[]))),
     Promise.all(props.map(p => guard('pms', () => pmsBilanOf(cfgs.pms!, p.id, y), null))),
@@ -125,7 +125,7 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
     on('clean') ? Promise.all(placeIds.map(id => guard('clean', () => cleanLinenReadiness(cfgs.clean!, id, today, 2), null as LinenArrival[] | null))) : Promise.resolve(null),
     on('clean') ? guard('clean', () => cleanLinenAlerts(cfgs.clean!), null as LinenAlert[] | null) : Promise.resolve(null),
   ])
-  // null (404) sur un lieu = module linge absent de cette version de Rocket Clean : colonne masquee
+  // null (404) sur un lieu = module linge absent de cette version de Loussa Ménage : colonne masquee
   const linenAvailable = !!linenBy && linenBy.every(l => l !== null)
   const linenOfPlace = new Map<string, LinenArrival[]>(linenAvailable ? placeIds.map((id, i) => [id, linenBy![i]!]) : [])
   const grantsOfPlace = new Map<string, PlaceGrant[] | null>(placeIds.map((id, i) => [id, grantsBy ? grantsBy[i]! : null]))
@@ -218,7 +218,7 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
   for (const d of departures) {
     if (d.cleaningPlanned === false) alerts.push({ level: d.day === 'today' ? 'warning' : 'info', code: 'departure_without_cleaning', brick: 'clean', at: `${d.date}T${d.time}`, link: lg(d.propertyId, 'timeline'), title: `Départ sans ménage à ${d.propertyName}`, detail: `${d.guest || 'Voyageur'} part ${when(d)}` })
   }
-  // Reservation modifiee apres planification du menage : drapeau « conflict » pose par Rocket Clean
+  // Reservation modifiee apres planification du menage : drapeau « conflict » pose par Loussa Ménage
   if (cleanTasks) {
     const byPlace = new Map(props.filter(p => p.placeId).map(p => [p.placeId!, p]))
     for (const t of cleanTasks) {
@@ -226,7 +226,7 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
       if (t.conflict && p) alerts.push({ level: 'warning', code: 'booking_changed', brick: 'clean', at: t.scheduledAt.slice(0, 16), link: lg(p.lodgifyPropertyId, 'timeline'), title: `Réservation modifiée après planification du ménage (${p.name})`, detail: `${t.label} du ${t.scheduledAt.slice(0, 10)} : vérifier la date` })
     }
   }
-  // Alertes du module linge de Rocket Clean (lots en retard, pertes du mois, kits des 7 prochains jours) sur les logements
+  // Alertes du module linge de Loussa Ménage (lots en retard, pertes du mois, kits des 7 prochains jours) sur les logements
   // visibles ; les kits d'une arrivee d'aujourd'hui/demain sont deja signales ci-dessus (linen_missing / linen_tight).
   if (linenAlerts) {
     const byPlace = new Map(props.filter(p => p.placeId).map(p => [p.placeId!.toLowerCase(), p]))
@@ -239,7 +239,7 @@ export async function collectSmartDashboard(cfgs: BrickConfigs, opts: SmartOptio
     }
   }
   for (const b of Object.keys(bricks) as BrickName[]) {
-    if (bricks[b].configured && !bricks[b].ok) alerts.push({ level: b === 'pms' ? 'critical' : 'warning', code: 'brick_unreachable', brick: b, at: '', link: '/settings/plugins', title: `${bricks[b].name} injoignable`, detail: bricks[b].error || '' })
+    if (bricks[b].configured && !bricks[b].ok) alerts.push({ level: b === 'pms' ? 'critical' : 'warning', code: 'brick_unreachable', brick: b, at: '', link: '/settings/connexions?onglet=briques', title: `${bricks[b].name} injoignable`, detail: bricks[b].error || '' })
   }
   alerts.sort((a, c) => LEVEL_RANK[a.level] - LEVEL_RANK[c.level] || (a.at || '9').localeCompare(c.at || '9'))
 

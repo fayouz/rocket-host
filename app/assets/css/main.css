@@ -41,3 +41,21 @@
 @media (prefers-reduced-motion: reduce) {
   .bg-kenburns { animation: none; }
 }
+
+/* Barres de defilement aux couleurs du theme (clair et sombre) : page, sidebar et zones internes (liste d'e-mails, conversation, tableaux).
+   Firefox : scrollbar-width / scrollbar-color ; Chromium / Safari : ::-webkit-scrollbar. Couleurs = jetons Nuxt UI. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-accented) transparent;
+}
+*:hover { scrollbar-color: color-mix(in oklab, var(--ui-primary) 55%, var(--ui-border-accented)) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--ui-border-accented);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--ui-primary); }
+html { background-color: var(--ui-bg); }

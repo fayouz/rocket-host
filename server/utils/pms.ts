@@ -1,6 +1,6 @@
-// Client pour l'API Rocket PMS (fayouz/rocket-pms), optionnel : actif seulement si PMS_API_URL est renseigne (Reglages > Connexions).
+// Client pour l'API Loussa Réservations (fayouz/rocket-pms), optionnel : actif seulement si PMS_API_URL est renseigne (Reglages > Connexions).
 // Tant qu'il est absent, l'appli fonctionne exactement comme avant (Lodgify + Nuki en direct, voir lodgify.ts et nuki.ts).
-// Authentification : jeton d'application Rocket Core ("Authorization: Bearer rpm_..."), cree dans Rocket PMS > Applications.
+// Authentification : jeton d'application Loussa Core ("Authorization: Bearer rpm_..."), cree dans Loussa Réservations > Applications.
 //
 // Tranche branchee pour l'instant : logements + reservations en lecture (voir pmsLoadData, utilise par lodgify.ts::loadData).
 // Le reste de l'API (serrures/codes, domotique, documents, conversation) reste a brancher : voir docs/rocket-pms.md.
@@ -12,14 +12,14 @@ function config() {
   return { url: getSetting('PMS_API_URL').replace(/\/+$/, ''), token: getSecret('PMS_API_TOKEN') }
 }
 
-// Vrai si PMS_API_URL est renseigne : bascule le reste de l'appli sur Rocket PMS plutot que Lodgify/Nuki en direct.
+// Vrai si PMS_API_URL est renseigne : bascule le reste de l'appli sur Loussa Réservations plutot que Lodgify/Nuki en direct.
 export function pmsEnabled(): boolean {
   return !!config().url
 }
 
 async function call(path: string, init?: RequestInit): Promise<any> {
   const { url, token } = config()
-  if (!url) throw createError({ statusCode: 500, statusMessage: 'Rocket PMS non configuré (adresse vide dans Réglages › Connexions)' })
+  if (!url) throw createError({ statusCode: 500, statusMessage: 'Loussa Réservations non configuré (adresse vide dans Réglages › Connexions)' })
   const res = await fetch(url + path, {
     ...init,
     headers: { Authorization: `Bearer ${token}`, accept: 'application/json', ...(init?.headers || {}) },
@@ -30,14 +30,14 @@ async function call(path: string, init?: RequestInit): Promise<any> {
     let detail = ''
     try { const j = JSON.parse(text); detail = String(j?.detail || j?.message || j?.title || '') } catch {}
     const passthrough = res.status >= 400 && res.status < 500 && res.status !== 401 && res.status !== 403
-    throw createError({ statusCode: passthrough ? res.status : 502, statusMessage: (passthrough && detail ? detail : `Rocket PMS ${res.status} sur ${path}`).slice(0, 300) })
+    throw createError({ statusCode: passthrough ? res.status : 502, statusMessage: (passthrough && detail ? detail : `Loussa Réservations ${res.status} sur ${path}`).slice(0, 300) })
   }
-  if (text.length > MAX_BYTES) throw createError({ statusCode: 502, statusMessage: `Réponse Rocket PMS trop volumineuse sur ${path}` })
+  if (text.length > MAX_BYTES) throw createError({ statusCode: 502, statusMessage: `Réponse Loussa Réservations trop volumineuse sur ${path}` })
   return text ? JSON.parse(text) : null
 }
 
 export interface PmsProperty {
-  id: string // uuid Rocket PMS
+  id: string // uuid Loussa Réservations
   name: string
   lodgifyPropertyId: number | null
   lodgifyName: string | null
@@ -119,7 +119,7 @@ export async function pmsHealth(): Promise<{ configured: boolean; ok: boolean; e
 
 let idCache: { at: number; map: Map<number, string> } | null = null
 
-// uuid Rocket PMS du logement lie a ce logement Lodgify (cache 60 s, comme loadData)
+// uuid Loussa Réservations du logement lie a ce logement Lodgify (cache 60 s, comme loadData)
 export async function pmsPropertyId(lodgifyPropertyId: number | null | undefined): Promise<string> {
   if (!idCache || Date.now() - idCache.at > 60 * 1000) {
     const map = new Map<number, string>()
@@ -127,7 +127,7 @@ export async function pmsPropertyId(lodgifyPropertyId: number | null | undefined
     idCache = { at: Date.now(), map }
   }
   const id = lodgifyPropertyId == null ? undefined : idCache.map.get(lodgifyPropertyId)
-  if (!id) throw createError({ statusCode: 404, statusMessage: 'Logement absent de Rocket PMS' })
+  if (!id) throw createError({ statusCode: 404, statusMessage: 'Logement absent de Loussa Réservations' })
   return id
 }
 
@@ -162,7 +162,7 @@ export async function pmsPricing(lodgifyPropertyId: number | null | undefined, b
 }
 
 // Serrures de tous les logements PMS lies a Lodgify, au format Lock de l'appli (propertyId = identifiant Lodgify).
-// Un logement pas encore lie a un lieu Rocket Place (409) est ignore : il n'a simplement pas de serrure.
+// Un logement pas encore lie a un lieu Loussa Lieux (409) est ignore : il n'a simplement pas de serrure.
 export async function pmsLocks(): Promise<{ demo: boolean; locks: Lock[] }> {
   const props = (await pmsProperties()).filter(p => p.lodgifyPropertyId !== null)
   let demo = false
@@ -183,7 +183,7 @@ export interface PmsCode {
   code: string; validFrom: string; validUntil: string; status: string; error: string | null; outdated: boolean; grantId: string
 }
 
-// Codes clavier des sejours a venir, planifies par Rocket PMS / Rocket Place (source de verite quand le PMS est actif :
+// Codes clavier des sejours a venir, planifies par Loussa Réservations / Loussa Lieux (source de verite quand le PMS est actif :
 // la table locale access_code n'est alors ni lue ni ecrite). Meme format que codes.ts::planCodes.
 export async function pmsCodes(): Promise<{ demo: boolean; items: PmsCode[] }> {
   const props = (await pmsProperties()).filter(p => p.lodgifyPropertyId !== null)
@@ -201,7 +201,7 @@ export async function pmsCodes(): Promise<{ demo: boolean; items: PmsCode[] }> {
   return { demo, items: lists.flat().sort((a, b) => a.arrival.localeCompare(b.arrival)) }
 }
 
-// Ecrit le code d'une reservation sur la serrure (via PMS puis Rocket Place) : uniquement sur clic confirme.
+// Ecrit le code d'une reservation sur la serrure (via PMS puis Loussa Lieux) : uniquement sur clic confirme.
 export async function pmsSendCode(bookingId: number): Promise<{ ok: true }> {
   const item = (await pmsCodes()).items.find(i => i.bookingId === bookingId)
   if (!item) throw createError({ statusCode: 404, statusMessage: 'Réservation inconnue, déjà commencée, ou sans serrure liée' })
@@ -223,7 +223,7 @@ export async function pmsAccessByBooking(lodgifyPropertyId: number | null | unde
 
 export interface PmsDomotiqueSection { connectorId: string; name: string; pluginName: string; icon: string; error: string | null; cards: { title: string; icon: string; items: { label: string; value: string }[] }[] }
 
-// Domotique du logement vue par Rocket Place (connecteurs du lieu), en lecture seule
+// Domotique du logement vue par Loussa Lieux (connecteurs du lieu), en lecture seule
 export async function pmsDomotique(lodgifyPropertyId: number | null | undefined): Promise<PmsDomotiqueSection[]> {
   const r = await pmsCall(lodgifyPropertyId, '/domotique')
   return (r?.sections || []).map((s: any): PmsDomotiqueSection => ({
@@ -235,7 +235,7 @@ export async function pmsDomotique(lodgifyPropertyId: number | null | undefined)
 
 export interface PmsDocument { id: string; kind: 'file' | 'folder'; name: string; size: number | null; updatedAt: string | null }
 
-// Documents du lieu (Rocket Cloud via Rocket Place), lecture : dossier racine ou ?folder
+// Documents du lieu (Loussa Cloud via Loussa Lieux), lecture : dossier racine ou ?folder
 export async function pmsDocuments(lodgifyPropertyId: number | null | undefined, folder?: string) {
   const r = await pmsCall(lodgifyPropertyId, `/documents${folder ? `?folder=${encodeURIComponent(folder)}` : ''}`)
   return {
@@ -251,7 +251,7 @@ export async function pmsDocuments(lodgifyPropertyId: number | null | undefined,
 export async function pmsDocumentContent(lodgifyPropertyId: number | null | undefined, itemId: string): Promise<{ body: ArrayBuffer; type: string; disposition: string }> {
   const { url, token } = config()
   const res = await fetch(`${url}/api/properties/${await pmsPropertyId(lodgifyPropertyId)}/documents/${encodeURIComponent(itemId)}/content`, { headers: { Authorization: `Bearer ${token}` } })
-  if (!res.ok) throw createError({ statusCode: 502, statusMessage: `Rocket PMS ${res.status} sur le document` })
+  if (!res.ok) throw createError({ statusCode: 502, statusMessage: `Loussa Réservations ${res.status} sur le document` })
   const body = await res.arrayBuffer()
   if (body.byteLength > 50 * 1024 * 1024) throw createError({ statusCode: 502, statusMessage: 'Document trop volumineux' })
   return { body, type: res.headers.get('content-type') || 'application/octet-stream', disposition: res.headers.get('content-disposition') || 'attachment' }
@@ -259,7 +259,7 @@ export async function pmsDocumentContent(lodgifyPropertyId: number | null | unde
 
 export interface PmsStockLine { levelId: string; itemId: string; name: string; subscription: boolean; level: 'ok' | 'low' | 'empty' }
 
-// Stock du lieu : les articles suivis (niveau) et le reste du catalogue Rocket Place
+// Stock du lieu : les articles suivis (niveau) et le reste du catalogue Loussa Lieux
 export async function pmsStock(lodgifyPropertyId: number | null | undefined) {
   const r = await pmsCall(lodgifyPropertyId, '/stock')
   const items: any[] = r?.items || []
@@ -281,19 +281,19 @@ export async function pmsSetStockLevel(lodgifyPropertyId: number | null | undefi
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Tranche 2 (feature/pms-v2) : livret d'accueil + écran TV, e-mails Rocket Mailer, bilan, ménages Rocket Place.
+// Tranche 2 (feature/pms-v2) : livret d'accueil + écran TV, e-mails Loussa Mail, bilan, ménages Loussa Lieux.
 // Toujours derriere pmsEnabled(). Envois (livret, e-mail) uniquement sur clic confirme, jamais en tache de fond.
 // ---------------------------------------------------------------------------------------------------------------------
 
 // Lance une 404 propre quand le PMS n'est pas actif (les routes /pms-* n'ont alors pas de sens)
 export function requirePms() {
-  if (!pmsEnabled()) throw createError({ statusCode: 404, statusMessage: 'Rocket PMS non actif' })
+  if (!pmsEnabled()) throw createError({ statusCode: 404, statusMessage: 'Loussa Réservations non actif' })
 }
 
 const originOf = (u: unknown) => { try { return new URL(String(u)).origin } catch { return '' } }
 
 // Livret du logement vu par le PMS : liens TV, date de maj, visites des 30 derniers jours, lien vers l'éditeur PMS
-/** En-tête pour agir au nom d'un utilisateur du PMS (e-mails via Rocket Mailer) ; vide si PMS_IMPERSONATE_USER n'est pas défini. */
+/** En-tête pour agir au nom d'un utilisateur du PMS (e-mails via Loussa Mail) ; vide si PMS_IMPERSONATE_USER n'est pas défini. */
 function asUser(): Record<string, string> {
   const user = getSetting('PMS_IMPERSONATE_USER')
   return user ? { 'X-Impersonate-User': user } : {}
@@ -312,7 +312,7 @@ export async function pmsWelcomeBook(lodgifyPropertyId: number | null | undefine
     editorUrl: front ? `${front}/properties/${uuid}?tab=livret` : '',
     updatedAt: typeof book?.updatedAt === 'string' ? book.updatedAt : null,
     languages: Array.isArray(book?.languages) ? book.languages.map(String) : [],
-    // aperçu en lecture des rubriques texte (l'édition se fait dans Rocket PMS)
+    // aperçu en lecture des rubriques texte (l'édition se fait dans Loussa Réservations)
     sections: Object.entries(content).filter(([, v]) => typeof v === 'string' && v.trim()).map(([k, v]) => ({ key: k, text: String(v).slice(0, 2000) })),
     visits: stats ? { days: Number(stats.days || 30), total: Number(stats.total || 0), links: (stats.links || []).map((l: any) => ({ link: String(l.link), bookingId: l.bookingId == null ? null : Number(l.bookingId), guest: l.guest ? String(l.guest) : null, total: Number(l.total || 0), lastDay: String(l.lastDay || '') })) } : null,
   }
@@ -331,7 +331,7 @@ export async function pmsSendGuestLink(lodgifyPropertyId: number | null | undefi
   })
 }
 
-// E-mails Rocket Mailer rattaches a la reservation (par adresse du voyageur ou numero de reservation dans l'objet)
+// E-mails Loussa Mail rattaches a la reservation (par adresse du voyageur ou numero de reservation dans l'objet)
 export async function pmsBookingEmails(lodgifyPropertyId: number | null | undefined, bookingId: number) {
   const r = await pmsCall(lodgifyPropertyId, `/bookings/${bookingId}/emails`, { headers: asUser() })
   return {
@@ -355,7 +355,7 @@ export async function pmsSendBookingEmail(lodgifyPropertyId: number | null | und
   })
 }
 
-// Bilan annuel calcule par le PMS (revenus Lodgify + depenses saisies/importees dans Rocket PMS)
+// Bilan annuel calcule par le PMS (revenus Lodgify + depenses saisies/importees dans Loussa Réservations)
 export async function pmsBilan(lodgifyPropertyId: number | null | undefined, year: number) {
   const uuid = await pmsPropertyId(lodgifyPropertyId)
   const r = await call(`/api/properties/${uuid}/bilan?year=${year}`)
@@ -374,14 +374,14 @@ export async function pmsBilan(lodgifyPropertyId: number | null | undefined, yea
 export async function pmsBilanCsv(lodgifyPropertyId: number | null | undefined, year: number): Promise<{ body: string; disposition: string }> {
   const { url, token } = config()
   const res = await fetch(`${url}/api/properties/${await pmsPropertyId(lodgifyPropertyId)}/bilan.csv?year=${year}`, { headers: { Authorization: `Bearer ${token}` } })
-  if (!res.ok) throw createError({ statusCode: 502, statusMessage: `Rocket PMS ${res.status} sur le bilan CSV` })
+  if (!res.ok) throw createError({ statusCode: 502, statusMessage: `Loussa Réservations ${res.status} sur le bilan CSV` })
   const body = await res.text()
   if (body.length > MAX_BYTES) throw createError({ statusCode: 502, statusMessage: 'Bilan CSV trop volumineux' })
   return { body, disposition: res.headers.get('content-disposition') || `attachment; filename="bilan-${year}.csv"` }
 }
 
-// Menages (taches Rocket Place creees par le PMS apres chaque depart), lus dans la timeline du PMS (lecture seule).
-// Le PMS n'expose pas encore le lien secret /m/<token> de Rocket Place : pas de lien direct pour l'instant.
+// Menages (taches Loussa Lieux creees par le PMS apres chaque depart), lus dans la timeline du PMS (lecture seule).
+// Le PMS n'expose pas encore le lien secret /m/<token> de Loussa Lieux : pas de lien direct pour l'instant.
 export async function pmsCleanings(lodgifyPropertyId: number | null | undefined) {
   const r = await pmsCall(lodgifyPropertyId, '/timeline?past=14&future=60')
   return (r?.events || []).filter((e: any) => e.kind === 'cleaning').map((e: any) => ({ at: String(e.at), title: String(e.title || 'Ménage'), description: String(e.description || '') }))

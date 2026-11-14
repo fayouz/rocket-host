@@ -128,7 +128,7 @@ export async function login(event: H3Event, usernameRaw: unknown, password: unkn
   const ip = String(getRequestIP(event, { xForwardedFor: true }) ?? 'inconnue')
   const recent = (ipFails.get(ip) ?? []).filter(t => Date.now() - t < IP_WINDOW)
   if (recent.length >= IP_MAX) throw createError({ statusCode: 429, statusMessage: 'Trop d\'essais depuis cette adresse : réessaie dans quelques minutes' })
-  if (!localLoginAllowed()) throw createError({ statusCode: 403, statusMessage: 'Connexion locale désactivée : utilise « Se connecter avec Rocket Auth »' })
+  if (!localLoginAllowed()) throw createError({ statusCode: 403, statusMessage: 'Connexion locale désactivée : utilise « Se connecter avec Connexion Loussa »' })
   const username = typeof usernameRaw === 'string' ? usernameRaw.trim().slice(0, 80) : ''
   if (!username || typeof password !== 'string' || !password || password.length > 200) throw generic()
   const db = useDatabase()

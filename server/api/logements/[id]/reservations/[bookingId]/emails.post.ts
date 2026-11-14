@@ -1,4 +1,4 @@
-// Envoie un e-mail au voyageur via Rocket PMS / Rocket Mailer : { subject, text, messageId }. Uniquement sur clic Envoyer.
+// Envoie un e-mail au voyageur via Loussa Réservations / Loussa Mail : { subject, text, messageId }. Uniquement sur clic Envoyer.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export default defineEventHandler(async (event) => {
   requirePms()

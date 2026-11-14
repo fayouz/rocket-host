@@ -48,7 +48,7 @@
       </div>
     </UCard>
 
-    <!-- Cartes Rocket (tableau de bord intelligent) : seulement quand Rocket PMS est branche ; chaque carte n'apparait
+    <!-- Cartes Rocket (tableau de bord intelligent) : seulement quand Loussa Réservations est branche ; chaque carte n'apparait
          que si sa donnee ou sa brique est disponible. Le reste de l'accueil est inchange. -->
     <DashboardSmartCards v-if="pmsOn" />
 

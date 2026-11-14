@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   const { bookings, demo } = await loadData()
   await planCodes().catch(() => {}) // planifie les codes a venir (base locale uniquement)
   const codes = (await useDatabase().sql`SELECT booking_id, status, code, valid_from, valid_until, error FROM access_code`).rows as any[]
-  // Rocket PMS actif : le code de chaque reservation vient du PMS (la table locale n'est pas utilisee)
+  // Loussa Réservations actif : le code de chaque reservation vient du PMS (la table locale n'est pas utilisee)
   const pmsAccess = pmsEnabled() ? await pmsAccessByBooking(lg.lodgifyPropertyId).catch(() => new Map()) : null
   const mails = (await useDatabase().sql`SELECT target_id, COUNT(*) AS n FROM mail_link WHERE kind = 'booking' AND method != 'removed' GROUP BY target_id`).rows as any[]
   const since = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10)

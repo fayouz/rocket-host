@@ -1,2 +1,2 @@
-// Page de connexion : Rocket Auth actif ? connexion locale gardee ? (aucun secret renvoye)
+// Page de connexion : Connexion Loussa actif ? connexion locale gardee ? (aucun secret renvoye)
 export default defineEventHandler(() => ({ enabled: rocketAuthEnabled(), localLogin: localLoginAllowed() }))

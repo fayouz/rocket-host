@@ -1,4 +1,4 @@
-// Lien voyageur (livret personnalisé au séjour, page /g/ de Rocket PMS) d'une réservation + QR code (SVG en data URL).
+// Lien voyageur (livret personnalisé au séjour, page /g/ de Loussa Réservations) d'une réservation + QR code (SVG en data URL).
 import QRCode from 'qrcode'
 export default defineEventHandler(async (event) => {
   requirePms()

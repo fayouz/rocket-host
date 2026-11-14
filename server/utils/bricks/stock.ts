@@ -1,4 +1,4 @@
-// Client direct Rocket Stock (ROCKET_STOCK_URL / ROCKET_STOCK_TOKEN), lecture seule : niveaux d'un lieu, consommation.
+// Client direct Loussa Stock (ROCKET_STOCK_URL / ROCKET_STOCK_TOKEN), lecture seule : niveaux d'un lieu, consommation.
 import { asList, brickGet, type BrickConfig } from './http.ts'
 
 export async function stockLow(cfg: BrickConfig, placeId: string): Promise<{ name: string; level: string }[]> {

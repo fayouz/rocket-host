@@ -42,7 +42,7 @@ function validity(b: { arrival: string; departure: string; checkIn?: string; che
 }
 
 export async function planCodes() {
-  if (pmsEnabled()) return pmsCodes() // Rocket PMS actif : codes planifies par PMS / Rocket Place, table access_code non utilisee
+  if (pmsEnabled()) return pmsCodes() // Loussa Réservations actif : codes planifies par PMS / Loussa Lieux, table access_code non utilisee
   const db = useDatabase()
   const [{ bookings, properties, demo }, { locks }] = await Promise.all([loadData(), loadLocks()])
   const today = new Date().toISOString().slice(0, 10)

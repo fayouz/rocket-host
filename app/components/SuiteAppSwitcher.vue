@@ -1,12 +1,12 @@
 <template>
-  <!-- Selecteur d'applications de la suite Rocket (liste publiee par Rocket Auth). Invisible sans Rocket Auth. -->
+  <!-- Selecteur d'applications de LoussaSuite (liste publiee par Connexion Loussa). Invisible sans Connexion Loussa. -->
   <UPopover v-if="data?.enabled && (data.apps.length || data.account)">
-    <UTooltip text="Applications Rocket">
-      <UButton color="neutral" variant="ghost" square icon="i-lucide-grid-3x3" aria-label="Applications Rocket" />
+    <UTooltip text="Applications LoussaSuite">
+      <UButton color="neutral" variant="ghost" square icon="i-lucide-grid-3x3" aria-label="Applications LoussaSuite" />
     </UTooltip>
     <template #content>
       <div class="w-72 p-2">
-        <p class="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-dimmed">Suite Rocket</p>
+        <p class="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-dimmed">LoussaSuite</p>
         <div class="grid grid-cols-3 gap-1">
           <a v-for="app in data.apps" :key="app.id + app.url" :href="app.url" :title="app.description || app.name"
             class="flex flex-col items-center gap-1 rounded-md p-2 text-center text-xs hover:bg-elevated">

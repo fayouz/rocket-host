@@ -1,12 +1,12 @@
 <template>
   <div v-if="data">
-    <!-- Rocket PMS actif : ménages créés dans Rocket Place après chaque départ (lecture seule) -->
+    <!-- Loussa Réservations actif : ménages créés dans Loussa Lieux après chaque départ (lecture seule) -->
     <template v-if="pms">
-      <h2 class="section-title !mt-0">Ménages (Rocket Place)</h2>
-      <p class="mb-2 text-sm text-muted">Tâches de ménage planifiées par Rocket PMS après chaque départ, 14 derniers jours et 60 prochains. Lecture seule : l'attribution et le suivi se font dans Rocket Place.</p>
+      <h2 class="section-title !mt-0">Ménages (Loussa Lieux)</h2>
+      <p class="mb-2 text-sm text-muted">Tâches de ménage planifiées par Loussa Réservations après chaque départ, 14 derniers jours et 60 prochains. Lecture seule : l'attribution et le suivi se font dans Loussa Lieux.</p>
       <UCard class="mb-6">
         <p v-if="menStatus === 'pending' || menStatus === 'idle'" class="text-sm text-muted">Chargement…</p>
-        <p v-else-if="!menages" class="text-sm text-muted">Rocket PMS ne répond pas pour le moment.</p>
+        <p v-else-if="!menages" class="text-sm text-muted">Loussa Réservations ne répond pas pour le moment.</p>
         <p v-else-if="!menages.items.length" class="text-sm text-muted">Aucun ménage sur la période.</p>
         <ul v-else class="divide-y divide-default text-sm">
           <li v-for="(m, i) in menages.items" :key="i" class="flex flex-wrap items-center justify-between gap-2 py-2">

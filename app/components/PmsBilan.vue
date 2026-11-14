@@ -1,18 +1,18 @@
 <template>
   <div class="space-y-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 class="section-title !mt-0">Bilan {{ data?.year ?? year }} <span class="text-sm font-normal text-muted">· Rocket PMS</span></h2>
+      <h2 class="section-title !mt-0">Bilan {{ data?.year ?? year }} <span class="text-sm font-normal text-muted">· Loussa Réservations</span></h2>
       <div class="flex items-center gap-2">
         <USelect v-if="data?.years.length" v-model="year" :items="data.years.map(y => ({ label: String(y), value: y }))" class="w-28" />
         <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-download" label="Export CSV" :to="`/api/logements/${logementId}/pms-bilan.csv?year=${year}`" external target="_blank" />
       </div>
     </div>
     <p v-if="status === 'pending' && !data" class="text-sm text-muted">Chargement…</p>
-    <p v-else-if="!data" class="text-sm text-muted">Rocket PMS ne répond pas pour ce logement.</p>
+    <p v-else-if="!data" class="text-sm text-muted">Loussa Réservations ne répond pas pour ce logement.</p>
     <template v-else>
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <UCard><p class="text-sm text-muted">Revenus des séjours</p><p class="text-xl font-semibold">{{ eur(data.revenue) }}</p><p class="text-xs text-muted">bruts, répartis par nuit</p></UCard>
-        <UCard><p class="text-sm text-muted">Charges</p><p class="text-xl font-semibold text-warning">− {{ eur(data.chargesTotal) }}</p><p class="text-xs text-muted">{{ data.items.filter(i => i.kind !== 'income').length }} dépense(s) dans Rocket PMS</p></UCard>
+        <UCard><p class="text-sm text-muted">Charges</p><p class="text-xl font-semibold text-warning">− {{ eur(data.chargesTotal) }}</p><p class="text-xs text-muted">{{ data.items.filter(i => i.kind !== 'income').length }} dépense(s) dans Loussa Réservations</p></UCard>
         <UCard><p class="text-sm text-muted">Autres recettes</p><p class="text-xl font-semibold">{{ eur(data.otherIncome) }}</p></UCard>
         <UCard :class="data.result < 0 ? 'border-l-4 border-l-error' : 'border-l-4 border-l-success'"><p class="text-sm text-muted">Résultat estimé</p><p class="text-xl font-semibold">{{ eur(data.result) }}</p></UCard>
       </div>
@@ -57,7 +57,7 @@
           </tbody>
         </table>
       </UCard>
-      <p class="text-xs text-muted">Calcul Rocket PMS : revenus des réservations Lodgify répartis sur les nuits de l'année, dépenses saisies ou importées (relevés de plateformes) dans Rocket PMS. Les saisies se font dans Rocket PMS. À confirmer avec ton comptable.</p>
+      <p class="text-xs text-muted">Calcul Loussa Réservations : revenus des réservations Lodgify répartis sur les nuits de l'année, dépenses saisies ou importées (relevés de plateformes) dans Loussa Réservations. Les saisies se font dans Loussa Réservations. À confirmer avec ton comptable.</p>
     </template>
   </div>
 </template>

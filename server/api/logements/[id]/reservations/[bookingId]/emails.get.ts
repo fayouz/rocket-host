@@ -1,4 +1,4 @@
-// E-mails (Rocket Mailer) rattachés à la réservation, via Rocket PMS (PMS actif seulement).
+// E-mails (Loussa Mail) rattachés à la réservation, via Loussa Réservations (PMS actif seulement).
 export default defineEventHandler(async (event) => {
   requirePms()
   const lg = await getLogement(getRouterParam(event, 'id'))

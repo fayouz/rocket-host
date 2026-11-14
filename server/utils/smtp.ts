@@ -5,9 +5,9 @@ import MailComposer from 'nodemailer/lib/mail-composer'
 import { connect, errText, getImapConfig, need } from './imap'
 import { syncFolderTree } from './mailFolders'
 
-const transport = (cfg: Awaited<ReturnType<typeof getImapConfig>>) => nodemailer.createTransport({
+const transport = (cfg: Awaited<ReturnType<typeof getImapConfig>>) => nodemailer.createTransport(<any>{
   host: cfg.smtpHost, port: cfg.smtpPort, secure: cfg.smtpSecure, requireTLS: !cfg.smtpSecure, // STARTTLS obligatoire si pas de TLS direct
-  auth: { user: cfg.user, pass: getSecret('IMAP_PASSWORD') },
+  auth: cfg.authMailboxId ? { type: 'OAuth2', user: cfg.user, accessToken: cachedMailAccessToken(cfg.authMailboxId) } : { user: cfg.user, pass: getSecret('IMAP_PASSWORD') },
   connectionTimeout: 20_000, greetingTimeout: 20_000, socketTimeout: 60_000, tls: { rejectUnauthorized: true },
 })
 

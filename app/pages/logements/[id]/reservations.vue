@@ -164,7 +164,7 @@
         </template>
       </UCard>
 
-      <!-- Rocket PMS actif : livret du séjour (lien, QR, envoi) et e-mails Rocket Mailer de la réservation -->
+      <!-- Loussa Réservations actif : livret du séjour (lien, QR, envoi) et e-mails Loussa Mail de la réservation -->
       <PmsBookingPanel v-if="pms" :logement-id="String(route.params.id)" :booking-id="current.id" :guest="current.guest" />
 
       <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
@@ -219,7 +219,8 @@ const filteredItems = computed(() => {
   return [...items].sort((a, b) => sortAsc.value ? a.arrival.localeCompare(b.arrival) : b.arrival.localeCompare(a.arrival))
 })
 // Reservation selectionnee (colonne de droite) : par defaut celle en cours, sinon la premiere de la liste filtree (la plus recente/proche)
-const selected = ref<number | null>(null)
+// ?booking=<id> (depuis la vue « Tous les logements ») : ouvre directement cette reservation
+const selected = ref<number | null>(Number(route.query.booking) || null)
 watchEffect(() => {
   if (selected.value !== null && filteredItems.value.some(b => b.id === selected.value)) return
   const items = filteredItems.value

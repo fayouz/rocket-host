@@ -1,4 +1,4 @@
-// Envoie le lien du livret au voyageur via Rocket PMS : { channel: lodgify|email, messageId, text?, lang? }.
+// Envoie le lien du livret au voyageur via Loussa Réservations : { channel: lodgify|email, messageId, text?, lang? }.
 // Appelée uniquement par le bouton « Envoyer le livret » après confirmation (messageId du navigateur : envoi idempotent).
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export default defineEventHandler(async (event) => {

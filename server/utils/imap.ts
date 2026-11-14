@@ -13,12 +13,13 @@ export interface ImapConfig {
   syncMail: boolean; mailDays: number; mailSyncedAt: string | null; mailResult: string
   smtpHost: string; smtpPort: number; smtpSecure: boolean; fromName: string; sentFolder: string; spamFolder: string
   autoFile: boolean; treatedFolder: string
+  authMailboxId: number // > 0 : boite Google / Microsoft, authentification XOAUTH2 (jeton d'acces), sinon mot de passe IMAP_PASSWORD
 }
 export interface ImapRule { id: number; name: string; sender: string; subject: string; source: string; category: string; logementId: number; enabled: boolean }
 
 export async function getImapConfig(): Promise<ImapConfig> {
   const r = ((await useDatabase().sql`SELECT * FROM imap_config WHERE id = 1`).rows as any[])[0]
-  return {
+  const cfg: ImapConfig = {
     provider: String(r.provider ?? 'custom'), enabled: !!Number(r.enabled), host: String(r.host), port: Number(r.port), secure: !!Number(r.secure), user: String(r.user), folder: String(r.folder),
     intervalMin: Number(r.interval_min), sinceDays: Number(r.since_days), lastUid: Number(r.last_uid), uidValidity: Number(r.uid_validity),
     lastRunAt: r.last_run_at ? String(r.last_run_at) : null, lastResult: String(r.last_result),
@@ -26,7 +27,11 @@ export async function getImapConfig(): Promise<ImapConfig> {
     smtpHost: String(r.smtp_host ?? ''), smtpPort: Number(r.smtp_port ?? 465), smtpSecure: !!Number(r.smtp_secure ?? 1), fromName: String(r.from_name ?? ''),
     sentFolder: String(r.sent_folder ?? ''), spamFolder: String(r.spam_folder ?? ''),
     autoFile: !!Number(r.auto_file ?? 0), treatedFolder: String(r.treated_folder ?? 'Traité'),
+    authMailboxId: Number(r.auth_mailbox_id ?? 0),
   }
+  // Boite OAuth : jeton d'acces renouvele ici (asynchrone) pour que connect() / l'envoi restent synchrones
+  if (cfg.authMailboxId) await refreshMailAccessToken(cfg.authMailboxId).catch(() => {})
+  return cfg
 }
 
 export async function getImapRules(): Promise<ImapRule[]> {
@@ -39,14 +44,15 @@ export async function getImapRules(): Promise<ImapRule[]> {
 export const connect = (cfg: ImapConfig) => new ImapFlow({
   host: cfg.host, port: cfg.port, secure: cfg.secure,
   ...(cfg.secure ? {} : { doSTARTTLS: true }), // sans TLS implicite : STARTTLS obligatoire, jamais de mot de passe en clair
-  auth: { user: cfg.user, pass: getSecret('IMAP_PASSWORD') },
+  auth: cfg.authMailboxId ? { user: cfg.user, accessToken: cachedMailAccessToken(cfg.authMailboxId) } : { user: cfg.user, pass: getSecret('IMAP_PASSWORD') },
   logger: false, tls: { rejectUnauthorized: true },
   connectionTimeout: 20_000, greetingTimeout: 20_000, socketTimeout: 120_000,
 } as any)
 
 export const errText = (e: any) => String(e?.responseText || e?.message || e).replace(/\s+/g, ' ').slice(0, 200)
 export const need = (cfg: ImapConfig) =>
-  !hasSecret('IMAP_PASSWORD') ? 'mot de passe de la boîte non renseigné (Réglages › Connexions)' : !cfg.host || !cfg.user ? 'serveur ou identifiant non renseigné' : null
+  cfg.authMailboxId ? (!cachedMailAccessToken(cfg.authMailboxId) ? 'connexion Google / Microsoft expirée ou refusée : reconnecte la boîte (Réglages › Boîtes e-mail)' : !cfg.host || !cfg.user ? 'serveur ou identifiant non renseigné' : null)
+  : !hasSecret('IMAP_PASSWORD') ? 'mot de passe de la boîte non renseigné (Réglages › Connexions)' : !cfg.host || !cfg.user ? 'serveur ou identifiant non renseigné' : null
 
 // Test de connexion : ne lit aucun message (compte seulement les correspondances de chaque regle)
 export async function testImap() {

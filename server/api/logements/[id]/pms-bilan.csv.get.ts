@@ -1,4 +1,4 @@
-// Export CSV du bilan Rocket PMS (?year=), relayé tel quel (PMS actif seulement).
+// Export CSV du bilan Loussa Réservations (?year=), relayé tel quel (PMS actif seulement).
 export default defineEventHandler(async (event) => {
   requirePms()
   const lg = await getLogement(getRouterParam(event, 'id'))

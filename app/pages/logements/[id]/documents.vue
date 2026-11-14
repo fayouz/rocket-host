@@ -8,11 +8,11 @@
       Tous les fichiers du logement. Clic droit sur un fichier → « Type et montant… » : un type comptable (facture, taxe, assurance…)
       avec sa date et son montant le fait compter dans le Bilan. Le filtre « Type » à droite retrouve les fichiers comptables.
     </p>
-    <!-- Rocket PMS actif : documents du lieu dans Rocket Place (Rocket Cloud), en lecture -->
+    <!-- Loussa Réservations actif : documents du lieu dans Loussa Lieux (Loussa Cloud), en lecture -->
     <UCard v-if="pmsDocs?.enabled">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-cloud" class="size-3.5" /> Documents du lieu (Rocket Place)</p>
+          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-cloud" class="size-3.5" /> Documents du lieu (Loussa Lieux)</p>
           <UButton v-if="pmsFolder" size="xs" color="neutral" variant="link" icon="i-lucide-arrow-left" label="Dossier racine" @click="pmsFolder = ''" />
         </div>
       </template>
@@ -23,7 +23,7 @@
       </div>
       <p v-if="!pmsDocs.items.length" class="text-sm text-muted">Aucun document dans ce dossier.</p>
     </UCard>
-    <p v-else-if="pmsError" class="text-sm text-error">Documents Rocket Place indisponibles : {{ pmsError }}</p>
+    <p v-else-if="pmsError" class="text-sm text-error">Documents Loussa Lieux indisponibles : {{ pmsError }}</p>
     <FileExplorer :logement-id="Number(route.params.id)" height="calc(100vh - 20rem)" :readonly="!can('AG')" />
   </div>
 </template>
@@ -32,7 +32,7 @@
 const route = useRoute()
 const { can, refresh } = useAuth()
 await refresh()
-// Documents du lieu via Rocket PMS : { enabled: false } tant que PMS_API_URL n'est pas configure (rien n'est affiche)
+// Documents du lieu via Loussa Réservations : { enabled: false } tant que PMS_API_URL n'est pas configure (rien n'est affiche)
 const pmsFolder = ref('')
 const { data: pmsDocs, error: pmsFetchError } = useFetch(() => `/api/logements/${route.params.id}/pms-documents`, { query: computed(() => (pmsFolder.value ? { folder: pmsFolder.value } : {})), server: false })
 const pmsError = computed(() => (pmsFetchError.value as any)?.data?.statusMessage || (pmsFetchError.value ? 'erreur' : ''))

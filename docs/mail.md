@@ -40,3 +40,6 @@ Le bouton **« Relancer l'association »** recalcule tout ; les rattachements ma
 - L'adresse d'envoi est celle de la boîte ; destinataires validés (20 au plus), objet sur une seule ligne, 100 000 caractères, pièces jointes 15 Mo.
 - Une protection **contre les requêtes venant d'un autre site** (CSRF) refuse toute écriture dont l'origine n'est pas l'appli elle-même. Elle ne gêne pas les workflows n8n (appels de serveur à serveur).
 - « Tester l'envoi » vérifie la connexion et l'identification SMTP **sans envoyer de message**.
+
+## Plusieurs boîtes et assistant (2026-09-29)
+Réglages › Boîtes e-mail › « Ajouter une boîte e-mail » : sources Rocket Mailer (partagée / perso), Google, Microsoft (OAuth) ou Locale (IMAP/SMTP, service détecté par MX). Secrets en base uniquement (`MAILBOX_<id>_PASSWORD`, `MAILBOX_<id>_REFRESH_TOKEN`, `IMAP_PASSWORD` pour la principale Locale). Routes : `GET/POST /api/mailboxes`, `POST /api/mailboxes/test`, `PUT/DELETE /api/mailboxes/:id`, `POST /api/mailboxes/:id/test`, `GET /api/mailer/mailboxes`, `GET /api/mail/oauth/:provider/start|callback`. Adresse de retour OAuth : `https://<hôte>/api/mail/oauth/google|microsoft/callback`.

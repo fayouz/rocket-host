@@ -50,24 +50,33 @@ export function openSecret(name: string, row: { ciphertext: string; nonce: strin
 // kind 'secret' : chiffre, jamais renvoye ; kind 'setting' : texte clair (adresses, identifiants non sensibles).
 export interface ConfigEntry { name: string; kind: 'secret' | 'setting'; group: string; label: string; help?: string; placeholder?: string }
 export const CONFIG_GROUPS: { key: string; title: string; description: string }[] = [
-  { key: 'pms', title: 'Rocket PMS', description: 'Adresse de l\'API et jeton d\'application (rpm_…). Vide = Lodgify/Nuki en direct.' },
-  { key: 'place', title: 'Rocket Place', description: 'Tableau de bord intelligent : lieux, accès, écrans.' },
-  { key: 'clean', title: 'Rocket Clean', description: 'Tableau de bord intelligent : ménage et linge.' },
-  { key: 'stock', title: 'Rocket Stock', description: 'Tableau de bord intelligent : stock.' },
-  { key: 'cast', title: 'Rocket Cast', description: 'Tableau de bord intelligent : écrans TV.' },
+  { key: 'pms', title: 'Loussa Réservations', description: 'Adresse de l\'API et jeton d\'application (rpm_…). Vide = Lodgify/Nuki en direct.' },
+  { key: 'place', title: 'Loussa Lieux', description: 'Tableau de bord intelligent : lieux, accès, écrans.' },
+  { key: 'clean', title: 'Loussa Ménage', description: 'Tableau de bord intelligent : ménage et linge.' },
+  { key: 'stock', title: 'Loussa Stock', description: 'Tableau de bord intelligent : stock.' },
+  { key: 'cast', title: 'Loussa Diffusion', description: 'Tableau de bord intelligent : écrans TV.' },
+  { key: 'mailer', title: 'Loussa Mail', description: 'Boîtes partagées et boîtes perso gérées par Loussa Mail (assistant « Ajouter une boîte e-mail »). Appels faits au nom de l\'utilisateur connecté (X-Impersonate-User).' },
+  { key: 'mailoauth', title: 'Connexion Google / Microsoft (boîtes e-mail)', description: 'Applications OAuth pour « Se connecter avec Google / Microsoft » dans l\'assistant boîte e-mail. Adresse de retour : https://<hôte>/api/mail/oauth/google|microsoft/callback.' },
   { key: 'mail', title: 'E-mail (IMAP/SMTP)', description: 'Mot de passe de la boîte ; serveur, identifiant et règles dans Boîte e-mail (IMAP/SMTP).' },
   { key: 'homey', title: 'Domotique (Homey)', description: 'Clé d\'API Homey Pro (accès local) et application OAuth (mode cloud).' },
-  { key: 'direct', title: 'Lodgify / Nuki en direct', description: 'Utilisés seulement quand Rocket PMS n\'est pas branché.' },
+  { key: 'direct', title: 'Lodgify / Nuki en direct', description: 'Utilisés seulement quand Loussa Réservations n\'est pas branché.' },
   { key: 'webhook', title: 'Webhook (n8n)', description: 'Jeton attendu dans « Authorization: Bearer … » des imports n8n.' },
 ]
 export const CONFIG_ENTRIES: ConfigEntry[] = [
   { name: 'PMS_API_URL', kind: 'setting', group: 'pms', label: 'Adresse de l\'API', placeholder: 'https://pms.exemple.fr' },
   { name: 'PMS_API_TOKEN', kind: 'secret', group: 'pms', label: 'Jeton d\'application' },
-  { name: 'PMS_IMPERSONATE_USER', kind: 'setting', group: 'pms', label: 'Compte expéditeur des e-mails (Rocket Mailer)' },
+  { name: 'PMS_IMPERSONATE_USER', kind: 'setting', group: 'pms', label: 'Compte expéditeur des e-mails (Loussa Mail)' },
   ...(['place', 'clean', 'stock', 'cast'] as const).flatMap(b => [
     { name: `ROCKET_${b.toUpperCase()}_URL`, kind: 'setting' as const, group: b, label: 'Adresse de l\'API', placeholder: `https://${b}.exemple.fr` },
     { name: `ROCKET_${b.toUpperCase()}_TOKEN`, kind: 'secret' as const, group: b, label: 'Jeton d\'application' },
   ]),
+  { name: 'ROCKET_MAILER_URL', kind: 'setting', group: 'mailer', label: 'Adresse de l\'API', placeholder: 'https://mailer.exemple.fr' },
+  { name: 'ROCKET_MAILER_TOKEN', kind: 'secret', group: 'mailer', label: 'Jeton d\'application' },
+  { name: 'GOOGLE_MAIL_CLIENT_ID', kind: 'setting', group: 'mailoauth', label: 'Google : identifiant client OAuth', placeholder: '….apps.googleusercontent.com' },
+  { name: 'GOOGLE_MAIL_CLIENT_SECRET', kind: 'secret', group: 'mailoauth', label: 'Google : secret client OAuth' },
+  { name: 'MICROSOFT_MAIL_CLIENT_ID', kind: 'setting', group: 'mailoauth', label: 'Microsoft : identifiant d\'application (client)' },
+  { name: 'MICROSOFT_MAIL_CLIENT_SECRET', kind: 'secret', group: 'mailoauth', label: 'Microsoft : secret client' },
+  { name: 'MICROSOFT_MAIL_TENANT', kind: 'setting', group: 'mailoauth', label: 'Microsoft : locataire (facultatif)', placeholder: 'common' },
   { name: 'IMAP_PASSWORD', kind: 'secret', group: 'mail', label: 'Mot de passe de la boîte (IMAP et SMTP)' },
   { name: 'HOMEY_API_KEY', kind: 'secret', group: 'homey', label: 'Clé d\'API Homey Pro (local)', help: 'Homey web app > Réglages > Clés d\'API ; droits minimaux : lire et commander les appareils.' },
   { name: 'HOMEY_CLIENT_ID', kind: 'setting', group: 'homey', label: 'Identifiant de l\'application OAuth (cloud)' },
@@ -79,5 +88,7 @@ export const CONFIG_ENTRIES: ConfigEntry[] = [
 ]
 // Secrets des connecteurs (plugins « Service web »…) : nom libre commencant par CONNECTOR_
 export const CONNECTOR_SECRET = /^CONNECTOR_[A-Z0-9_]{1,60}$/
-export const isKnownSecretName = (n: string) => CONNECTOR_SECRET.test(n) || CONFIG_ENTRIES.some(e => e.kind === 'secret' && e.name === n)
+// Secrets des boites e-mail ajoutees par l'assistant : mot de passe (Locale) ou jeton de renouvellement OAuth (Google / Microsoft)
+export const MAILBOX_SECRET = /^MAILBOX_\d{1,9}_(PASSWORD|REFRESH_TOKEN)$/
+export const isKnownSecretName = (n: string) => CONNECTOR_SECRET.test(n) || MAILBOX_SECRET.test(n) || CONFIG_ENTRIES.some(e => e.kind === 'secret' && e.name === n)
 export const isKnownSettingName = (n: string) => CONFIG_ENTRIES.some(e => e.kind === 'setting' && e.name === n)

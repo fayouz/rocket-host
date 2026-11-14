@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   type Msg = { key: string; kind: 'lodgify' | 'mail'; from: 'host' | 'guest'; at: string; subject: string; text: string; status: string; mailId?: number; sender?: string; fromAddr?: string; toAddrs?: string }
   const messages: Msg[] = []
   if (pmsEnabled()) {
-    messages.push(...await pmsConversation(lg.lodgifyPropertyId, bookingId)) // fil lu via Rocket PMS
+    messages.push(...await pmsConversation(lg.lodgifyPropertyId, bookingId)) // fil lu via Loussa Réservations
   } else if (!demo && b.threadUid) {
     const t = await lodgifyCall(`/messaging/${b.threadUid}`, getSecret('LODGIFY_API_KEY'))
     for (const m of t?.messages || []) {

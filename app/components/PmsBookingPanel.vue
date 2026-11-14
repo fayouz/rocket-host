@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-4">
-    <!-- Livret voyageur Rocket PMS : lien personnalisé au séjour, QR code, envoi explicite -->
+    <!-- Livret voyageur Loussa Réservations : lien personnalisé au séjour, QR code, envoi explicite -->
     <UCard>
       <template #header>
-        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-book-heart" class="size-3.5" /> Livret du séjour (Rocket PMS)</p>
+        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-book-heart" class="size-3.5" /> Livret du séjour (Loussa Réservations)</p>
       </template>
       <p v-if="linkStatus === 'pending' || linkStatus === 'idle'" class="text-sm text-muted">Chargement…</p>
       <p v-else-if="!link?.url" class="text-sm text-muted">Lien indisponible pour cette réservation.</p>
@@ -27,10 +27,10 @@
       </div>
     </UCard>
 
-    <!-- E-mails Rocket Mailer rattachés à la réservation -->
+    <!-- E-mails Loussa Mail rattachés à la réservation -->
     <UCard>
       <template #header>
-        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-mail" class="size-3.5" /> E-mails (Rocket PMS)</p>
+        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-mail" class="size-3.5" /> E-mails (Loussa Réservations)</p>
         <p v-if="emails?.guestEmail" class="mt-1 text-xs text-muted">{{ emails.guestEmail }}</p>
       </template>
       <p v-if="emailsStatus === 'pending' || emailsStatus === 'idle'" class="text-sm text-muted">Chargement…</p>
@@ -57,7 +57,7 @@
           <UInput v-model="subject" size="sm" placeholder="Objet" :disabled="sendingMail || !emails.guestEmail" />
           <UTextarea v-model="text" :rows="3" autoresize size="sm" placeholder="Écrire un e-mail au voyageur…" class="w-full" :disabled="sendingMail || !emails.guestEmail" />
           <div class="flex items-center justify-between gap-2">
-            <p class="text-xs" :class="mailError ? 'text-error' : 'text-muted'">{{ mailError || mailInfo || (emails.guestEmail ? 'Envoyé via Rocket Mailer.' : 'Pas d’adresse e-mail pour ce voyageur.') }}</p>
+            <p class="text-xs" :class="mailError ? 'text-error' : 'text-muted'">{{ mailError || mailInfo || (emails.guestEmail ? 'Envoyé via Loussa Mail.' : 'Pas d’adresse e-mail pour ce voyageur.') }}</p>
             <UButton size="xs" icon="i-lucide-send" label="Envoyer" :loading="sendingMail" :disabled="!subject.trim() || !text.trim() || !emails.guestEmail" @click="sendMail" />
           </div>
         </div>

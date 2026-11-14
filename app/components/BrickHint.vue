@@ -1,10 +1,10 @@
 <template>
-  <!-- Rappel en tete d'une page locale remplacee par une brique Rocket quand Rocket PMS est branche -->
+  <!-- Rappel en tete d'une page locale remplacee par une brique LoussaSuite quand Loussa Réservations est branche -->
   <UAlert
     v-if="pms?.configured"
     color="info" variant="subtle" icon="i-lucide-rocket" class="mb-4 print:hidden"
-    :title="`Géré dans ${brick === 'place' ? 'Rocket Place' : 'Rocket PMS'}`"
-    :description="description || 'Rocket PMS est branché : cette page locale reste disponible mais la référence est dans la brique.'"
+    :title="`Géré dans ${brick === 'place' ? 'Loussa Lieux' : 'Loussa Réservations'}`"
+    :description="description || 'Loussa Réservations est branché : cette page locale reste disponible mais la référence est dans la brique.'"
     :actions="url ? [{ label: 'Ouvrir', icon: 'i-lucide-external-link', to: url, target: '_blank', color: 'info', variant: 'outline' }] : []"
   />
 </template>

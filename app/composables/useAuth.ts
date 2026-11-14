@@ -11,7 +11,7 @@ export function useAuth() {
     let redirect: string | null = null
     try { redirect = (await $fetch<{ redirect?: string | null }>('/api/auth/logout', { method: 'POST' })).redirect ?? null } catch { /* déjà déconnecté */ }
     user.value = null
-    window.location.assign(redirect || '/connexion') // connexion Rocket Auth : fin de session chez Rocket Auth aussi
+    window.location.assign(redirect || '/connexion') // connexion Connexion Loussa : fin de session chez Connexion Loussa aussi
   }
   // Menus : masque ce que le role ne peut pas ouvrir. AFFICHAGE SEULEMENT : le serveur refuse de toute facon (server/utils/policy.ts).
   const letter = computed(() => ({ admin: 'A', gestionnaire: 'G', comptable: 'C', menage: 'M' } as const)[user.value?.role ?? 'menage'])
