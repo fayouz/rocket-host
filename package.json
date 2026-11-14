@@ -17,6 +17,7 @@
   "dependencies": {
     "@iconify-json/simple-icons": "^1.2.97",
     "@nuxt/ui": "^4.11.1",
+    "@nuxtjs/i18n": "^10.6.0",
     "@types/sanitize-html": "^2.16.1",
     "imapflow": "^2.0.5",
     "mailparser": "^3.9.28",
