@@ -1,4 +1,4 @@
-// Connexion d'une boite Google / Microsoft par OAuth (« Se connecter avec Google / Microsoft ») pour une boite geree par Rocket Host
+// Connexion d'une boite Google / Microsoft par OAuth (« Se connecter avec Google / Microsoft ») pour une boite geree par l’Espace Loussa
 // (IMAP / SMTP en XOAUTH2). Identifiants de l'application : Reglages > Connexions > Connexions directes (GOOGLE_MAIL_CLIENT_ID /
 // GOOGLE_MAIL_CLIENT_SECRET, MICROSOFT_MAIL_…). Le jeton de renouvellement est un secret chiffre MAILBOX_<id>_REFRESH_TOKEN ;
 // le jeton d'acces (1 h) reste en memoire seulement. Aucun jeton ne sort vers le navigateur.

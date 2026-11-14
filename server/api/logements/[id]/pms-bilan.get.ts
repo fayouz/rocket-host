@@ -1,4 +1,4 @@
-// Bilan annuel calculé par Rocket PMS (revenus + dépenses du PMS), ?year= (PMS actif seulement).
+// Bilan annuel calculé par Loussa Réservations (revenus + dépenses du PMS), ?year= (PMS actif seulement).
 export default defineEventHandler(async (event) => {
   requirePms()
   const lg = await getLogement(getRouterParam(event, 'id'))

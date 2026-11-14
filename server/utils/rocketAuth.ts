@@ -1,8 +1,8 @@
-// Rocket Auth (authentification unique de la suite Rocket, OpenID Connect). Voir docs/rocket-auth.md.
+// Connexion Loussa (authentification unique de LoussaSuite, OpenID Connect). Voir docs/rocket-auth.md.
 // Actif seulement quand ROCKET_AUTH_URL est renseigne ; sinon rien ne change (connexion locale seule).
 // Flux : code d'autorisation + PKCE (S256), state et nonce dans un cookie chiffre de courte duree, jeton d'identite verifie
 // avec les cles publiques (JWKS, RS256) par le module crypto de Node (aucune dependance ajoutee).
-// Le secret client est l'identite de l'appli aupres de Rocket Auth : il reste dans .env pour l'instant (phase 2 : coffre de secrets du compte).
+// Le secret client est l'identite de l'appli aupres de Connexion Loussa : il reste dans .env pour l'instant (phase 2 : coffre de secrets du compte).
 import { createHash, createPublicKey, randomBytes, verify as cryptoVerify } from 'node:crypto'
 import type { H3Event } from 'h3'
 import type { Role } from './auth'
@@ -14,7 +14,7 @@ const env = (k: string) => (process.env[k] ?? '').trim()
 export interface RocketAuthConfig { issuer: string; clientId: string; clientSecret: string; adminGroup: string; autoCreate: boolean; roleGroups: Record<string, Role>; defaultRole: Role | null; appsUrl: string; redirectUri: string }
 
 export const rocketAuthEnabled = () => !!env('ROCKET_AUTH_URL')
-// Connexion locale (identifiant + mot de passe) : gardee par defaut pendant la transition ; ROCKET_LOCAL_LOGIN=0 la coupe quand Rocket Auth est actif
+// Connexion locale (identifiant + mot de passe) : gardee par defaut pendant la transition ; ROCKET_LOCAL_LOGIN=0 la coupe quand Connexion Loussa est actif
 export const localLoginAllowed = () => !rocketAuthEnabled() || !['0', 'false', 'non', 'no'].includes(env('ROCKET_LOCAL_LOGIN').toLowerCase())
 
 const ROLES: Role[] = ['admin', 'gestionnaire', 'comptable', 'menage']
@@ -64,7 +64,7 @@ export async function rocketDiscovery(): Promise<Discovery> {
   const issuer = rocketAuthConfig().issuer
   if (disco && disco.issuer === issuer && Date.now() - disco.at < TTL) return disco.d
   const d = await $fetch<Discovery>(`${issuer}/.well-known/openid-configuration`, { timeout: 8000 })
-  if (d.issuer.replace(/\/+$/, '') !== issuer) throw new Error('Rocket Auth : l\'émetteur annoncé ne correspond pas à ROCKET_AUTH_URL')
+  if (d.issuer.replace(/\/+$/, '') !== issuer) throw new Error('Connexion Loussa : l\'émetteur annoncé ne correspond pas à ROCKET_AUTH_URL')
   disco = { at: Date.now(), issuer, d }
   return d
 }
@@ -130,13 +130,13 @@ export async function rocketAuthorizeUrl(event: H3Event, next: unknown) {
   return u.toString()
 }
 
-// Retour de Rocket Auth : verifie state, echange le code, verifie le jeton d'identite, associe le compte local, ouvre la session
+// Retour de Connexion Loussa : verifie state, echange le code, verifie le jeton d'identite, associe le compte local, ouvre la session
 export async function handleCallback(event: H3Event) {
   const q = getQuery(event)
   const s = await pending(event)
   const p = s.data
   await s.clear() // usage unique
-  if (q.error) throw createError({ statusCode: 401, statusMessage: `Rocket Auth a refusé la connexion (${String(q.error).slice(0, 60)})` })
+  if (q.error) throw createError({ statusCode: 401, statusMessage: `Connexion Loussa a refusé la connexion (${String(q.error).slice(0, 60)})` })
   if (!p.state || !p.verifier || !p.at || Date.now() - p.at > 600_000 || typeof q.state !== 'string' || q.state !== p.state || typeof q.code !== 'string')
     throw createError({ statusCode: 400, statusMessage: 'Demande de connexion expirée ou invalide : recommence' })
   const cfg = rocketAuthConfig(event)
@@ -145,14 +145,14 @@ export async function handleCallback(event: H3Event) {
     method: 'POST', timeout: 10000,
     headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${Buffer.from(`${encodeURIComponent(cfg.clientId)}:${encodeURIComponent(cfg.clientSecret)}`).toString('base64')}` },
     body: new URLSearchParams({ grant_type: 'authorization_code', code: q.code, redirect_uri: cfg.redirectUri, code_verifier: p.verifier }).toString(),
-  }).catch(() => { throw createError({ statusCode: 502, statusMessage: 'Rocket Auth : échange du code refusé' }) })
-  if (!tokens.id_token) throw createError({ statusCode: 502, statusMessage: 'Rocket Auth : pas de jeton d\'identité' })
+  }).catch(() => { throw createError({ statusCode: 502, statusMessage: 'Connexion Loussa : échange du code refusé' }) })
+  if (!tokens.id_token) throw createError({ statusCode: 502, statusMessage: 'Connexion Loussa : pas de jeton d\'identité' })
   let claims: Record<string, any>
   try { claims = await verifyRocketJwt(tokens.id_token) } catch (e: any) { throw createError({ statusCode: 401, statusMessage: `Jeton d'identité refusé : ${e?.message ?? ''}` }) }
   if (claims.nonce !== p.nonce) throw createError({ statusCode: 401, statusMessage: 'Jeton d\'identité refusé : nonce' })
   const row = await linkRocketAccount(event, claims, cfg)
   await startSession(event, row, { sso: 1 })
-  await audit(event, 'connexion', 'Rocket Auth', { id: Number(row.id), username: String(row.username) })
+  await audit(event, 'connexion', 'Connexion Loussa', { id: Number(row.id), username: String(row.username) })
   return p.next || '/'
 }
 
@@ -162,36 +162,36 @@ export async function linkRocketAccount(event: H3Event | null, claims: Record<st
   const sub = String(claims.sub ?? '')
   const email = String(claims.email ?? '').trim().toLowerCase()
   if (!sub) throw createError({ statusCode: 401, statusMessage: 'Jeton sans identifiant (sub)' })
-  const refuse = async (why: string) => { await audit(event, 'connexion_echec', `Rocket Auth : ${why}`, { username: email || sub }); return createError({ statusCode: 403, statusMessage: why }) }
+  const refuse = async (why: string) => { await audit(event, 'connexion_echec', `Connexion Loussa : ${why}`, { username: email || sub }); return createError({ statusCode: 403, statusMessage: why }) }
   const role = roleFromGroups(claims.groups, cfg)
   let r = ((await db.sql`SELECT u.* FROM rocket_auth_link l JOIN app_user u ON u.id = l.user_id WHERE l.sub = ${sub}`).rows as any[])[0]
   if (!r && email) {
-    if (claims.email_verified === false) throw await refuse('Adresse e-mail non vérifiée dans Rocket Auth')
+    if (claims.email_verified === false) throw await refuse('Adresse e-mail non vérifiée dans Connexion Loussa')
     r = ((await db.sql`SELECT * FROM app_user WHERE lower(email) = ${email}`).rows as any[])[0]
   }
   const now = new Date().toISOString()
   if (!r) {
-    if (!cfg.autoCreate) throw await refuse('Aucun compte Rocket Host pour cette adresse e-mail (demande à un administrateur de t\'en créer un)')
+    if (!cfg.autoCreate) throw await refuse('Aucun compte Espace Loussa pour cette adresse e-mail (demande à un administrateur de t\'en créer un)')
     const newRole = role ?? cfg.defaultRole
-    if (!newRole) throw await refuse('Aucun rôle Rocket Host pour tes groupes Rocket Auth')
-    if (!email) throw await refuse('Rocket Auth n\'a pas transmis d\'adresse e-mail')
+    if (!newRole) throw await refuse('Aucun rôle Espace Loussa pour tes groupes Connexion Loussa')
+    if (!email) throw await refuse('Connexion Loussa n\'a pas transmis d\'adresse e-mail')
     const base = String(claims.preferred_username || email.split('@')[0]).replace(/[^\w.-]/g, '').slice(0, 60) || 'utilisateur'
     let username = base
     for (let i = 2; ((await db.sql`SELECT 1 FROM app_user WHERE username = ${username}`).rows as any[]).length; i++) username = `${base}${i}`
     await db.sql`INSERT INTO app_user (username, display_name, email, role, password_hash, must_change, default_password, created_at) VALUES (${username}, ${String(claims.name || username).slice(0, 120)}, ${email}, ${newRole}, '', 0, 0, ${now})`
     r = ((await db.sql`SELECT * FROM app_user WHERE username = ${username}`).rows as any[])[0]
-    await audit(event, 'utilisateur_cree', `Rocket Auth (${newRole})`, { id: Number(r.id), username })
+    await audit(event, 'utilisateur_cree', `Connexion Loussa (${newRole})`, { id: Number(r.id), username })
   } else if (role && role !== r.role) {
-    await db.sql`UPDATE app_user SET role = ${role} WHERE id = ${r.id}` // les groupes Rocket Auth font foi quand ils donnent un role
+    await db.sql`UPDATE app_user SET role = ${role} WHERE id = ${r.id}` // les groupes Connexion Loussa font foi quand ils donnent un role
     r.role = role
   }
-  if (!Number(r.active)) throw await refuse('Compte Rocket Host désactivé')
+  if (!Number(r.active)) throw await refuse('Compte Espace Loussa désactivé')
   await db.sql`INSERT INTO rocket_auth_link (sub, user_id, linked_at, last_sid) VALUES (${sub}, ${r.id}, ${now}, ${claims.sid ?? null}) ON CONFLICT(sub) DO UPDATE SET user_id = excluded.user_id, last_sid = excluded.last_sid`
   await db.sql`UPDATE app_user SET failed_count = 0, locked_until = NULL, last_login_at = ${now} WHERE id = ${r.id}`
   return r
 }
 
-// Deconnexion a l'initiative de l'appli : adresse de fin de session Rocket Auth (null si indisponible)
+// Deconnexion a l'initiative de l'appli : adresse de fin de session Connexion Loussa (null si indisponible)
 export async function endSessionUrl(event: H3Event) {
   try {
     const d = await rocketDiscovery()
@@ -204,7 +204,7 @@ export async function endSessionUrl(event: H3Event) {
   } catch { return null }
 }
 
-// Back-channel logout : Rocket Auth previent que l'utilisateur s'est deconnecte (ou que son compte est desactive).
+// Back-channel logout : Connexion Loussa previent que l'utilisateur s'est deconnecte (ou que son compte est desactive).
 // Les sessions locales sont des cookies chiffres : on les invalide toutes pour ce compte (session_version + 1).
 const seenJti = new Map<string, number>()
 export async function handleBackchannel(logoutToken: unknown) {
@@ -223,12 +223,12 @@ export async function handleBackchannel(logoutToken: unknown) {
     : (await db.sql`SELECT user_id FROM rocket_auth_link WHERE last_sid = ${String(c.sid)}`).rows) as any[]
   for (const r of rows) {
     await db.sql`UPDATE app_user SET session_version = session_version + 1 WHERE id = ${r.user_id}`
-    await audit(null, 'deconnexion', 'Rocket Auth (back-channel)', { id: Number(r.user_id) })
+    await audit(null, 'deconnexion', 'Connexion Loussa (back-channel)', { id: Number(r.user_id) })
   }
   return { ok: true, sessions: rows.length }
 }
 
-// Applications de la suite (selecteur) : GET /api/suite/apps de Rocket Auth, en cache 60 s ; liste vide si indisponible
+// Applications de la suite (selecteur) : GET /api/suite/apps de Connexion Loussa, en cache 60 s ; liste vide si indisponible
 export interface SuiteApps { apps: { id: string; name: string; url: string; icon?: string; description?: string }[]; account?: string | null }
 let appsCache: { at: number; data: SuiteApps } | null = null
 export async function suiteApps(): Promise<SuiteApps> {

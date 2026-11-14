@@ -2,7 +2,7 @@
 // Le catalogue lui-meme et le panier Amazon restent globaux (/api/stock).
 export default defineEventHandler(async (event) => {
   const lg = await getLogement(getRouterParam(event, 'id'))
-  if (pmsEnabled()) { // Rocket PMS actif : niveaux du lieu dans Rocket Place (catalogue gere la-bas)
+  if (pmsEnabled()) { // Loussa Réservations actif : niveaux du lieu dans Loussa Lieux (catalogue gere la-bas)
     const r = await pmsStock(lg.lodgifyPropertyId)
     return { pms: true as const, logement: lg, lines: r.lines, available: r.available }
   }

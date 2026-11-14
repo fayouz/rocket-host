@@ -2,12 +2,12 @@
   <UCard>
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <b class="flex items-center gap-1.5"><UIcon name="i-lucide-rocket" class="size-4" /> Livret et écran TV gérés par Rocket PMS</b>
-        <UButton v-if="data?.editorUrl" size="sm" icon="i-lucide-external-link" label="Modifier dans Rocket PMS" :to="data.editorUrl" external target="_blank" />
+        <b class="flex items-center gap-1.5"><UIcon name="i-lucide-rocket" class="size-4" /> Livret et écran TV gérés par Loussa Réservations</b>
+        <UButton v-if="data?.editorUrl" size="sm" icon="i-lucide-external-link" label="Modifier dans Loussa Réservations" :to="data.editorUrl" external target="_blank" />
       </div>
     </template>
     <p v-if="status === 'pending' || status === 'idle'" class="text-sm text-muted">Chargement…</p>
-    <p v-else-if="!data" class="text-sm text-muted">Rocket PMS ne répond pas pour ce logement.</p>
+    <p v-else-if="!data" class="text-sm text-muted">Loussa Réservations ne répond pas pour ce logement.</p>
     <div v-else class="space-y-3 text-sm">
       <p class="text-muted">
         Chaque réservation a son propre lien voyageur (onglet Réservations : copier, QR code, « Envoyer le livret »).

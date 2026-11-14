@@ -1,4 +1,4 @@
-// Appel HTTP commun aux clients directs des briques Rocket (Place, Clean, Stock, Cast, et PMS pour le tableau de bord
+// Appel HTTP commun aux clients directs des briques LoussaSuite (Place, Clean, Stock, Cast, et PMS pour le tableau de bord
 // intelligent). Volontairement sans auto-import Nuxt (pas de useRuntimeConfig/createError) : la configuration est passee
 // en parametre, ce qui permet de tester l'agregation avec un fetch simule (scripts/check-smart-dashboard.mjs).
 // Garde-fous : delai maximal par appel, reponse plafonnee, erreur typee (BrickError) jamais propagee telle quelle au navigateur.
@@ -7,7 +7,7 @@ export type BrickName = 'pms' | 'place' | 'clean' | 'stock' | 'cast'
 export interface BrickConfig { url: string; token: string; timeoutMs?: number; maxBytes?: number; impersonate?: string }
 
 export const BRICK_LABELS: Record<BrickName, string> = {
-  pms: 'Rocket PMS', place: 'Rocket Place', clean: 'Rocket Clean', stock: 'Rocket Stock', cast: 'Rocket Cast',
+  pms: 'Loussa Réservations', place: 'Loussa Lieux', clean: 'Loussa Ménage', stock: 'Loussa Stock', cast: 'Loussa Diffusion',
 }
 
 const DEFAULT_TIMEOUT = 4000

@@ -1,7 +1,7 @@
-// Client Rocket Mailer pour l'assistant « Ajouter une boîte e-mail » (ROCKET_MAILER_URL / ROCKET_MAILER_TOKEN, Reglages > Connexions >
-// Briques Rocket). Chaque appel est fait au nom de l'utilisateur connecte (X-Impersonate-User = son adresse e-mail) : Mailer ne
+// Client Loussa Mail pour l'assistant « Ajouter une boîte e-mail » (ROCKET_MAILER_URL / ROCKET_MAILER_TOKEN, Reglages > Connexions >
+// Briques LoussaSuite). Chaque appel est fait au nom de l'utilisateur connecte (X-Impersonate-User = son adresse e-mail) : Mailer ne
 // renvoie que les boites partagees dont il est membre et cree SA boite perso.
-// Routes visees (branche feature/personal-mailboxes de Rocket Mailer, en cours) :
+// Routes visees (branche feature/personal-mailboxes de Loussa Mail, en cours) :
 //   GET  /api/mailboxes                      boites visibles par l'utilisateur (partagees + perso)
 //   GET  /api/mailboxes/detect?email=        service de messagerie detecte (MX)
 //   POST /api/mailboxes/personal             creation de la boite perso { email, provider?, imap?, smtp?, password? }
@@ -15,8 +15,8 @@ export const mailerConfigured = () => !!getSetting('ROCKET_MAILER_URL') && hasSe
 const base = () => getSetting('ROCKET_MAILER_URL').replace(/\/+$/, '')
 
 export async function mailerCall(path: string, userEmail: string, init: { method?: string; body?: unknown } = {}): Promise<any> {
-  if (!mailerConfigured()) throw new MailerError(503, 'Rocket Mailer non configuré (Réglages › Connexions › Briques Rocket)')
-  if (!userEmail) throw new MailerError(400, 'Ton compte n\'a pas d\'adresse e-mail : impossible d\'agir en ton nom dans Rocket Mailer')
+  if (!mailerConfigured()) throw new MailerError(503, 'Loussa Mail non configuré (Réglages › Connexions › Briques LoussaSuite)')
+  if (!userEmail) throw new MailerError(400, 'Ton compte n\'a pas d\'adresse e-mail : impossible d\'agir en ton nom dans Loussa Mail')
   let res: Response
   try {
     res = await fetch(base() + path, {
@@ -26,12 +26,12 @@ export async function mailerCall(path: string, userEmail: string, init: { method
       signal: AbortSignal.timeout(20_000),
     })
   } catch (e: any) {
-    throw new MailerError(502, e?.name === 'TimeoutError' ? 'Rocket Mailer ne répond pas (délai dépassé)' : 'Rocket Mailer injoignable')
+    throw new MailerError(502, e?.name === 'TimeoutError' ? 'Loussa Mail ne répond pas (délai dépassé)' : 'Loussa Mail injoignable')
   }
   const j: any = await res.json().catch(() => null)
   if (!res.ok) {
-    const msg = res.status === 401 || res.status === 403 ? 'Rocket Mailer refuse le jeton ou ton compte (membre de la boîte ?)'
-      : res.status === 404 ? 'Fonction absente de ce Rocket Mailer (bientôt)' : String(j?.statusMessage || j?.message || j?.error || `erreur ${res.status}`).slice(0, 200)
+    const msg = res.status === 401 || res.status === 403 ? 'Loussa Mail refuse le jeton ou ton compte (membre de la boîte ?)'
+      : res.status === 404 ? 'Fonction absente de ce Loussa Mail (bientôt)' : String(j?.statusMessage || j?.message || j?.error || `erreur ${res.status}`).slice(0, 200)
     throw new MailerError(res.status, msg)
   }
   return j
@@ -47,7 +47,7 @@ export async function mailerMailboxes(userEmail: string): Promise<MailerBox[]> {
 
 /** Etat de Mailer pour l'assistant : configure, joignable, boite perso disponible (route detect presente). */
 export async function mailerStatus(userEmail: string) {
-  if (!mailerConfigured()) return { configured: false, ok: false, personal: false, message: 'Rocket Mailer non configuré' }
+  if (!mailerConfigured()) return { configured: false, ok: false, personal: false, message: 'Loussa Mail non configuré' }
   let ok = false, message = ''
   try { await mailerMailboxes(userEmail); ok = true } catch (e: any) { message = e.message }
   let personal = false

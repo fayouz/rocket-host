@@ -27,6 +27,15 @@
 interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
   {
+    date: '14 nov. 2026',
+    title: 'Nouveau nom : Espace Loussa, de la suite LoussaSuite',
+    icon: 'i-lucide-badge-check',
+    points: [
+      'Rocket Host devient l’Espace Loussa ; les briques prennent les noms de LoussaSuite : Loussa Réservations, Loussa Lieux, Loussa Ménage, Loussa Stock, Loussa Diffusion, Loussa Mail, Loussa Cloud',
+      'Connexion unique : « Connexion Loussa » ; administration : « Loussa Console »',
+    ],
+  },
+  {
     date: '29 sept. 2026',
     title: 'Menu réorganisé par tâche',
     icon: 'i-lucide-list-tree',

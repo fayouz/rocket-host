@@ -1,7 +1,7 @@
 // Assistant, etape finale : enregistre la boite. Releve DESACTIVE par defaut (rien n'est lu ni envoye avant activation).
 //  { source: 'local', label?, provider, host, port, secure, smtpHost, smtpPort, smtpSecure, user, password }
-//  { source: 'mailer-shared', mailerId }   boite partagee de Rocket Mailer dont l'utilisateur est membre
-//  { source: 'mailer-personal', email, provider?, host?, port?, secure?, smtpHost?, smtpPort?, smtpSecure?, password? }  creee dans Rocket Mailer
+//  { source: 'mailer-shared', mailerId }   boite partagee de Loussa Mail dont l'utilisateur est membre
+//  { source: 'mailer-personal', email, provider?, host?, port?, secure?, smtpHost?, smtpPort?, smtpSecure?, password? }  creee dans Loussa Mail
 // (Google / Microsoft : creees au retour OAuth, GET /api/mail/oauth/:provider/callback)
 export default defineEventHandler(async (event) => {
   const b = (await readBody(event).catch(() => null)) ?? {}
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   } else if (b.source === 'mailer-shared') {
     const box = (await mailerMailboxes(user?.email ?? '').catch((e: any) => { throw createError({ statusCode: 502, statusMessage: e.message }) }))
       .find(m => m.id === String(b.mailerId) && m.kind === 'shared')
-    if (!box) throw bad('Boîte partagée introuvable (es-tu membre de cette boîte dans Rocket Mailer ?)')
+    if (!box) throw bad('Boîte partagée introuvable (es-tu membre de cette boîte dans Loussa Mail ?)')
     id = await createMailerMailbox('mailer-shared', box)
   } else if (b.source === 'mailer-personal') {
     const email = String(b.email ?? '').trim().toLowerCase()

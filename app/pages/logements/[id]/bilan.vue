@@ -1,5 +1,5 @@
 <template>
-  <!-- Rocket PMS actif : bilan calculé par le PMS (revenus + dépenses du PMS) -->
+  <!-- Loussa Réservations actif : bilan calculé par le PMS (revenus + dépenses du PMS) -->
   <PmsBilan v-if="pms" :logement-id="String(route.params.id)" />
   <div v-else-if="data" class="space-y-3">
     <div class="flex flex-wrap items-center justify-between gap-2">

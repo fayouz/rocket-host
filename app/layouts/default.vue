@@ -4,7 +4,7 @@
       <template #header="{ collapsed }">
         <NuxtLink to="/" class="flex items-center gap-2 px-0.5" :class="{ 'justify-center': collapsed }">
           <UIcon name="i-lucide-house" class="size-6 shrink-0 text-primary" />
-          <span v-if="!collapsed" class="truncate font-bold">Rocket Host</span>
+          <span v-if="!collapsed" class="truncate font-bold">Espace Loussa</span>
         </NuxtLink>
       </template>
 
@@ -96,7 +96,7 @@ interface NavItem { label: string; icon?: string; to?: string; target?: string; 
 type BadgeColor = 'success' | 'warning' | 'error' | 'neutral' | 'info'
 interface NavGroup { label: string; switcher?: boolean; brick?: { name: string; icon: string; status?: { label: string; color: BadgeColor } }; items: NavItem[] }
 
-// Etat des briques : Rocket PMS (et Place/Mailer/Cloud, joints a travers lui) d'apres /api/pms/status
+// Etat des briques : Loussa Réservations (et Place/Mailer/Cloud, joints a travers lui) d'apres /api/pms/status
 const { data: pms } = await useFetch('/api/pms/status', { key: 'pms-status' })
 const front = useRuntimeConfig().public
 const pmsOn = computed(() => !!pms.value?.configured)
@@ -117,11 +117,11 @@ const brickPills = computed((): { label: string; color: BadgeColor }[] => [
 ])
 // Reglages avances : replies dans un seul sous-menu replie par defaut (Administration), admins seulement. Pages inchangees.
 const adminChildren = computed((): NavItem[] => [
-  { label: 'Connexions & intégrations', to: '/settings/connexions' }, // briques Rocket + connexions directes (plugins inclus)
+  { label: 'Connexions & intégrations', to: '/settings/connexions' }, // briques LoussaSuite + connexions directes (plugins inclus)
   { label: 'Domotique', to: lgPage('domotique') },
   { label: 'Boîtes e-mail', to: '/settings/imap' },
   { label: 'Logements & lieux', to: '/settings', badge: managed('Place') },
-  ...ext(front.pmsFrontUrl, 'Ouvrir Rocket PMS (Lodgify)'),
+  ...ext(front.pmsFrontUrl, 'Ouvrir Loussa Réservations (Lodgify)'),
   { label: 'Utilisateurs & rôles', to: '/settings/utilisateurs' },
   { label: 'Journal d\'audit', to: '/settings/utilisateurs?tab=journal' },
   { label: 'Imports', to: '/settings/imports' },

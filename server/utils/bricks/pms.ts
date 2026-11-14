@@ -1,10 +1,10 @@
-// Client direct Rocket PMS pour le tableau de bord intelligent (lecture seule). Le client historique server/utils/pms.ts
+// Client direct Loussa Réservations pour le tableau de bord intelligent (lecture seule). Le client historique server/utils/pms.ts
 // reste utilise par le reste de l'appli ; celui-ci est pur (config en parametre) pour etre testable sans Nuxt.
 import { asList, brickGet, type BrickConfig } from './http.ts'
 
 export interface PmsLink { id: string; name: string; color: string; lodgifyPropertyId: number | null; placeId: string | null }
 
-// GET /api/place-links : logements PMS + placeId (lieu Rocket Place, partage par Clean/Stock/Cast). Repli : /api/properties.
+// GET /api/place-links : logements PMS + placeId (lieu Loussa Lieux, partage par Clean/Stock/Cast). Repli : /api/properties.
 export async function pmsLinks(cfg: BrickConfig): Promise<PmsLink[]> {
   let rows: any[]
   try { rows = asList((await brickGet('pms', cfg, '/api/place-links'))?.properties) }

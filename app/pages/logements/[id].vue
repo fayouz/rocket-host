@@ -19,7 +19,7 @@ const { can, refresh } = useAuth()
 await refresh()
 const { data: logement } = await useFetch(() => `/api/logements/${route.params.id}`)
 if (!logement.value) throw createError({ statusCode: 404, statusMessage: 'Logement introuvable', fatal: true })
-// Rocket PMS actif : les onglets (livret, réservations, bilan, timeline) affichent aussi les données du PMS
+// Loussa Réservations actif : les onglets (livret, réservations, bilan, timeline) affichent aussi les données du PMS
 const pms = useState<boolean>('pms', () => false)
 watchEffect(() => { pms.value = !!logement.value?.pms })
 const menu = computed(() => {

@@ -1,4 +1,4 @@
-// Boites e-mail configurees + etat des sources de l'assistant (applications OAuth renseignees, Rocket Mailer). Jamais de secret : etat + indice.
+// Boites e-mail configurees + etat des sources de l'assistant (applications OAuth renseignees, Loussa Mail). Jamais de secret : etat + indice.
 export default defineEventHandler(async (event) => {
   setResponseHeader(event, 'Cache-Control', 'no-store, private')
   return {

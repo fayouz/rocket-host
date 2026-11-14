@@ -1,10 +1,10 @@
 <template>
-  <!-- Rocket PMS actif : niveaux du lieu dans Rocket Place (le catalogue se gere dans Rocket Place) -->
+  <!-- Loussa Réservations actif : niveaux du lieu dans Loussa Lieux (le catalogue se gere dans Loussa Lieux) -->
   <div v-if="data?.pms" class="space-y-2">
     <h2 class="section-title !mt-0">Stock</h2>
     <p class="text-sm text-muted">
       {{ pmsToBuy ? `${pmsToBuy} article${pmsToBuy > 1 ? 's' : ''} à racheter.` : 'Rien à racheter.' }}
-      Stock du lieu dans Rocket Place (via Rocket PMS) : le catalogue et les articles suivis se gèrent là-bas.
+      Stock du lieu dans Loussa Lieux (via Loussa Réservations) : le catalogue et les articles suivis se gèrent là-bas.
     </p>
     <UCard v-for="it in data.lines" :key="it.levelId" :class="{ 'border-l-4 border-l-warning': it.level === 'low', 'border-l-4 border-l-error': it.level === 'empty' }">
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -14,7 +14,7 @@
         </div>
       </div>
     </UCard>
-    <UCard v-if="!data.lines.length"><p class="text-sm text-muted">Ce lieu ne suit aucun article dans Rocket Place.</p></UCard>
+    <UCard v-if="!data.lines.length"><p class="text-sm text-muted">Ce lieu ne suit aucun article dans Loussa Lieux.</p></UCard>
     <p v-if="error" class="text-sm text-error">{{ error }}</p>
   </div>
   <div v-else-if="data" class="space-y-2">

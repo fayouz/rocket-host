@@ -1,4 +1,4 @@
-// Client direct Rocket Clean (ROCKET_CLEAN_URL / ROCKET_CLEAN_TOKEN), lecture seule : menages du jour, couts, linge.
+// Client direct Loussa Ménage (ROCKET_CLEAN_URL / ROCKET_CLEAN_TOKEN), lecture seule : menages du jour, couts, linge.
 import { asList, brickGet, BrickError, type BrickConfig } from './http.ts'
 
 export interface CleanTask { id: string; placeId: string; label: string; type: string; scheduledAt: string; dueAt: string | null; status: string; late: boolean; conflict: boolean; externalRef: string | null; cost: number | null }
@@ -33,7 +33,7 @@ const linenLevel = (v: unknown): LinenLevel | 'unknown' => {
   return s === 'ready' || s === 'tight' || s === 'missing' ? s : 'unknown'
 }
 
-// GET /api/linen/readiness?place=&date=&days= (Rocket Clean, module linge) :
+// GET /api/linen/readiness?place=&date=&days= (Loussa Ménage, module linge) :
 // [{placeId, placeName, arrivals: [{from, until, externalRef, status: ready|tight|missing, kits: [{kitName, needed, available, status}]}]}].
 // null = fonction absente (404) : colonne masquee.
 export async function cleanLinenReadiness(cfg: BrickConfig, placeId: string, date: string, days: number): Promise<LinenArrival[] | null> {
@@ -51,7 +51,7 @@ export async function cleanLinenReadiness(cfg: BrickConfig, placeId: string, dat
 }
 
 // Etat du linge d'une arrivee : par la reference de la reservation (« booking:<id> » ou se terminant par l'id), sinon
-// par le jour d'arrivee. 'unknown' : Rocket Clean ne connait pas cette arrivee.
+// par le jour d'arrivee. 'unknown' : Loussa Ménage ne connait pas cette arrivee.
 export function linenFor(arrivals: LinenArrival[], bookingId: number, date: string): LinenArrival | null {
   const ref = (a: LinenArrival) => a.externalRef !== null && (a.externalRef === String(bookingId) || new RegExp(`[:/#-]${bookingId}$`).test(a.externalRef))
   return arrivals.find(ref) || arrivals.find(a => a.externalRef === null && a.from.slice(0, 10) === date) || arrivals.find(a => a.from.slice(0, 10) === date) || null

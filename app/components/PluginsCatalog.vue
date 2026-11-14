@@ -12,10 +12,10 @@
       v-if="pms"
       :color="!pms.configured ? 'neutral' : pms.ok ? 'success' : 'error'" variant="subtle"
       :icon="!pms.configured ? 'i-lucide-server-off' : pms.ok ? 'i-lucide-server' : 'i-lucide-server-crash'"
-      title="Rocket PMS"
+      title="Loussa Réservations"
       :description="!pms.configured
         ? 'Non branché : les logements, réservations et serrures continuent de venir de Lodgify et Nuki en direct.'
-        : pms.ok ? 'Connecté : logements et réservations viennent de Rocket PMS.' : `Branché mais injoignable : ${pms.error || 'erreur inconnue'}`"
+        : pms.ok ? 'Connecté : logements et réservations viennent de Loussa Réservations.' : `Branché mais injoignable : ${pms.error || 'erreur inconnue'}`"
     />
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <UCard v-for="p in shown" :key="p.id" :ui="{ body: 'flex h-full flex-col gap-3' }">

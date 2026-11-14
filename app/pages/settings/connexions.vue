@@ -2,7 +2,7 @@
   <div v-if="data" class="space-y-4">
     <h2 class="section-title !mt-0">Connexions & intégrations</h2>
     <p class="text-sm text-muted">
-      Adresses et jetons des briques Rocket et des services branchés. Les secrets sont chiffrés en base (AES-256-GCM) et ne sont jamais réaffichés :
+      Adresses et jetons des briques LoussaSuite et des services branchés. Les secrets sont chiffrés en base (AES-256-GCM) et ne sont jamais réaffichés :
       seuls leurs 4 derniers caractères apparaissent. Détails : docs/secrets.md.
     </p>
     <UAlert v-if="!data.keyPresent" color="error" variant="subtle" icon="i-lucide-key-round" title="Clé de chiffrement absente"
@@ -13,9 +13,9 @@
 
     <UTabs v-model="tab" :items="tabs" :content="false" class="w-full" />
 
-    <!-- Briques Rocket : applis / middlewares de la suite, branchees par adresse + jeton d'application -->
+    <!-- Briques LoussaSuite : applis / middlewares de la suite, branchees par adresse + jeton d'application -->
     <template v-if="tab === 'briques'">
-      <p class="text-sm text-muted">Applications de la suite Rocket. Rocket Cloud passe par Rocket PMS ; Rocket Mailer peut aussi être branché en direct pour les boîtes e-mail (partagées et perso) ; Rocket Auth (connexion unique) se règle dans l'environnement du serveur.</p>
+      <p class="text-sm text-muted">Applications de LoussaSuite. Loussa Cloud passe par Loussa Réservations ; Loussa Mail peut aussi être branché en direct pour les boîtes e-mail (partagées et perso) ; Connexion Loussa (connexion unique) se règle dans l'environnement du serveur.</p>
       <div class="grid gap-4 lg:grid-cols-2">
         <UCard v-for="g in groupsOf(BRICKS)" :key="g.key">
           <template #header>
@@ -46,20 +46,20 @@
           <template #header>
             <div class="flex items-start justify-between gap-2">
               <div>
-                <h3 class="font-semibold">Rocket Mailer · Rocket Cloud · Rocket Auth</h3>
-                <p class="text-xs text-muted">Mailer (envois d'e-mails) et Cloud (fichiers) sont joints à travers Rocket PMS : rien à saisir ici. Rocket Auth : variables ROCKET_AUTH_… du serveur.</p>
+                <h3 class="font-semibold">Loussa Mail · Loussa Cloud · Connexion Loussa</h3>
+                <p class="text-xs text-muted">Mailer (envois d'e-mails) et Cloud (fichiers) sont joints à travers Loussa Réservations : rien à saisir ici. Connexion Loussa : variables ROCKET_AUTH_… du serveur.</p>
               </div>
               <UBadge size="sm" variant="subtle" :color="brickStatus('pms').color" :label="pmsOn ? 'via PMS' : 'local'" />
             </div>
           </template>
-          <p class="text-sm text-muted">Sans Rocket PMS, les e-mails partent par la boîte IMAP/SMTP et les fichiers restent dans Rocket Host.</p>
+          <p class="text-sm text-muted">Sans Loussa Réservations, les e-mails partent par la boîte IMAP/SMTP et les fichiers restent dans l’Espace Loussa.</p>
         </UCard>
       </div>
     </template>
 
     <!-- Connexions directes : services tiers utilises directement par Host (et catalogue des plugins/connecteurs) -->
     <template v-else>
-      <p class="text-sm text-muted">Services tiers branchés directement sur Rocket Host : Lodgify, Nuki, Homey, boîte e-mail, webhook n8n et plugins / connecteurs par logement.</p>
+      <p class="text-sm text-muted">Services tiers branchés directement sur l’Espace Loussa : Lodgify, Nuki, Homey, boîte e-mail, webhook n8n et plugins / connecteurs par logement.</p>
       <div class="grid gap-4 lg:grid-cols-2">
         <UCard v-for="g in groupsOf(DIRECT)" :key="g.key">
           <template #header>
@@ -108,9 +108,9 @@
 
 <script setup lang="ts">
 const { data, refresh } = await useFetch('/api/settings/connexions')
-// Deux onglets : briques de la suite Rocket / services tiers en direct (?onglet=briques|directes)
+// Deux onglets : briques de LoussaSuite / services tiers en direct (?onglet=briques|directes)
 const route = useRoute()
-const tabs = [{ label: 'Briques Rocket', value: 'briques', icon: 'i-lucide-boxes' }, { label: 'Connexions directes', value: 'directes', icon: 'i-lucide-plug' }]
+const tabs = [{ label: 'Briques LoussaSuite', value: 'briques', icon: 'i-lucide-boxes' }, { label: 'Connexions directes', value: 'directes', icon: 'i-lucide-plug' }]
 const tab = computed({
   get: () => (route.query.onglet === 'directes' ? 'directes' : 'briques'),
   set: v => navigateTo({ query: { ...route.query, onglet: v } }, { replace: true }),

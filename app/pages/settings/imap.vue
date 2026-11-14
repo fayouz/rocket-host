@@ -1,6 +1,6 @@
 <template>
   <div v-if="data" class="space-y-3">
-    <BrickHint brick="pms" description="Les e-mails voyageurs passent par Rocket Mailer via Rocket PMS ; cette boîte locale reste utilisée pour l'e-mail de gestion." />
+    <BrickHint brick="pms" description="Les e-mails voyageurs passent par Loussa Mail via Loussa Réservations ; cette boîte locale reste utilisée pour l'e-mail de gestion." />
     <!-- Liste des boites (assistant « Ajouter une boite e-mail ») ; la boite principale se regle en detail plus bas -->
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="section-title !my-0">Boîtes e-mail</h2>
@@ -27,7 +27,7 @@
         <li v-if="!boxes?.mailboxes?.length" class="p-3 text-sm text-muted">Aucune boîte : clique sur « Ajouter une boîte e-mail ».</li>
       </ul>
     </UCard>
-    <p class="text-xs text-muted">La boîte <b>principale</b> alimente le relevé des pièces jointes, l'écran E-mails et l'envoi ; les boîtes Rocket Mailer sont relevées par Mailer. Relevé désactivé à l'ajout.</p>
+    <p class="text-xs text-muted">La boîte <b>principale</b> alimente le relevé des pièces jointes, l'écran E-mails et l'envoi ; les boîtes Loussa Mail sont relevées par Mailer. Relevé désactivé à l'ajout.</p>
     <MailboxWizard v-model:open="wizardOpen" :resume="resume" @saved="onSaved" />
 
     <h2 class="section-title">Boîte principale — E-mail (IMAP)</h2>

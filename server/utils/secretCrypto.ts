@@ -50,22 +50,22 @@ export function openSecret(name: string, row: { ciphertext: string; nonce: strin
 // kind 'secret' : chiffre, jamais renvoye ; kind 'setting' : texte clair (adresses, identifiants non sensibles).
 export interface ConfigEntry { name: string; kind: 'secret' | 'setting'; group: string; label: string; help?: string; placeholder?: string }
 export const CONFIG_GROUPS: { key: string; title: string; description: string }[] = [
-  { key: 'pms', title: 'Rocket PMS', description: 'Adresse de l\'API et jeton d\'application (rpm_…). Vide = Lodgify/Nuki en direct.' },
-  { key: 'place', title: 'Rocket Place', description: 'Tableau de bord intelligent : lieux, accès, écrans.' },
-  { key: 'clean', title: 'Rocket Clean', description: 'Tableau de bord intelligent : ménage et linge.' },
-  { key: 'stock', title: 'Rocket Stock', description: 'Tableau de bord intelligent : stock.' },
-  { key: 'cast', title: 'Rocket Cast', description: 'Tableau de bord intelligent : écrans TV.' },
-  { key: 'mailer', title: 'Rocket Mailer', description: 'Boîtes partagées et boîtes perso gérées par Rocket Mailer (assistant « Ajouter une boîte e-mail »). Appels faits au nom de l\'utilisateur connecté (X-Impersonate-User).' },
+  { key: 'pms', title: 'Loussa Réservations', description: 'Adresse de l\'API et jeton d\'application (rpm_…). Vide = Lodgify/Nuki en direct.' },
+  { key: 'place', title: 'Loussa Lieux', description: 'Tableau de bord intelligent : lieux, accès, écrans.' },
+  { key: 'clean', title: 'Loussa Ménage', description: 'Tableau de bord intelligent : ménage et linge.' },
+  { key: 'stock', title: 'Loussa Stock', description: 'Tableau de bord intelligent : stock.' },
+  { key: 'cast', title: 'Loussa Diffusion', description: 'Tableau de bord intelligent : écrans TV.' },
+  { key: 'mailer', title: 'Loussa Mail', description: 'Boîtes partagées et boîtes perso gérées par Loussa Mail (assistant « Ajouter une boîte e-mail »). Appels faits au nom de l\'utilisateur connecté (X-Impersonate-User).' },
   { key: 'mailoauth', title: 'Connexion Google / Microsoft (boîtes e-mail)', description: 'Applications OAuth pour « Se connecter avec Google / Microsoft » dans l\'assistant boîte e-mail. Adresse de retour : https://<hôte>/api/mail/oauth/google|microsoft/callback.' },
   { key: 'mail', title: 'E-mail (IMAP/SMTP)', description: 'Mot de passe de la boîte ; serveur, identifiant et règles dans Boîte e-mail (IMAP/SMTP).' },
   { key: 'homey', title: 'Domotique (Homey)', description: 'Clé d\'API Homey Pro (accès local) et application OAuth (mode cloud).' },
-  { key: 'direct', title: 'Lodgify / Nuki en direct', description: 'Utilisés seulement quand Rocket PMS n\'est pas branché.' },
+  { key: 'direct', title: 'Lodgify / Nuki en direct', description: 'Utilisés seulement quand Loussa Réservations n\'est pas branché.' },
   { key: 'webhook', title: 'Webhook (n8n)', description: 'Jeton attendu dans « Authorization: Bearer … » des imports n8n.' },
 ]
 export const CONFIG_ENTRIES: ConfigEntry[] = [
   { name: 'PMS_API_URL', kind: 'setting', group: 'pms', label: 'Adresse de l\'API', placeholder: 'https://pms.exemple.fr' },
   { name: 'PMS_API_TOKEN', kind: 'secret', group: 'pms', label: 'Jeton d\'application' },
-  { name: 'PMS_IMPERSONATE_USER', kind: 'setting', group: 'pms', label: 'Compte expéditeur des e-mails (Rocket Mailer)' },
+  { name: 'PMS_IMPERSONATE_USER', kind: 'setting', group: 'pms', label: 'Compte expéditeur des e-mails (Loussa Mail)' },
   ...(['place', 'clean', 'stock', 'cast'] as const).flatMap(b => [
     { name: `ROCKET_${b.toUpperCase()}_URL`, kind: 'setting' as const, group: b, label: 'Adresse de l\'API', placeholder: `https://${b}.exemple.fr` },
     { name: `ROCKET_${b.toUpperCase()}_TOKEN`, kind: 'secret' as const, group: b, label: 'Jeton d\'application' },

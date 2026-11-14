@@ -1,4 +1,4 @@
-// Assistant, source Rocket Mailer : etat de Mailer et boites partagees dont l'utilisateur connecte est membre (X-Impersonate-User).
+// Assistant, source Loussa Mail : etat de Mailer et boites partagees dont l'utilisateur connecte est membre (X-Impersonate-User).
 export default defineEventHandler(async (event) => {
   const email = (await currentUser(event))?.email ?? ''
   const status = await mailerStatus(email)

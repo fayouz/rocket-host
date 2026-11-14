@@ -2,7 +2,7 @@
 // - La boite principale (is_primary) est celle d'imap_config : releve des pieces jointes, synchro de l'ecran E-mails et envoi
 //   restent lus par le code existant (imap.ts, mail.ts, smtp.ts). Locale : mot de passe IMAP_PASSWORD ; Google / Microsoft : XOAUTH2.
 // - Les autres boites Locale / Google / Microsoft sont enregistrees et testables ; leur releve viendra ensuite.
-// - Les boites Rocket Mailer (partagee / perso) sont relevees par Mailer lui-meme : Host garde seulement la reference.
+// - Les boites Loussa Mail (partagee / perso) sont relevees par Mailer lui-meme : Host garde seulement la reference.
 // - Releve desactive par defaut : rien n'est lu ni envoye tant que l'utilisateur ne l'active pas.
 import nodemailer from 'nodemailer'
 import { ImapFlow } from 'imapflow'
@@ -105,7 +105,7 @@ export async function testSavedMailbox(id: number, userEmail: string) {
   if (!m) throw createError({ statusCode: 404, statusMessage: 'Boîte introuvable' })
   let out: { ok: boolean; imap?: any; smtp?: any; message?: string }
   if (m.source === 'mailer-shared' || m.source === 'mailer-personal') {
-    try { const j = await mailerTest(userEmail, String(m.config.mailerId)); out = { ok: j?.ok !== false, message: String(j?.message || (j?.ok === false ? 'Test refusé par Rocket Mailer' : 'Test réussi dans Rocket Mailer')) } }
+    try { const j = await mailerTest(userEmail, String(m.config.mailerId)); out = { ok: j?.ok !== false, message: String(j?.message || (j?.ok === false ? 'Test refusé par Loussa Mail' : 'Test réussi dans Loussa Mail')) } }
     catch (e: any) { out = { ok: false, message: e.message } }
   } else {
     let c: ServerCfg, auth: Auth

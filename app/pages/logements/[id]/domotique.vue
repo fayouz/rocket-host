@@ -7,11 +7,11 @@
 
     <UAlert v-if="oauthMsg" :color="oauthMsg.color" variant="subtle" :title="oauthMsg.text" />
 
-    <!-- Rocket PMS actif : connecteurs du lieu vus par Rocket Place (lecture seule, rien n'est commande d'ici) -->
+    <!-- Loussa Réservations actif : connecteurs du lieu vus par Loussa Lieux (lecture seule, rien n'est commande d'ici) -->
     <UCard v-if="data.pms">
-      <template #header><p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-house-wifi" class="size-3.5" /> Domotique du lieu (Rocket Place, lecture seule)</p></template>
+      <template #header><p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-house-wifi" class="size-3.5" /> Domotique du lieu (Loussa Lieux, lecture seule)</p></template>
       <p v-if="data.pms.error" class="text-sm text-error">{{ data.pms.error }}</p>
-      <p v-else-if="!data.pms.sections.length" class="text-sm text-muted">Aucun connecteur sur ce lieu dans Rocket Place.</p>
+      <p v-else-if="!data.pms.sections.length" class="text-sm text-muted">Aucun connecteur sur ce lieu dans Loussa Lieux.</p>
       <div v-for="sec in data.pms.sections" :key="sec.connectorId" class="mb-3 last:mb-0">
         <p class="mb-1 flex items-center gap-1.5 font-medium"><UIcon :name="sec.icon" class="size-4" />{{ sec.name }}<span class="text-xs font-normal text-muted">· {{ sec.pluginName }}</span></p>
         <p v-if="sec.error" class="text-sm text-error">{{ sec.error }}</p>

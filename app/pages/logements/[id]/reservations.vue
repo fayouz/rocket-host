@@ -164,7 +164,7 @@
         </template>
       </UCard>
 
-      <!-- Rocket PMS actif : livret du séjour (lien, QR, envoi) et e-mails Rocket Mailer de la réservation -->
+      <!-- Loussa Réservations actif : livret du séjour (lien, QR, envoi) et e-mails Loussa Mail de la réservation -->
       <PmsBookingPanel v-if="pms" :logement-id="String(route.params.id)" :booking-id="current.id" :guest="current.guest" />
 
       <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">

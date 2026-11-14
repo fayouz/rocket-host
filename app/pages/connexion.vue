@@ -1,14 +1,14 @@
 <template>
   <div class="mx-auto mt-10 max-w-sm">
     <div class="mb-4 text-center">
-      <h1 class="text-2xl font-semibold">Rocket Host</h1>
+      <h1 class="text-2xl font-semibold">Espace Loussa</h1>
       <p class="text-sm text-muted">Connexion</p>
     </div>
     <UCard>
       <div v-if="sso?.enabled" class="space-y-3" :class="{ 'mb-4': sso.localLogin }">
         <p v-if="loggedOut" class="text-sm text-muted">Tu es déconnecté.</p>
         <p v-if="ssoError" class="text-sm text-error" role="alert">{{ ssoError }}</p>
-        <UButton block icon="i-lucide-rocket" label="Se connecter avec Rocket Auth" :to="`/api/auth/rocket/login?next=${encodeURIComponent(next)}`" external />
+        <UButton block icon="i-lucide-rocket" label="Se connecter avec Connexion Loussa" :to="`/api/auth/rocket/login?next=${encodeURIComponent(next)}`" external />
         <USeparator v-if="sso.localLogin" label="ou avec un compte local" />
       </div>
       <form v-if="!sso?.enabled || sso.localLogin" class="space-y-3" @submit.prevent="submit">
@@ -19,7 +19,7 @@
         <UButton color="neutral" variant="link" block label="Mot de passe oublié ?" to="/mot-de-passe-oublie" />
       </form>
     </UCard>
-    <!-- Inscription en libre-service : geree par Rocket Console (masque si ROCKET_CONSOLE_PUBLIC_URL est vide) -->
+    <!-- Inscription en libre-service : geree par Loussa Console (masque si ROCKET_CONSOLE_PUBLIC_URL est vide) -->
     <div v-if="signupUrl" class="mt-4 space-y-1 text-center">
       <UButton color="neutral" variant="outline" block icon="i-lucide-user-plus" label="Créer un compte · choisir une offre" :to="signupUrl" external />
       <UButton color="neutral" variant="link" size="sm" label="Voir les offres" :to="signupUrl" external />
@@ -30,12 +30,12 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'bare' })
 const route = useRoute()
-// Page d'inscription de Rocket Console (compte, offre, essai) : lien seulement si l'adresse publique est configuree
+// Page d'inscription de Loussa Console (compte, offre, essai) : lien seulement si l'adresse publique est configuree
 const consoleUrl = String(useRuntimeConfig().public.rocketConsolePublicUrl || '').replace(/\/+$/, '')
 const signupUrl = consoleUrl ? `${consoleUrl}/inscription` : ''
 const username = ref('')
 const password = ref('')
-// Rocket Auth (connexion unique) : bouton affiche seulement si ROCKET_AUTH_URL est renseigne cote serveur
+// Connexion Loussa (connexion unique) : bouton affiche seulement si ROCKET_AUTH_URL est renseigne cote serveur
 const { data: sso } = await useFetch<{ enabled: boolean; localLogin: boolean }>('/api/auth/rocket/config', { default: () => ({ enabled: false, localLogin: true }) })
 const ssoError = computed(() => String(route.query.sso_error ?? '').slice(0, 200))
 const loggedOut = computed(() => route.query.logged_out === '1')

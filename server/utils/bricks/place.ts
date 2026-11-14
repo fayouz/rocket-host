@@ -1,4 +1,4 @@
-// Client direct Rocket Place (ROCKET_PLACE_URL / ROCKET_PLACE_TOKEN), lecture seule : acces (codes) d'un lieu.
+// Client direct Loussa Lieux (ROCKET_PLACE_URL / ROCKET_PLACE_TOKEN), lecture seule : acces (codes) d'un lieu.
 import { asList, brickGet, type BrickConfig } from './http.ts'
 
 export interface PlaceGrant { id: string; status: string; error: string | null; externalRef: string | null; validFrom: string | null }

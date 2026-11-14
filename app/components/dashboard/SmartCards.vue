@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-// Cartes du tableau de bord intelligent, integrees a l'accueil (pages/index.vue) quand Rocket PMS est branche : une seule route GET /api/dashboard/smart croise
+// Cartes du tableau de bord intelligent, integrees a l'accueil (pages/index.vue) quand Loussa Réservations est branche : une seule route GET /api/dashboard/smart croise
 // PMS, Place, Clean, Stock et Cast. Chaque widget indique ses briques sources ; une brique en panne vide seulement sa
 // colonne et ajoute une alerte. Rafraichissement manuel + automatique toutes les 5 minutes.
 const { data: d, pending, error, refresh } = await useFetch('/api/dashboard/smart', { key: 'smart-dashboard' })
