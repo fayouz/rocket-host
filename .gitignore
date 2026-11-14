@@ -5,3 +5,4 @@ node_modules
 .data
 .env.local
 public/_docs-ui
+DEMO-ADMIN-PASSWORD.txt

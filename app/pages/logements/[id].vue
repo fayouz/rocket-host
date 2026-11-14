@@ -27,10 +27,9 @@ const menu = computed(() => {
   // Lettres = rôles autorisés (mêmes que la table des permissions du serveur, qui reste seule juge)
   return [
     ['AG', { label: 'Réservations', icon: 'i-lucide-calendar-days', to: `${base}/reservations` }],
-    ['AG', { label: 'Serrures', icon: 'i-lucide-lock', to: `${base}/serrures` }],
-    ['AG', { label: 'Timeline', icon: 'i-lucide-git-commit-vertical', to: `${base}/timeline` }],
+    ['AG', { label: 'Historique', icon: 'i-lucide-git-commit-vertical', to: `${base}/timeline` }],
     ['AGM', { label: 'Stock', icon: 'i-lucide-package', to: `${base}/stock` }],
-    ['AG', { label: 'Domotique', icon: 'i-lucide-thermometer', to: `${base}/domotique` }],
+    ['AG', { label: 'Domotique', icon: 'i-lucide-house-wifi', to: `${base}/serrures`, active: /\/(serrures|domotique)$/.test(route.path) }],
     ['A', { label: 'QR code ménage', icon: 'i-lucide-qr-code', to: `${base}/qr` }],
     ['AG', { label: 'Livret Accueil', icon: 'i-lucide-book-heart', to: `${base}/livret` }],
     ['AGC', { label: 'Documents', icon: 'i-lucide-folder-open', to: `${base}/documents` }],
