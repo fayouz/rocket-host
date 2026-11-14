@@ -40,9 +40,9 @@
               <p v-if="user.email" class="truncate text-xs text-muted">{{ user.email }}</p>
             </div>
           </NuxtLink>
-          <div class="flex items-center justify-between px-1 text-xs">
-            <span class="flex items-center gap-1.5 text-success"><span class="size-1.5 rounded-full bg-success" /> Connecté</span>
-            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-log-out" label="Déconnexion" @click="logout" />
+          <div class="flex min-w-0 items-center justify-between gap-2 px-1 text-xs">
+            <span class="flex min-w-0 items-center gap-1.5 truncate text-success"><span class="size-1.5 shrink-0 rounded-full bg-success" /> Connecté</span>
+            <UTooltip text="Déconnexion"><UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-log-out" aria-label="Déconnexion" class="shrink-0" @click="logout" /></UTooltip>
           </div>
         </div>
       </template>
@@ -110,9 +110,9 @@ const ext = (url: string, label: string): NavItem[] => (url ? [{ label, icon: 'i
 const managed = (label: string) => (pmsOn.value ? label : undefined)
 // Pastilles compactes d'etat des briques (bas de la sidebar, admins seulement), vers Reglages > Connexions.
 const brickPills = computed((): { label: string; color: BadgeColor }[] => [
-  { label: 'PMS', color: pmsStatus.value.color },
-  { label: 'Place', color: viaPms.value.color },
-  { label: 'Mailer', color: (pmsOn.value ? viaPms.value : { label: 'local', color: 'info' as BadgeColor }).color },
+  { label: 'Réservations', color: pmsStatus.value.color },
+  { label: 'Lieux', color: viaPms.value.color },
+  { label: 'Mail', color: (pmsOn.value ? viaPms.value : { label: 'local', color: 'info' as BadgeColor }).color },
   { label: 'Cloud', color: (pmsOn.value ? viaPms.value : { label: 'local', color: 'info' as BadgeColor }).color },
 ])
 // Reglages avances : replies dans un seul sous-menu replie par defaut (Administration), admins seulement. Pages inchangees.
@@ -120,7 +120,7 @@ const adminChildren = computed((): NavItem[] => [
   { label: 'Connexions & intégrations', to: '/settings/connexions' }, // briques LoussaSuite + connexions directes (plugins inclus)
   { label: 'Domotique', to: lgPage('domotique') },
   { label: 'Boîtes e-mail', to: '/settings/imap' },
-  { label: 'Logements & lieux', to: '/settings', badge: managed('Place') },
+  { label: 'Logements & lieux', to: '/settings', badge: managed('Lieux') },
   ...ext(front.pmsFrontUrl, 'Ouvrir Loussa Réservations (Lodgify)'),
   { label: 'Utilisateurs & rôles', to: '/settings/utilisateurs' },
   { label: 'Journal d\'audit', to: '/settings/utilisateurs?tab=journal' },
@@ -161,9 +161,9 @@ const groups = computed(() => ([
     items: [
       can('AG') && { label: 'Réservations', icon: 'i-lucide-calendar-days', to: linkFor('reservations') },
       can('AGM') && { label: 'Ménage & linge', icon: 'i-lucide-sparkles', to: linkFor('menage') },
-      can('AG') && { label: 'Accès & serrures', icon: 'i-lucide-key-round', to: linkFor('serrures') },
-      can('AGM') && { label: 'Stock & courses', icon: 'i-lucide-package', to: linkFor('stock'), badge: managed('Place') },
-      can('AG') && { label: 'Écrans & livret', icon: 'i-lucide-tv', to: linkFor('ecrans'), badge: managed('PMS') },
+      can('AG') && { label: 'Accès & domotique', icon: 'i-lucide-house-wifi', to: linkFor('serrures') },
+      can('AGM') && { label: 'Stock & courses', icon: 'i-lucide-package', to: linkFor('stock'), badge: managed('Lieux') },
+      can('AG') && { label: 'Écrans & livret', icon: 'i-lucide-tv', to: linkFor('ecrans'), badge: managed('Réservations') },
     ].filter(Boolean),
   },
   {

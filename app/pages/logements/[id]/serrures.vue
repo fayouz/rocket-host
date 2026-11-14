@@ -1,4 +1,6 @@
 <template>
+  <div>
+  <DomotiqueNav />
   <div v-if="locksData" class="flex flex-col gap-4 lg:h-[calc(100vh-17rem)] lg:flex-row">
     <!-- Colonne gauche : liste des serrures du logement, comme une boite de reception -->
     <div class="min-w-0 space-y-1 overflow-y-auto lg:w-80 lg:shrink-0 lg:border-r lg:border-default lg:pr-3">
@@ -55,6 +57,7 @@
         <p v-if="!current.logs.length" class="text-sm text-muted">Aucun passage récent.</p>
       </UCard>
     </div>
+  </div>
   </div>
 </template>
 

@@ -3,7 +3,7 @@
     <!-- Livret voyageur Loussa Réservations : lien personnalisé au séjour, QR code, envoi explicite -->
     <UCard>
       <template #header>
-        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-book-heart" class="size-3.5" /> Livret du séjour (Loussa Réservations)</p>
+        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-book-heart" class="size-3.5" /> Livret du séjour</p>
       </template>
       <p v-if="linkStatus === 'pending' || linkStatus === 'idle'" class="text-sm text-muted">Chargement…</p>
       <p v-else-if="!link?.url" class="text-sm text-muted">Lien indisponible pour cette réservation.</p>
@@ -30,7 +30,7 @@
     <!-- E-mails Loussa Mail rattachés à la réservation -->
     <UCard>
       <template #header>
-        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-mail" class="size-3.5" /> E-mails (Loussa Réservations)</p>
+        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-mail" class="size-3.5" /> E-mails</p>
         <p v-if="emails?.guestEmail" class="mt-1 text-xs text-muted">{{ emails.guestEmail }}</p>
       </template>
       <p v-if="emailsStatus === 'pending' || emailsStatus === 'idle'" class="text-sm text-muted">Chargement…</p>

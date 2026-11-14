@@ -1,4 +1,6 @@
 <template>
+  <div>
+  <DomotiqueNav />
   <div v-if="data" class="space-y-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="section-title !mt-0">Domotique</h2>
@@ -174,6 +176,7 @@
         </ul>
       </UCard>
     </template>
+  </div>
   </div>
 </template>
 

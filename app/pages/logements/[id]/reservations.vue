@@ -43,7 +43,7 @@
           <div class="flex flex-wrap justify-end gap-1">
             <UBadge v-if="phase(current) === 'now'" color="success" label="En cours" />
             <UBadge v-else-if="phase(current) === 'next'" color="info" variant="subtle" label="À venir" />
-            <UBadge :color="statusColor(current.status)" variant="subtle" :label="current.status" />
+            <UBadge :color="statusColor(current.status)" variant="subtle" :label="statusLabel(current.status)" />
             <PlatformBadge :source="current.source" />
           </div>
         </div>
@@ -87,7 +87,7 @@
           <UTextarea v-model="draft" :rows="3" autoresize :placeholder="mode === 'mail' ? 'Écrire un e-mail…' : 'Écrire au voyageur…'" class="w-full" :disabled="sending" />
           <div class="flex flex-wrap items-center justify-between gap-2">
             <p class="text-xs text-muted">
-              {{ sendError || sentInfo || (mode === 'mail' ? `Envoyé par e-mail depuis ta boîte${lastMail ? ', en réponse au dernier e-mail échangé' : ''}.` : `Envoyé à ${current.guest} via ${current.source || 'Lodgify'}.`) }}
+              {{ sendError || sentInfo || (mode === 'mail' ? `Envoyé par e-mail depuis ta boîte${lastMail ? ', en réponse au dernier e-mail échangé' : ''}.` : `Envoyé à ${current.guest} via ${/airbnb/i.test(current.source || '') ? 'Airbnb' : /booking/i.test(current.source || '') ? 'Booking.com' : 'Lodgify'}.`) }}
             </p>
             <UButton icon="i-lucide-send" label="Envoyer" :loading="sending" :disabled="!draft.trim() || (mode === 'mail' && (!mailTo.trim() || !mailSubject.trim()))" @click="send" />
           </div>
@@ -314,6 +314,7 @@ const stayLogs = (logs: { date: string; action: number; who: string }[]) => {
 const convBox = ref<HTMLElement | null>(null)
 watch(conv, () => { resetMail(); nextTick(() => { if (convBox.value) convBox.value.scrollTop = convBox.value.scrollHeight }) })
 const when = (d: string) => new Date(d).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const statusLabel = (s: string) => ({ Booked: 'Confirmée', Open: 'En attente', Tentative: 'Option', Declined: 'Refusée', Cancelled: 'Annulée', Canceled: 'Annulée' } as Record<string, string>)[s] || s
 const statusColor = (s: string) => /book/i.test(s) ? 'success' : /declin|cancel/i.test(s) ? 'error' : 'info'
 const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
 const eur = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €'
