@@ -1,10 +1,11 @@
 <template>
-  <iframe ref="frame" :srcdoc="doc" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin" class="w-full rounded-md bg-white" :style="{ height: `${height}px` }" title="Contenu du message" @load="fit" />
+  <iframe ref="frame" :srcdoc="doc" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin" class="w-full rounded-md bg-white" :style="{ height: `${height}px` }" :title="t('manage.mailBody.title')" @load="fit" />
 </template>
 
 <script setup lang="ts">
 // HTML deja nettoye par le serveur. Le cadre n'execute aucun script (sandbox sans allow-scripts) et la CSP interdit tout chargement distant ;
 // allow-same-origin sert uniquement a mesurer la hauteur du contenu.
+const { t } = useI18n()
 const props = defineProps<{ html: string }>()
 const frame = ref<HTMLIFrameElement | null>(null)
 const height = ref(300)

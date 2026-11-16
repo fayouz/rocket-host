@@ -1,10 +1,10 @@
 <template>
   <div class="space-y-2">
     <div class="flex gap-2">
-      <UInput v-model="q" placeholder="Rechercher une image (ex. plage, montagne, forêt…)" class="w-full" @keyup.enter="search" />
-      <UButton icon="i-lucide-search" label="Chercher" :loading="busy" @click="search" />
+      <UInput v-model="q" :placeholder="t('admin.bgSearch.placeholder')" class="w-full" @keyup.enter="search" />
+      <UButton icon="i-lucide-search" :label="t('admin.bgSearch.search')" :loading="busy" @click="search" />
     </div>
-    <p class="text-xs text-muted">Images du domaine public (Openverse), sans compte ni clé, aucune attribution requise.</p>
+    <p class="text-xs text-muted">{{ t('admin.bgSearch.note') }}</p>
     <p v-if="error" class="text-sm text-error">{{ error }}</p>
     <div v-if="results.length" class="grid grid-cols-3 gap-2 sm:grid-cols-4">
       <button
@@ -18,11 +18,12 @@
         </span>
       </button>
     </div>
-    <p v-else-if="searched && !busy" class="text-sm text-muted">Aucun résultat.</p>
+    <p v-else-if="searched && !busy" class="text-sm text-muted">{{ t('admin.bgSearch.none') }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 const props = defineProps<{ searchUrl: string }>()
 defineEmits<{ pick: [{ id: string; url: string; thumbnail: string; title: string; attribution: string }] }>()
 
@@ -36,7 +37,7 @@ async function search() {
   if (!q.value.trim()) return
   busy.value = true; error.value = ''; searched.value = true
   try { results.value = await $fetch(props.searchUrl, { query: { q: q.value } }) }
-  catch (e: any) { error.value = e?.data?.statusMessage || 'Échec de la recherche.' }
+  catch (e: any) { error.value = e?.data?.statusMessage || t('admin.bgSearch.failed') }
   busy.value = false
 }
 </script>

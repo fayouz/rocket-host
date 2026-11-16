@@ -2,15 +2,15 @@
   <UCard>
     <template #header>
       <div class="flex items-center justify-between gap-2">
-        <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-package" class="size-4 text-muted" /> Stock</h3>
-        <UButton size="xs" color="neutral" variant="link" to="/settings/stock" label="Catalogue" trailing-icon="i-lucide-arrow-right" />
+        <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-package" class="size-4 text-muted" /> {{ t('daily.stock.title') }}</h3>
+        <UButton size="xs" color="neutral" variant="link" to="/settings/stock" :label="t('daily.stockW.catalogue')" trailing-icon="i-lucide-arrow-right" />
       </div>
     </template>
-    <p v-if="error || !data" class="text-sm text-muted">Indisponible pour le moment.</p>
+    <p v-if="error || !data" class="text-sm text-muted">{{ t('daily.common.unavailable') }}</p>
     <template v-else>
       <p class="mb-3 text-sm">
-        <b>{{ data.shopping.length }}</b> article{{ data.shopping.length > 1 ? 's' : '' }} à racheter
-        <span v-if="!data.shopping.length" class="text-muted">— tout va bien</span>
+        <b>{{ data.shopping.length }}</b> {{ t('daily.stockW.itemsToBuy', data.shopping.length) }}
+        <span v-if="!data.shopping.length" class="text-muted">{{ t('daily.stockW.allGood') }}</span>
       </p>
       <ul class="space-y-2">
         <li v-for="r in rows" :key="r.id" class="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -18,13 +18,13 @@
             <span v-if="r.color" class="inline-block size-2 shrink-0 rounded-full" :style="{ backgroundColor: r.color }" /> {{ r.name }}
           </NuxtLink>
           <span class="flex flex-wrap gap-1">
-            <UBadge v-if="r.empty" color="error" variant="subtle" :label="`${r.empty} vide${r.empty > 1 ? 's' : ''}`" />
-            <UBadge v-if="r.low" color="warning" variant="subtle" :label="`${r.low} bas`" />
-            <UBadge v-if="!r.empty && !r.low" color="success" variant="subtle" :label="r.total ? 'OK' : 'aucun article'" />
+            <UBadge v-if="r.empty" color="error" variant="subtle" :label="t('daily.stockW.empty', { n: r.empty }, r.empty)" />
+            <UBadge v-if="r.low" color="warning" variant="subtle" :label="t('daily.stockW.low', { n: r.low })" />
+            <UBadge v-if="!r.empty && !r.low" color="success" variant="subtle" :label="r.total ? 'OK' : t('daily.stockW.noItem')" />
           </span>
         </li>
       </ul>
-      <UButton v-if="data.amazonUrl" class="mt-3" size="sm" block color="neutral" variant="outline" icon="i-lucide-shopping-cart" label="Ouvrir le panier Amazon" :to="data.amazonUrl" target="_blank" />
+      <UButton v-if="data.amazonUrl" class="mt-3" size="sm" block color="neutral" variant="outline" icon="i-lucide-shopping-cart" :label="t('daily.stockW.openAmazon')" :to="data.amazonUrl" target="_blank" />
     </template>
   </UCard>
 </template>
@@ -33,6 +33,7 @@
 // Etat du stock de tous les logements : articles a racheter, et par logement le nombre d'articles vides / bas
 // `properties` : filtre optionnel du selecteur de logements du tableau de bord (ids Lodgify, vide = tous)
 const props = defineProps<{ properties?: number[] }>()
+const { t } = useI18n()
 const query = computed(() => ({ properties: props.properties?.length ? props.properties.join(',') : undefined }))
 const { data, error } = await useFetch('/api/stock', { query })
 const { data: lg } = await useFetch('/api/logements', { key: 'logements' })

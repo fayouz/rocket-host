@@ -1,31 +1,31 @@
 <template>
   <div v-if="data" class="space-y-3">
-    <h2 class="section-title !mt-0">Livret Accueil</h2>
+    <h2 class="section-title !mt-0">{{ t('manage.livret.title') }}</h2>
     <template v-if="pms">
       <PmsLivretCard :logement-id="String(route.params.id)" />
-      <p class="text-xs text-muted">Ci-dessous : l'ancien livret local de l’Espace Loussa (lien /g/ propre à l'appli), conservé tant que la bascule n'est pas terminée.</p>
+      <p class="text-xs text-muted">{{ t('manage.livret.legacy') }}</p>
     </template>
     <UTabs v-model="tab" :items="tabs" :content="false" />
 
     <!-- ONGLET LIVRET ACCUEIL -->
     <template v-if="tab === 'accueil'">
-      <p class="text-sm text-muted">Une page pour le voyageur, sans compte à créer, accessible par lien ou QR code. Infos du logement seulement : pour personnaliser par séjour (code de porte, dates), voir plus tard.</p>
-      <p class="text-sm text-muted">Fond, mise en page et widgets affichés se règlent dans l'onglet <b>Écran TV</b> (communs au livret et à l'écran TV).</p>
+      <p class="text-sm text-muted">{{ t('manage.livret.intro') }}</p>
+      <p class="text-sm text-muted"><i18n-t keypath="manage.livret.bgNote" tag="span"><template #tab><b>{{ t('manage.livret.tabTv') }}</b></template></i18n-t></p>
 
       <div class="grid gap-4 lg:grid-cols-3">
         <div class="space-y-3 lg:col-span-2">
           <UCard>
-            <template #header><b>Lien du livret</b></template>
+            <template #header><b>{{ t('manage.livret.linkTitle') }}</b></template>
             <div class="flex flex-wrap items-center gap-3">
-              <img :src="qrUrl" alt="QR code du livret" class="size-32 rounded bg-white p-1">
+              <img :src="qrUrl" :alt="t('manage.livret.qrAlt')" class="size-32 rounded bg-white p-1">
               <div class="min-w-0 flex-1 space-y-2">
                 <UInput :model-value="link" readonly class="w-full font-mono text-xs" @focus="($event.target as HTMLInputElement).select()" />
                 <div class="flex flex-wrap gap-2">
-                  <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" :label="copied ? 'Copié' : 'Copier le lien'" @click="copy" />
-                  <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-eye" label="Aperçu" :to="link" external target="_blank" />
-                  <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-refresh-cw" label="Régénérer le lien" @click="regenerate" />
+                  <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" :label="copied ? t('manage.livret.copied') : t('manage.livret.copyLink')" @click="copy" />
+                  <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-eye" :label="t('manage.livret.preview')" :to="link" external target="_blank" />
+                  <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-refresh-cw" :label="t('manage.livret.regen')" @click="regenerate" />
                 </div>
-                <p class="text-xs text-muted">Régénérer invalide l'ancien lien immédiatement (utile si le QR affiché quelque part doit être remplacé) : le lien de l'écran TV change aussi.</p>
+                <p class="text-xs text-muted">{{ t('manage.livret.regenNote') }}</p>
               </div>
             </div>
           </UCard>
@@ -33,8 +33,8 @@
           <UCard>
             <template #header><b>Wi-Fi</b></template>
             <div class="grid gap-2 sm:grid-cols-2">
-              <UFormField label="Nom du réseau (SSID)"><UInput v-model="form.wifiSsid" class="w-full" /></UFormField>
-              <UFormField label="Mot de passe"><UInput v-model="form.wifiPassword" class="w-full" /></UFormField>
+              <UFormField :label="t('manage.livret.ssid')"><UInput v-model="form.wifiSsid" class="w-full" /></UFormField>
+              <UFormField :label="t('manage.livret.password')"><UInput v-model="form.wifiPassword" class="w-full" /></UFormField>
             </div>
           </UCard>
 
@@ -45,20 +45,20 @@
           </UCard>
 
           <div class="sticky bottom-4 flex items-center gap-2">
-            <UButton icon="i-lucide-save" label="Enregistrer" :loading="busy" @click="save" />
-            <span v-if="saved" class="text-sm text-success"><UIcon name="i-lucide-check" class="align-middle" /> Enregistré</span>
+            <UButton icon="i-lucide-save" :label="t('manage.livret.save')" :loading="busy" @click="save" />
+            <span v-if="saved" class="text-sm text-success"><UIcon name="i-lucide-check" class="align-middle" /> {{ t('manage.livret.saved') }}</span>
             <span v-if="error" class="text-sm text-error">{{ error }}</span>
           </div>
         </div>
 
         <div class="lg:col-span-1">
           <UCard class="lg:sticky lg:top-4" :ui="{ body: 'p-0 sm:p-0' }">
-            <template #header><b>Aperçu</b></template>
+            <template #header><b>{{ t('manage.livret.preview') }}</b></template>
             <div class="livret-preview-frame overflow-hidden bg-black">
-              <iframe :src="livretPreviewLink" class="livret-preview-iframe" title="Aperçu du livret" />
+              <iframe :src="livretPreviewLink" class="livret-preview-iframe" :title="t('manage.livret.previewTitle')" />
             </div>
             <div class="flex flex-wrap gap-2 p-3">
-              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir" @click="livretPreviewKey++" />
+              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" :label="t('manage.livret.refresh')" @click="livretPreviewKey++" />
             </div>
           </UCard>
         </div>
@@ -67,82 +67,82 @@
 
     <!-- ONGLET RÈGLEMENT INTÉRIEUR -->
     <template v-else-if="tab === 'reglement'">
-      <p class="text-sm text-muted">Affiché automatiquement dans le livret d'accueil du logement. Pas de synchronisation possible avec Lodgify (son API ne donne accès ni en lecture ni en écriture au champ équivalent, {{ rentalRulesTag }}) : si vous voulez qu'il apparaisse aussi dans vos messages automatiques Lodgify, recopiez-le à la main dans Rentals &gt; Messaging placeholders.</p>
+      <p class="text-sm text-muted">{{ t('manage.livret.rulesIntro', { tag: rentalRulesTag }) }}</p>
 
       <UCard>
-        <UTextarea v-model="form.houseRules" :rows="10" class="w-full" placeholder="Non fumeur, pas de fête, horaires de calme…" />
+        <UTextarea v-model="form.houseRules" :rows="10" class="w-full" :placeholder="t('manage.livret.rulesPh')" />
       </UCard>
 
       <div class="flex items-center gap-2">
-        <UButton icon="i-lucide-save" label="Enregistrer" :loading="busy" @click="save" />
-        <span v-if="saved" class="text-sm text-success"><UIcon name="i-lucide-check" class="align-middle" /> Enregistré</span>
+        <UButton icon="i-lucide-save" :label="t('manage.livret.save')" :loading="busy" @click="save" />
+        <span v-if="saved" class="text-sm text-success"><UIcon name="i-lucide-check" class="align-middle" /> {{ t('manage.livret.saved') }}</span>
         <span v-if="error" class="text-sm text-error">{{ error }}</span>
       </div>
     </template>
 
     <!-- ONGLET ÉCRAN TV -->
     <template v-else>
-      <p class="text-sm text-muted">Même lien que le livret, en plein écran, pensé pour être ouvert sur la TV du logement (grand texte, voyageur du jour affiché s'il y en a un). Voir <code>docs/ecran-tv-android.md</code> pour installer Fully Kiosk Browser dessus. Le fond, la mise en page et les widgets ci-dessous s'appliquent aussi au livret mobile (onglet Livret Accueil).</p>
+      <p class="text-sm text-muted"><i18n-t keypath="manage.livret.tvIntro" tag="span"><template #code><code>docs/ecran-tv-android.md</code></template></i18n-t></p>
 
       <div class="grid gap-4 lg:grid-cols-3">
         <div class="space-y-4 lg:col-span-2">
           <UCard>
-            <template #header><b>Lien de l'écran TV</b></template>
+            <template #header><b>{{ t('manage.livret.tvLinkTitle') }}</b></template>
             <div class="flex items-center gap-2">
               <UInput :model-value="tvLinkBase" readonly class="w-full font-mono text-xs" @focus="($event.target as HTMLInputElement).select()" />
-              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" :label="tvCopied ? 'Copié' : 'Copier'" @click="copyTv" />
+              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" :label="tvCopied ? t('manage.livret.copied') : t('manage.livret.copy')" @click="copyTv" />
             </div>
-            <p class="mt-2 text-xs text-muted">À coller dans l'URL de démarrage de Fully Kiosk Browser sur la TV. Change si le lien du livret est régénéré (onglet Livret Accueil).</p>
+            <p class="mt-2 text-xs text-muted">{{ t('manage.livret.tvLinkNote') }}</p>
           </UCard>
 
           <UCard>
-            <template #header><b>Mise en page</b></template>
+            <template #header><b>{{ t('manage.livret.layout') }}</b></template>
             <div class="grid gap-3 sm:grid-cols-2">
-              <UFormField label="Navigation (livret + écran TV)">
+              <UFormField :label="t('manage.livret.nav')">
                 <USelect :model-value="data.layout.navMode" :items="navItems" class="w-full" @update:model-value="setLayout($event, data.layout.gridColumns, data.layout.tvColumns)" />
               </UFormField>
-              <UFormField label="Disposition (livret)">
+              <UFormField :label="t('manage.livret.gridLayout')">
                 <USelect :model-value="data.layout.gridColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, $event, data.layout.tvColumns)" />
               </UFormField>
-              <UFormField label="Disposition (écran TV)">
+              <UFormField :label="t('manage.livret.tvLayout')">
                 <USelect :model-value="data.layout.tvColumns" :items="colItems" class="w-full" @update:model-value="setLayout(data.layout.navMode, data.layout.gridColumns, $event)" />
               </UFormField>
             </div>
-            <p class="mt-2 text-xs text-muted">En mode « Onglets », le livret et l'écran TV affichent un carrousel avec une barre de menu pour naviguer entre les widgets.</p>
+            <p class="mt-2 text-xs text-muted">{{ t('manage.livret.tabsNote') }}</p>
           </UCard>
 
           <UCard>
-            <template #header><b>Image de fond</b></template>
-            <p class="text-sm text-muted">Affichée en fond du livret et de l'écran TV, avec les blocs en verre dépoli par-dessus.</p>
+            <template #header><b>{{ t('manage.livret.bgTitle') }}</b></template>
+            <p class="text-sm text-muted">{{ t('manage.livret.bgIntro') }}</p>
 
             <div class="mt-2 rounded-lg border border-default p-3 text-sm">
               <template v-if="data.background.mode === 'custom'">
-                <p>Fond propre à ce logement.
-                  <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
+                <p>{{ t('manage.livret.bgCustom') }}
+                  <UButton size="xs" color="neutral" variant="link" :label="t('manage.livret.bgBack')" @click="setMode('inherit')" />
                 </p>
               </template>
               <template v-else-if="data.background.mode === 'none'">
-                <p>Aucun fond, forcé pour ce logement (même si un fond général existe).
-                  <UButton size="xs" color="neutral" variant="link" label="Revenir au fond général" @click="setMode('inherit')" />
+                <p>{{ t('manage.livret.bgNone') }}
+                  <UButton size="xs" color="neutral" variant="link" :label="t('manage.livret.bgBack')" @click="setMode('inherit')" />
                 </p>
               </template>
               <template v-else>
-                <p v-if="data.hasDefaultBackground">Utilise le fond général des réglages.
-                  <UButton size="xs" color="neutral" variant="link" label="Forcer aucun fond ici" @click="setMode('none')" />
+                <p v-if="data.hasDefaultBackground">{{ t('manage.livret.bgInherit') }}
+                  <UButton size="xs" color="neutral" variant="link" :label="t('manage.livret.bgForceNone')" @click="setMode('none')" />
                 </p>
-                <p v-else>Pas de fond général réglé, et rien de propre à ce logement : fond uni.</p>
+                <p v-else>{{ t('manage.livret.bgPlain') }}</p>
               </template>
             </div>
 
             <div v-if="data.background.hasFile || data.background.webUrl" class="mt-3 flex items-center gap-3">
-              <img :src="backgroundPreviewUrl" alt="Fond actuel" class="h-20 w-32 rounded object-cover ring ring-default">
+              <img :src="backgroundPreviewUrl" :alt="t('manage.livret.bgAlt')" class="h-20 w-32 rounded object-cover ring ring-default">
               <p v-if="data.background.attribution" class="text-xs text-muted">{{ data.background.attribution }}</p>
             </div>
 
-            <UCheckbox class="mt-3" :model-value="data.background.animated" label="Fond animé (léger effet de zoom/travelling)" @update:model-value="setAnimated" />
+            <UCheckbox class="mt-3" :model-value="data.background.animated" :label="t('manage.livret.animated')" @update:model-value="setAnimated" />
 
             <div class="mt-4 space-y-3">
-              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" label="Déposer une image" :loading="bgBusy" @click="fileInput?.click()" />
+              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" :label="t('manage.livret.upload')" :loading="bgBusy" @click="fileInput?.click()" />
               <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadBackground">
               <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickWeb" />
             </div>
@@ -152,31 +152,31 @@
           <UCard>
             <template #header>
               <div class="flex items-center justify-between gap-2">
-                <b>Pages</b>
-                <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-plus" label="Ajouter une page" @click="addPage" />
+                <b>{{ t('manage.livret.pages') }}</b>
+                <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-plus" :label="t('manage.livret.addPage')" @click="addPage" />
               </div>
             </template>
-            <p class="text-sm text-muted">Chaque page regroupe un ou plusieurs widgets : un onglet du carrousel (mode « Onglets »), ou une section (mode « Défilement »). Un widget coché dans aucune page n'est affiché nulle part.</p>
-            <p class="mt-1 text-xs text-muted">En mode « Onglets », chaque page peut avoir son propre fond (icône <UIcon name="i-lucide-image" class="align-middle" />) ; sans fond propre, elle garde le fond du logement.</p>
+            <p class="text-sm text-muted">{{ t('manage.livret.pagesNote') }}</p>
+            <p class="mt-1 text-xs text-muted"><i18n-t keypath="manage.livret.pageBgNote" tag="span"><template #icon><UIcon name="i-lucide-image" class="align-middle" /></template></i18n-t></p>
 
             <div class="mt-3 space-y-3">
               <div v-for="(page, pi) in data.pages" :key="page.id" class="rounded-lg border border-default p-3">
                 <div class="flex items-center gap-2">
-                  <UInput :model-value="page.label" class="flex-1" placeholder="Nom de la page" @change="renamePageLabel(page, ($event.target as HTMLInputElement).value)" />
+                  <UInput :model-value="page.label" class="flex-1" :placeholder="t('manage.livret.pageName')" @change="renamePageLabel(page, ($event.target as HTMLInputElement).value)" />
                   <UButton
                     size="xs" color="neutral" :variant="hasPageBg(page) ? 'soft' : 'ghost'" icon="i-lucide-image"
-                    :title="hasPageBg(page) ? 'Fond personnalisé' : 'Définir un fond pour cette page'" @click="openPageBg(page)"
+                    :title="hasPageBg(page) ? t('manage.livret.customBg') : t('manage.livret.setBg')" @click="openPageBg(page)"
                   />
                   <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="pi === 0" @click="movePage(pi, -1)" />
                   <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="pi === data.pages.length - 1" @click="movePage(pi, 1)" />
-                  <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :disabled="data.pages.length <= 1" title="Supprimer la page" @click="removePage(page)" />
+                  <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :disabled="data.pages.length <= 1" :title="t('manage.livret.deletePage')" @click="removePage(page)" />
                 </div>
                 <ul class="mt-2 divide-y divide-default">
                   <li v-for="w in WIDGET_CATALOG" :key="w.id" class="flex items-center gap-2 py-1.5 text-sm">
                     <UCheckbox :model-value="page.widgets.includes(w.id)" @update:model-value="assignWidget(w.id, page, $event)" />
                     <UIcon :name="w.icon" class="size-4 text-muted" />
-                    <span class="flex-1" :class="{ 'text-muted': !page.widgets.includes(w.id) }">{{ w.label }}</span>
-                    <span v-if="widgetPageLabel(w.id) && widgetPageLabel(w.id) !== page.label" class="text-xs text-muted">déjà dans « {{ widgetPageLabel(w.id) }} »</span>
+                    <span class="flex-1" :class="{ 'text-muted': !page.widgets.includes(w.id) }">{{ t(w.labelKey) }}</span>
+                    <span v-if="widgetPageLabel(w.id) && widgetPageLabel(w.id) !== page.label" class="text-xs text-muted">{{ t('manage.livret.alreadyIn', { page: widgetPageLabel(w.id) }) }}</span>
                     <template v-if="page.widgets.includes(w.id)">
                       <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-up" :disabled="page.widgets[0] === w.id" @click="moveWidgetInPage(page, w.id, -1)" />
                       <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevron-down" :disabled="page.widgets[page.widgets.length - 1] === w.id" @click="moveWidgetInPage(page, w.id, 1)" />
@@ -190,13 +190,13 @@
 
         <div class="lg:col-span-1">
           <UCard class="lg:sticky lg:top-4" :ui="{ body: 'p-0 sm:p-0' }">
-            <template #header><b>Aperçu</b></template>
+            <template #header><b>{{ t('manage.livret.preview') }}</b></template>
             <div ref="tvFrameEl" class="tv-preview-frame overflow-hidden bg-black">
-              <iframe :src="tvLink" class="tv-preview-iframe" :style="{ transform: `scale(${tvPreviewScale})` }" title="Aperçu de l'écran TV" />
+              <iframe :src="tvLink" class="tv-preview-iframe" :style="{ transform: `scale(${tvPreviewScale})` }" :title="t('manage.livret.tvPreviewTitle')" />
             </div>
             <div class="flex flex-wrap gap-2 p-3">
-              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir" @click="tvPreviewKey++" />
-              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-expand" label="Plein écran" :to="tvLink" external target="_blank" />
+              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" :label="t('manage.livret.refresh')" @click="tvPreviewKey++" />
+              <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-expand" :label="t('manage.livret.fullscreen')" :to="tvLink" external target="_blank" />
             </div>
           </UCard>
         </div>
@@ -204,15 +204,15 @@
     </template>
   </div>
 
-  <UModal v-model:open="pageBgOpen" :title="`Fond — ${pageBgLabel}`">
+  <UModal v-model:open="pageBgOpen" :title="t('manage.livret.pageBgTitle', { page: pageBgLabel })">
     <template #body>
       <div class="space-y-3">
-        <p class="text-xs text-muted">Remplace le fond du logement uniquement pour cette page (mode « Onglets »). Sans fond propre, cette page garde le fond du logement.</p>
+        <p class="text-xs text-muted">{{ t('manage.livret.pageBgIntro') }}</p>
         <div v-if="pageBgPreviewUrl" class="flex items-center gap-3">
-          <img :src="pageBgPreviewUrl" alt="Fond de la page" class="h-20 w-32 rounded object-cover ring ring-default">
-          <UButton size="xs" color="error" variant="soft" icon="i-lucide-trash-2" label="Retirer" :loading="pageBgBusy" @click="removePageBg" />
+          <img :src="pageBgPreviewUrl" :alt="t('manage.livret.pageBgAlt')" class="h-20 w-32 rounded object-cover ring ring-default">
+          <UButton size="xs" color="error" variant="soft" icon="i-lucide-trash-2" :label="t('manage.livret.remove')" :loading="pageBgBusy" @click="removePageBg" />
         </div>
-        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-upload" label="Déposer une image" :loading="pageBgBusy" @click="pageBgFileInput?.click()" />
+        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-upload" :label="t('manage.livret.upload')" :loading="pageBgBusy" @click="pageBgFileInput?.click()" />
         <input ref="pageBgFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadPageBg">
         <BackgroundSearchGrid :search-url="`/api/logements/${route.params.id}/livret/search`" @pick="pickPageBgWeb" />
         <p v-if="pageBgError" class="text-sm text-error">{{ pageBgError }}</p>
@@ -222,27 +222,28 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 const route = useRoute()
 const pms = useState<boolean>('pms', () => false)
 const router = useRouter()
 const { data, refresh } = await useFetch(() => `/api/logements/${route.params.id}/livret`, { key: `livret-${route.params.id}` })
 
-const tabs = [
-  { label: 'Livret Accueil', icon: 'i-lucide-book-heart', value: 'accueil' },
-  { label: 'Règlement intérieur', icon: 'i-lucide-list-checks', value: 'reglement' },
-  { label: 'Écran TV', icon: 'i-lucide-tv', value: 'tv' },
-]
-const tab = ref<string>(typeof route.query.onglet === 'string' && tabs.some(t => t.value === route.query.onglet) ? route.query.onglet : 'accueil')
-watch(tab, (t) => { router.replace({ query: { ...route.query, onglet: t } }) })
+const tabs = computed(() => [
+  { label: t('manage.livret.title'), icon: 'i-lucide-book-heart', value: 'accueil' },
+  { label: t('manage.livret.tabRules'), icon: 'i-lucide-list-checks', value: 'reglement' },
+  { label: t('manage.livret.tabTv'), icon: 'i-lucide-tv', value: 'tv' },
+])
+const tab = ref<string>(typeof route.query.onglet === 'string' && tabs.value.some(x => x.value === route.query.onglet) ? route.query.onglet : 'accueil')
+watch(tab, (v) => { router.replace({ query: { ...route.query, onglet: v } }) })
 
-const sections = [
-  { key: 'welcomeText', label: 'Mot de bienvenue', hint: 'Affiché en haut de la page. Astuce : {{guest}} est remplacé par le prénom du voyageur en cours de séjour.', rows: 3, placeholder: 'Bienvenue chez nous {{guest}} !' },
-  { key: 'checkinInfo', label: 'Arrivée', hint: 'Horaire habituel, comment entrer (au-delà du code, déjà géré ailleurs).', rows: 4, placeholder: 'Arrivée à partir de 15h. …' },
-  { key: 'checkoutInfo', label: 'Départ', hint: 'Horaire limite, consignes (clés, poubelles…).', rows: 4, placeholder: 'Départ avant 11h. …' },
-  { key: 'accessDirections', label: 'Accès', hint: 'Adresse, parking, digicode, étage…', rows: 4, placeholder: '' },
-  { key: 'localTips', label: 'Conseils du quartier', hint: 'Boulangerie, restaurants, transports…', rows: 5, placeholder: '' },
-  { key: 'faq', label: 'Questions fréquentes', hint: '', rows: 5, placeholder: '' },
-] as const
+const sections = computed(() => [
+  { key: 'welcomeText', label: t('manage.livret.sWelcome'), hint: t('manage.livret.sWelcomeHint'), rows: 3, placeholder: t('manage.livret.sWelcomePh') },
+  { key: 'checkinInfo', label: t('manage.livret.sCheckin'), hint: t('manage.livret.sCheckinHint'), rows: 4, placeholder: t('manage.livret.sCheckinPh') },
+  { key: 'checkoutInfo', label: t('manage.livret.sCheckout'), hint: t('manage.livret.sCheckoutHint'), rows: 4, placeholder: t('manage.livret.sCheckoutPh') },
+  { key: 'accessDirections', label: t('manage.livret.sAccess'), hint: t('manage.livret.sAccessHint'), rows: 4, placeholder: '' },
+  { key: 'localTips', label: t('manage.livret.sTips'), hint: t('manage.livret.sTipsHint'), rows: 5, placeholder: '' },
+  { key: 'faq', label: t('manage.livret.sFaq'), hint: '', rows: 5, placeholder: '' },
+])
 
 const form = reactive({ wifiSsid: '', wifiPassword: '', welcomeText: '', checkinInfo: '', checkoutInfo: '', accessDirections: '', localTips: '', faq: '', houseRules: '' })
 // once: true — sinon un refresh() declenche par une action sans rapport (fond, mise en page, widgets, sur l'autre
@@ -277,7 +278,7 @@ async function copy() { try { await navigator.clipboard.writeText(link.value); c
 const tvCopied = ref(false)
 async function copyTv() { try { await navigator.clipboard.writeText(tvLinkBase.value); tvCopied.value = true; setTimeout(() => { tvCopied.value = false }, 2000) } catch { /* copie manuelle possible */ } }
 async function regenerate() {
-  if (!confirm('Régénérer le lien ? L\'ancien (et le QR déjà imprimé) cessera de fonctionner.')) return
+  if (!confirm(t('manage.livret.confirmRegen'))) return
   await $fetch(`/api/logements/${route.params.id}/livret/token`, { method: 'POST' })
   await refresh()
 }
@@ -298,7 +299,7 @@ async function uploadBackground(e: Event) {
   try {
     const body = new FormData(); body.append('file', file)
     await $fetch(`/api/logements/${route.params.id}/livret/background`, { method: 'POST', body })
-  } catch (err: any) { bgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  } catch (err: any) { bgError.value = err?.data?.statusMessage || t('manage.livret.failed') }
   bgBusy.value = false
   if (fileInput.value) fileInput.value.value = ''
   bgVersion.value++
@@ -308,7 +309,7 @@ async function uploadBackground(e: Event) {
 async function pickWeb(r: { url: string; attribution: string }) {
   bgBusy.value = true; bgError.value = ''
   try { await $fetch(`/api/logements/${route.params.id}/livret/background-web`, { method: 'PUT', body: { url: r.url, attribution: r.attribution } }) }
-  catch (err: any) { bgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  catch (err: any) { bgError.value = err?.data?.statusMessage || t('manage.livret.failed') }
   bgBusy.value = false
   bgVersion.value++
   await refresh()
@@ -332,7 +333,7 @@ async function setAnimated(animated: boolean) {
 // (pas d'etat local separe a resynchroniser, plus simple qu'avant avec le widgetOrder a plat).
 type Page = NonNullable<typeof data.value>['pages'][number]
 async function addPage() {
-  await $fetch(`/api/logements/${route.params.id}/livret/pages`, { method: 'POST', body: { label: 'Nouvelle page', icon: 'i-lucide-file' } })
+  await $fetch(`/api/logements/${route.params.id}/livret/pages`, { method: 'POST', body: { label: t('manage.livret.newPage'), icon: 'i-lucide-file' } })
   await refresh()
   bumpPreviews()
 }
@@ -353,7 +354,7 @@ async function movePage(pi: number, dir: -1 | 1) {
   bumpPreviews()
 }
 async function removePage(page: Page) {
-  if (!confirm(`Supprimer la page « ${page.label} » ? Ses widgets ne seront plus affichés (à réassigner ailleurs si besoin).`)) return
+  if (!confirm(t('manage.livret.confirmDeletePage', { page: page.label }))) return
   await $fetch(`/api/logements/${route.params.id}/livret/pages/${page.id}`, { method: 'DELETE' })
   await refresh()
   bumpPreviews()
@@ -405,7 +406,7 @@ async function uploadPageBg(e: Event) {
   try {
     const body = new FormData(); body.append('file', file)
     await $fetch(`/api/logements/${route.params.id}/livret/pages/${pageBgId.value}/background`, { method: 'POST', body })
-  } catch (err: any) { pageBgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  } catch (err: any) { pageBgError.value = err?.data?.statusMessage || t('manage.livret.failed') }
   pageBgBusy.value = false
   if (pageBgFileInput.value) pageBgFileInput.value.value = ''
   pageBgVersion.value++
@@ -416,7 +417,7 @@ async function pickPageBgWeb(r: { url: string; attribution: string }) {
   if (pageBgId.value === null) return
   pageBgBusy.value = true; pageBgError.value = ''
   try { await $fetch(`/api/logements/${route.params.id}/livret/pages/${pageBgId.value}/background-web`, { method: 'PUT', body: { url: r.url, attribution: r.attribution } }) }
-  catch (err: any) { pageBgError.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  catch (err: any) { pageBgError.value = err?.data?.statusMessage || t('manage.livret.failed') }
   pageBgBusy.value = false
   await refresh()
   bumpPreviews()
@@ -430,8 +431,8 @@ async function removePageBg() {
   bumpPreviews()
 }
 
-const navItems = [{ label: 'Défilement (toutes les cartes)', value: 'scroll' }, { label: 'Onglets (une à la fois)', value: 'tabs' }]
-const colItems = [{ label: '1 colonne', value: 1 }, { label: '2 colonnes', value: 2 }]
+const navItems = computed(() => [{ label: t('manage.livret.navScroll'), value: 'scroll' }, { label: t('manage.livret.navTabs'), value: 'tabs' }])
+const colItems = computed(() => [{ label: t('manage.livret.col1'), value: 1 }, { label: t('manage.livret.col2'), value: 2 }])
 async function setLayout(navMode: unknown, gridColumns: unknown, tvColumns: unknown) {
   await $fetch(`/api/logements/${route.params.id}/livret/layout`, { method: 'PUT', body: { navMode, gridColumns, tvColumns } })
   await refresh()
@@ -447,7 +448,7 @@ async function save() {
     await $fetch(`/api/logements/${route.params.id}/livret`, { method: 'PUT', body: { ...form } })
     saved.value = true
     setTimeout(() => { saved.value = false }, 3000)
-  } catch (e: any) { error.value = e?.data?.statusMessage || 'Échec, réessaie.' }
+  } catch (e: any) { error.value = e?.data?.statusMessage || t('manage.livret.failed') }
   busy.value = false
   await refresh()
   bumpPreviews()

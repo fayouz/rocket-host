@@ -1,22 +1,22 @@
 <template>
   <div v-if="data" class="max-w-2xl space-y-3">
-    <BrickHint brick="pms" description="Livret et écran TV : l'éditeur de référence est dans Loussa Réservations." />
-    <h2 class="section-title !mt-0">Livret & écran TV</h2>
-    <p class="text-sm text-muted">Fond par défaut pour le livret d'accueil et l'écran TV de tous les logements. Chaque logement peut le garder, le remplacer par son propre fond, ou forcer l'absence de fond (page de son livret).</p>
+    <BrickHint brick="pms" :description="t('manage.welcome.hint')" />
+    <h2 class="section-title !mt-0">{{ t('manage.welcome.title') }}</h2>
+    <p class="text-sm text-muted">{{ t('manage.welcome.intro') }}</p>
 
     <UCard v-if="stats">
-      <template #header><b>Tableau de bord</b></template>
-      <p class="text-xs text-muted">Ouvertures du livret voyageur (page mobile) par logement. L'écran TV n'est pas compté : il s'auto-rafraîchit toutes les 10 minutes, ce qui fausserait le nombre de visites.</p>
+      <template #header><b>{{ t('manage.welcome.dashboard') }}</b></template>
+      <p class="text-xs text-muted">{{ t('manage.welcome.statsNote') }}</p>
 
       <div v-if="stats.totalByLogement.length" class="mt-3 space-y-2">
         <div v-for="l in stats.totalByLogement" :key="l.logementId" class="flex items-center justify-between gap-3">
           <span class="text-sm font-medium">{{ l.name }}</span>
-          <span class="text-sm text-muted">{{ l.g }} ouverture{{ l.g > 1 ? 's' : '' }}</span>
+          <span class="text-sm text-muted">{{ t('manage.welcome.opens', { n: l.g }, l.g) }}</span>
         </div>
       </div>
-      <p v-else class="mt-3 text-sm text-muted">Aucune ouverture enregistrée pour l'instant.</p>
+      <p v-else class="mt-3 text-sm text-muted">{{ t('manage.welcome.noOpens') }}</p>
 
-      <p class="mt-4 mb-1 text-xs font-medium text-muted">14 derniers jours</p>
+      <p class="mt-4 mb-1 text-xs font-medium text-muted">{{ t('manage.welcome.last14') }}</p>
       <div class="flex h-20 items-end gap-1">
         <div v-for="d in stats.dailyLast14" :key="d.day" class="group relative flex-1">
           <div class="rounded-t bg-primary/70" :style="{ height: `${barHeight(d.g)}%` }" />
@@ -26,21 +26,21 @@
     </UCard>
 
     <UCard>
-      <template #header><b>Fond par défaut</b></template>
+      <template #header><b>{{ t('manage.welcome.defaultBg') }}</b></template>
       <div v-if="data.hasBackground" class="mb-3 flex items-center gap-3">
-        <img :src="previewUrl" alt="Fond actuel" class="h-24 w-40 rounded object-cover ring ring-default">
+        <img :src="previewUrl" :alt="t('manage.welcome.currentBg')" class="h-24 w-40 rounded object-cover ring ring-default">
         <div class="space-y-1">
-          <p class="text-sm">{{ data.source === 'upload' ? 'Image déposée' : 'Image du web' }}</p>
+          <p class="text-sm">{{ data.source === 'upload' ? t('manage.welcome.uploaded') : t('manage.welcome.web') }}</p>
           <p v-if="data.attribution" class="text-xs text-muted">{{ data.attribution }}</p>
-          <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" label="Retirer" :loading="busy" @click="remove" />
+          <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :label="t('manage.welcome.remove')" :loading="busy" @click="remove" />
         </div>
       </div>
-      <p v-else class="mb-3 text-sm text-muted">Aucun fond par défaut : les livrets restent unis, sauf logement avec son propre fond.</p>
+      <p v-else class="mb-3 text-sm text-muted">{{ t('manage.welcome.noBg') }}</p>
 
-      <UCheckbox v-model="animated" label="Fond animé (léger effet de zoom/travelling)" @change="toggleAnimated" />
+      <UCheckbox v-model="animated" :label="t('manage.welcome.animated')" @change="toggleAnimated" />
 
       <div class="mt-4 space-y-3">
-        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" label="Déposer une image" :loading="busy" @click="fileInput?.click()" />
+        <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-image-up" :label="t('manage.welcome.upload')" :loading="busy" @click="fileInput?.click()" />
         <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="upload">
         <BackgroundSearchGrid search-url="/api/settings/welcomescreen/search" @pick="pickWeb" />
       </div>
@@ -50,6 +50,7 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 const { data, refresh } = await useFetch('/api/settings/welcomescreen', { key: 'welcomescreen-settings' })
 const { data: stats } = await useFetch('/api/settings/welcomescreen/stats', { key: 'welcomescreen-stats' })
 const barHeight = (n: number) => {
@@ -72,7 +73,7 @@ async function upload(e: Event) {
   try {
     const body = new FormData(); body.append('file', file)
     await $fetch('/api/settings/welcomescreen/background', { method: 'POST', body })
-  } catch (err: any) { error.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  } catch (err: any) { error.value = err?.data?.statusMessage || t('manage.welcome.failed') }
   busy.value = false
   if (fileInput.value) fileInput.value.value = ''
   version.value++
@@ -82,14 +83,14 @@ async function upload(e: Event) {
 async function pickWeb(r: { url: string; attribution: string }) {
   busy.value = true; error.value = ''
   try { await $fetch('/api/settings/welcomescreen/background-web', { method: 'PUT', body: { url: r.url, attribution: r.attribution } }) }
-  catch (err: any) { error.value = err?.data?.statusMessage || 'Échec, réessaie.' }
+  catch (err: any) { error.value = err?.data?.statusMessage || t('manage.welcome.failed') }
   busy.value = false
   version.value++
   await refresh()
 }
 
 async function remove() {
-  if (!confirm('Retirer le fond par défaut ? Les logements sans fond propre reviendront à un fond uni.')) return
+  if (!confirm(t('manage.welcome.confirmRemove'))) return
   busy.value = true
   try { await $fetch('/api/settings/welcomescreen/background', { method: 'DELETE' }) }
   finally { busy.value = false }

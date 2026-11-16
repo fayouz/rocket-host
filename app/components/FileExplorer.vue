@@ -9,8 +9,8 @@
        @dragover.prevent="onDragOverRoot" @dragleave.self="dropHint = ''" @drop.prevent="onDropRoot">
     <!-- Barre d'outils -->
     <div class="flex flex-wrap items-center gap-1 border-b border-default bg-elevated/50 px-2 py-1.5">
-      <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-chevron-left" :disabled="!canBack" aria-label="Précédent" @click="back" />
-      <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-chevron-right" :disabled="!canForward" aria-label="Suivant" @click="forward" />
+      <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-chevron-left" :disabled="!canBack" :aria-label="t('manage.files.prev')" @click="back" />
+      <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-chevron-right" :disabled="!canForward" :aria-label="t('manage.files.next')" @click="forward" />
       <div class="mx-1 flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto text-sm">
         <template v-for="(c, i) in crumbs" :key="i">
           <UIcon v-if="i" name="i-lucide-chevron-right" class="size-3.5 shrink-0 text-muted" />
@@ -20,27 +20,27 @@
           </button>
         </template>
       </div>
-      <UInput v-model="query" size="sm" icon="i-lucide-search" placeholder="Rechercher" class="w-40 sm:w-52" :ui="{ trailing: 'pe-1' }">
-        <template v-if="query" #trailing><UButton size="xs" color="neutral" variant="link" icon="i-lucide-x" aria-label="Effacer" @click="query = ''" /></template>
+      <UInput v-model="query" size="sm" icon="i-lucide-search" :placeholder="t('manage.files.search')" class="w-40 sm:w-52" :ui="{ trailing: 'pe-1' }">
+        <template v-if="query" #trailing><UButton size="xs" color="neutral" variant="link" icon="i-lucide-x" :aria-label="t('manage.files.clear')" @click="query = ''" /></template>
       </UInput>
       <UFieldGroup size="sm">
-        <UButton color="neutral" :variant="view === 'icons' ? 'solid' : 'outline'" icon="i-lucide-layout-grid" aria-label="Icônes" @click="view = 'icons'" />
-        <UButton color="neutral" :variant="view === 'list' ? 'solid' : 'outline'" icon="i-lucide-list" aria-label="Liste" @click="view = 'list'" />
+        <UButton color="neutral" :variant="view === 'icons' ? 'solid' : 'outline'" icon="i-lucide-layout-grid" :aria-label="t('manage.files.icons')" @click="view = 'icons'" />
+        <UButton color="neutral" :variant="view === 'list' ? 'solid' : 'outline'" icon="i-lucide-list" :aria-label="t('manage.files.list')" @click="view = 'list'" />
       </UFieldGroup>
-      <UButton v-if="!readonly" size="sm" color="neutral" variant="outline" icon="i-lucide-folder-plus" label="Dossier" :disabled="!canWrite" @click="newFolder" />
-      <UButton v-if="!readonly" size="sm" icon="i-lucide-upload" label="Ajouter" :disabled="!canWrite" :loading="uploading" @click="fileInput?.click()" />
+      <UButton v-if="!readonly" size="sm" color="neutral" variant="outline" icon="i-lucide-folder-plus" :label="t('manage.files.folder')" :disabled="!canWrite" @click="newFolder" />
+      <UButton v-if="!readonly" size="sm" icon="i-lucide-upload" :label="t('manage.files.add')" :disabled="!canWrite" :loading="uploading" @click="fileInput?.click()" />
       <input ref="fileInput" type="file" multiple class="hidden" @change="onPick">
     </div>
 
     <!-- Étiquettes : un clic filtre (dans le logement ouvert, ou partout depuis la racine) -->
     <div class="flex flex-wrap items-center gap-1.5 border-b border-default px-3 py-1.5 text-xs">
-      <span class="text-muted">Étiquettes :</span>
+      <span class="text-muted">{{ t('manage.files.tagsLabel') }}</span>
       <button v-for="t in tags" :key="t.id" type="button" class="flex items-center gap-1 rounded-full border px-2 py-0.5 hover:bg-elevated"
               :class="tagFilter === t.id ? 'border-primary bg-primary/15 font-medium' : 'border-default'" :aria-pressed="tagFilter === t.id" @click="toggleFilter(t.id)">
         <span class="size-2 rounded-full" :class="DOT[t.color]" /> {{ t.name }} <span class="text-muted">{{ t.count }}</span>
       </button>
-      <span v-if="!tags.length" class="text-muted">aucune pour l'instant</span>
-      <button v-if="!readonly" type="button" class="flex items-center gap-1 rounded-full px-2 py-0.5 text-muted hover:bg-elevated" @click="manageOpen = true"><UIcon name="i-lucide-settings-2" class="size-3" /> Gérer</button>
+      <span v-if="!tags.length" class="text-muted">{{ t('manage.files.noneYet') }}</span>
+      <button v-if="!readonly" type="button" class="flex items-center gap-1 rounded-full px-2 py-0.5 text-muted hover:bg-elevated" @click="manageOpen = true"><UIcon name="i-lucide-settings-2" class="size-3" /> {{ tr('manage.files.manage') }}</button>
       <!-- Type de fichier : les types comptables alimentent le Bilan -->
       <USelect v-model="typeFilter" :items="typeFilterItems" size="xs" class="ml-auto w-48" />
     </div>
@@ -48,9 +48,9 @@
     <div class="flex min-h-0 flex-1">
       <!-- Barre latérale -->
       <aside v-if="!lockedLogement" class="hidden w-44 shrink-0 space-y-0.5 overflow-y-auto border-r border-default bg-elevated/30 p-2 text-sm sm:block">
-        <p class="px-2 pb-1 pt-0.5 text-xs font-semibold uppercase tracking-wide text-muted">Favoris</p>
-        <button type="button" class="side" :class="{ on: loc.logement === undefined }" @click="go({})"><UIcon name="i-lucide-hard-drive" /> Tous les logements</button>
-        <p class="px-2 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted">Logements</p>
+        <p class="px-2 pb-1 pt-0.5 text-xs font-semibold uppercase tracking-wide text-muted">{{ t('manage.files.favorites') }}</p>
+        <button type="button" class="side" :class="{ on: loc.logement === undefined }" @click="go({})"><UIcon name="i-lucide-hard-drive" /> {{ tr('manage.files.allProperties') }}</button>
+        <p class="px-2 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted">{{ t('manage.files.properties') }}</p>
         <button v-for="l in data?.logements ?? []" :key="l.id" type="button" class="side" :class="{ on: loc.logement === l.id, drop: dropHint === `side${l.id}` }"
                 @click="go({ logement: l.id })" @dragover.prevent.stop="dropHint = `side${l.id}`" @dragleave.stop="dropHint = ''" @drop.prevent.stop="dropOnLogement(l.id, $event)">
           <UIcon name="i-lucide-house" /> <span class="truncate">{{ l.name }}</span>
@@ -61,16 +61,16 @@
       <UContextMenu :items="menuItems" class="min-w-0 flex-1" :ui="{ content: 'min-w-44' }">
         <div ref="pane" class="relative h-full min-w-0 overflow-y-auto p-3 outline-none" tabindex="0" @click.self="selected = []" @keydown="onKey" @contextmenu="onContextBlank">
           <div v-if="dropHint === 'root'" class="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/10 text-sm font-medium text-primary">
-            Déposer ici pour ajouter à « {{ here }} »
+            {{ tr('manage.files.dropHere', { here }) }}
           </div>
 
           <p v-if="error" class="mb-2 rounded bg-error/10 px-2 py-1 text-sm text-error">{{ error }}</p>
           <ul v-if="notes.length" class="mb-2 space-y-0.5 rounded bg-warning/10 px-2 py-1 text-sm text-warning"><li v-for="n in notes" :key="n">{{ n }}</li></ul>
 
           <p v-if="!items.length && !creating" class="py-16 text-center text-sm text-muted">
-            <template v-if="searching">Aucun résultat.</template>
-            <template v-else-if="loc.logement === undefined">Aucun logement.</template>
-            <template v-else>Dossier vide — glisse des fichiers ici, ou utilise « Ajouter ».</template>
+            <template v-if="searching">{{ tr('manage.files.noResults') }}</template>
+            <template v-else-if="loc.logement === undefined">{{ tr('manage.files.noProperty') }}</template>
+            <template v-else>{{ tr('manage.files.emptyFolder') }}</template>
           </p>
 
           <!-- Icônes -->
@@ -132,11 +132,11 @@
     <!-- Barre d'état -->
     <div class="flex items-center justify-between border-t border-default bg-elevated/50 px-3 py-1 text-xs text-muted">
       <span>{{ status }}</span>
-      <span class="hidden sm:inline">Double-clic : ouvrir · Espace : aperçu · Entrée : renommer · Suppr : supprimer · Glisser-déposer : ajouter / déplacer</span>
+      <span class="hidden sm:inline">{{ tr('manage.files.shortcuts') }}</span>
     </div>
 
     <!-- Gestion des étiquettes -->
-    <UModal v-model:open="manageOpen" title="Étiquettes" description="Communes à tous les logements. Supprimer une étiquette ne supprime aucun fichier.">
+    <UModal v-model:open="manageOpen" :title="tr('manage.files.tagsTitle')" :description="tr('manage.files.tagsDesc')">
       <template #body>
         <ul class="space-y-2">
           <li v-for="t in tags" :key="t.id" class="flex items-center gap-2">
@@ -145,39 +145,39 @@
             </span>
             <UInput :model-value="t.name" size="sm" class="min-w-0 flex-1" :maxlength="30" @change="onRename(t, $event)" />
             <span class="w-6 text-right text-xs text-muted">{{ t.count }}</span>
-            <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" aria-label="Supprimer l'étiquette" @click="removeTag(t)" />
+            <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="t('manage.files.deleteTag')" @click="removeTag(t)" />
           </li>
-          <li v-if="!tags.length" class="text-sm text-muted">Aucune étiquette.</li>
+          <li v-if="!tags.length" class="text-sm text-muted">{{ t('manage.files.noTags') }}</li>
         </ul>
         <form class="mt-4 flex flex-wrap items-center gap-2 border-t border-default pt-3" @submit.prevent="addTag">
-          <UInput v-model="newTag.name" size="sm" class="min-w-0 flex-1" placeholder="Nouvelle étiquette" :maxlength="30" @keydown.enter.prevent="addTag" />
+          <UInput v-model="newTag.name" size="sm" class="min-w-0 flex-1" :placeholder="t('manage.files.newTag')" :maxlength="30" @keydown.enter.prevent="addTag" />
           <span class="flex gap-1">
             <button v-for="c in colors" :key="c" type="button" class="size-4 rounded-full" :class="[DOT[c], newTag.color === c ? 'ring-2 ring-primary ring-offset-1 ring-offset-default' : '']" :aria-label="c" @click="newTag.color = c" />
           </span>
-          <UButton type="submit" size="sm" label="Ajouter" :disabled="!newTag.name.trim()" />
+          <UButton type="submit" size="sm" :label="t('manage.files.add')" :disabled="!newTag.name.trim()" />
         </form>
         <p v-if="tagError" class="mt-2 text-sm text-error">{{ tagError }}</p>
       </template>
     </UModal>
 
     <!-- Type et donnees comptables d'un fichier -->
-    <UModal v-model:open="metaOpen" :title="metaItem?.name" description="Un type comptable (charge ou recette) fait compter le fichier dans le Bilan du logement, avec sa date et son montant.">
+    <UModal v-model:open="metaOpen" :title="metaItem?.name" :description="tr('manage.files.metaDesc')">
       <template #body>
         <form class="grid gap-3 sm:grid-cols-2" @submit.prevent="saveMeta">
-          <UFormField label="Type" class="sm:col-span-2">
+          <UFormField :label="t('manage.files.type')" class="sm:col-span-2">
             <USelect v-model="metaType" :items="typeItems" class="w-full" />
           </UFormField>
           <template v-if="metaAccounting">
-            <UFormField label="Date" required><UInput v-model="meta.date" type="date" class="w-full" /></UFormField>
-            <UFormField label="Montant (€)" required><UInput v-model="meta.amount" inputmode="decimal" placeholder="0,00" class="w-full" /></UFormField>
+            <UFormField :label="t('manage.files.date')" required><UInput v-model="meta.date" type="date" class="w-full" /></UFormField>
+            <UFormField :label="t('manage.files.amount')" required><UInput v-model="meta.amount" inputmode="decimal" :placeholder="tr('manage.files.amountPh')" class="w-full" /></UFormField>
           </template>
-          <UFormField label="Note" class="sm:col-span-2"><UInput v-model="meta.note" class="w-full" placeholder="Facultatif" /></UFormField>
+          <UFormField :label="t('manage.files.note')" class="sm:col-span-2"><UInput v-model="meta.note" class="w-full" :placeholder="t('manage.files.optional')" /></UFormField>
           <p v-if="metaError" class="text-sm text-error sm:col-span-2">{{ metaError }}</p>
         </form>
       </template>
       <template #footer>
-        <UButton color="neutral" variant="ghost" label="Annuler" @click="metaOpen = false" />
-        <UButton label="Enregistrer" :loading="metaBusy" @click="saveMeta" />
+        <UButton color="neutral" variant="ghost" :label="t('manage.files.cancel')" @click="metaOpen = false" />
+        <UButton :label="t('manage.files.save')" :loading="metaBusy" @click="saveMeta" />
       </template>
     </UModal>
 
@@ -186,21 +186,23 @@
       <template #body>
         <div v-if="preview" class="flex min-h-64 items-center justify-center">
           <img v-if="isImage(preview)" :src="fileUrl(preview)" :alt="preview.name" class="max-h-[70vh] max-w-full rounded">
-          <iframe v-else-if="preview.ext === 'pdf'" :src="fileUrl(preview)" class="h-[70vh] w-full rounded border border-default" title="Aperçu PDF" />
+          <iframe v-else-if="preview.ext === 'pdf'" :src="fileUrl(preview)" class="h-[70vh] w-full rounded border border-default" :title="t('manage.files.pdfPreview')" />
           <div v-else class="space-y-2 text-center text-sm text-muted">
             <UIcon :name="iconOf(preview)" class="size-16" />
-            <p>Pas d'aperçu pour ce type de fichier.</p>
+            <p>{{ t('manage.files.noPreview') }}</p>
           </div>
         </div>
       </template>
       <template #footer>
-        <UButton v-if="preview" color="neutral" variant="outline" icon="i-lucide-download" label="Télécharger" :to="fileUrl(preview, true)" external />
+        <UButton v-if="preview" color="neutral" variant="outline" icon="i-lucide-download" :label="t('manage.files.download')" :to="fileUrl(preview, true)" external />
       </template>
     </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
+const { t: tr } = useI18n() // `t` est deja utilise comme variable locale (etiquettes) dans ce composant
+const { fmtLocale, money } = useLocaleFormat()
 interface Tag { id: number; name: string; color: string; count?: number }
 interface Item { tags?: Tag[]; fileType?: string; typeLabel?: string; typeKind?: '' | 'charge' | 'recette' | 'doc'; date?: string | null; amount?: number | null; note?: string; id: number; kind: 'folder' | 'file' | 'logement'; name: string; size: number; updatedAt: string; createdAt: string; parentId: number | null; logementId: number; ext: string; inline: boolean; where?: string }
 interface Loc { logement?: number; folder?: number | null }
@@ -252,19 +254,19 @@ function toggleFilter(id: number) { tagFilter.value = tagFilter.value === id ? n
 
 // --- Types de fichier (voir server/utils/documents.ts#CATEGORIES) ---
 const types = computed(() => tagData.value?.types ?? [])
-const KIND_GROUPS: Record<FileType['kind'], string> = { charge: 'Charges (Bilan)', recette: 'Recettes (Bilan)', doc: 'Autres types' }
+const KIND_GROUPS = computed<Record<FileType['kind'], string>>(() => ({ charge: tr('manage.files.grpCharges'), recette: tr('manage.files.grpIncome'), doc: tr('manage.files.grpOther') }))
 const groupedTypes = (kinds: FileType['kind'][]) => kinds.map(k => [
-  { type: 'label' as const, label: KIND_GROUPS[k] },
+  { type: 'label' as const, label: KIND_GROUPS.value[k] },
   ...types.value.filter(t => t.kind === k).map(t => ({ label: t.label, value: t.key })),
 ])
-const typeItems = computed(() => [[{ label: 'Sans type', value: 'none' }], ...groupedTypes(['charge', 'recette', 'doc'])])
-const typeFilterItems = computed(() => [[{ label: 'Tous les types', value: 'all' }, { label: 'Fichiers comptables (Bilan)', value: 'compta' }], ...groupedTypes(['charge', 'recette', 'doc'])])
+const typeItems = computed(() => [[{ label: tr('manage.files.noType'), value: 'none' }], ...groupedTypes(['charge', 'recette', 'doc'])])
+const typeFilterItems = computed(() => [[{ label: tr('manage.files.allTypes'), value: 'all' }, { label: tr('manage.files.accountingFiles'), value: 'compta' }], ...groupedTypes(['charge', 'recette', 'doc'])])
 const TYPE_BADGE: Record<string, string> = { charge: 'bg-warning/15 text-warning', recette: 'bg-success/15 text-success', doc: 'bg-elevated text-muted' }
 const isAccounting = (kind?: string) => kind === 'charge' || kind === 'recette'
 // Fichier comptable sans date ou sans montant : il ne compte pas encore (ou pas au bon endroit) dans le Bilan
 const incomplete = (it: Item) => isAccounting(it.typeKind) && (!it.date || it.amount === null || it.amount === undefined)
-const eur = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
-const typeTitle = (it: Item) => [it.typeLabel, it.date ? dateFr(it.date) : '', it.amount !== null && it.amount !== undefined ? eur(it.amount) : '', incomplete(it) ? 'à compléter pour le Bilan' : ''].filter(Boolean).join(' · ')
+const eur = (n: number) => money(n)
+const typeTitle = (it: Item) => [it.typeLabel, it.date ? dateFr(it.date) : '', it.amount !== null && it.amount !== undefined ? eur(it.amount) : '', incomplete(it) ? tr('manage.files.incomplete') : ''].filter(Boolean).join(' · ')
 const metaOpen = ref(false)
 const metaItem = ref<Item | null>(null)
 const meta = reactive({ fileType: '', date: '', amount: '', note: '' })
@@ -281,7 +283,7 @@ function editMeta(it: Item) {
 }
 async function saveMeta() {
   if (!metaItem.value) return
-  if (metaAccounting.value && (!meta.date || !meta.amount.trim())) { metaError.value = 'Date et montant requis pour un type comptable.'; return }
+  if (metaAccounting.value && (!meta.date || !meta.amount.trim())) { metaError.value = tr('manage.files.metaRequired'); return }
   metaBusy.value = true
   metaError.value = ''
   try {
@@ -292,7 +294,7 @@ async function saveMeta() {
   finally { metaBusy.value = false }
 }
 const error = ref('')
-const msg = (e: any) => e?.data?.statusMessage || 'Échec, réessaie.'
+const msg = (e: any) => e?.data?.statusMessage || tr('manage.files.failed')
 watch(loadError, (e) => { error.value = e ? msg(e) : '' })
 watch(loc, () => { selected.value = []; renaming.value = ''; creating.value = null; notes.value = []; error.value = '' })
 const canWrite = computed(() => !props.readonly && loc.value.logement !== undefined && !searching.value) // readonly : rôle en lecture seule (le serveur refuse aussi)
@@ -300,7 +302,7 @@ const canWrite = computed(() => !props.readonly && loc.value.logement !== undefi
 // --- Fil d'Ariane ---
 const crumbs = computed(() => {
   const out: { label: string; loc: Loc; search?: boolean }[] = []
-  if (!lockedLogement.value) out.push({ label: 'Documents', loc: {} })
+  if (!lockedLogement.value) out.push({ label: tr('manage.files.documents'), loc: {} })
   if (loc.value.logement !== undefined) {
     const name = data.value?.logement?.name ?? data.value?.logements.find(l => l.id === loc.value.logement)?.name ?? '…'
     out.push({ label: name, loc: { logement: loc.value.logement } })
@@ -308,25 +310,25 @@ const crumbs = computed(() => {
   }
   if (searching.value) {
     const tn = tags.value.find(t => t.id === tagFilter.value)?.name
-    const ty = typeFilter.value === 'compta' ? 'Fichiers comptables' : types.value.find(t => t.key === typeFilter.value)?.label
-    out.push({ label: [ty ? `Type : ${ty}` : '', tn ? `Étiquette : ${tn}` : '', debounced.value ? `Recherche : ${debounced.value}` : ''].filter(Boolean).join(' + '), loc: loc.value, search: true })
+    const ty = typeFilter.value === 'compta' ? tr('manage.files.accountingShort') : types.value.find(t => t.key === typeFilter.value)?.label
+    out.push({ label: [ty ? tr('manage.files.crumbType', { v: ty }) : '', tn ? tr('manage.files.crumbTag', { v: tn }) : '', debounced.value ? tr('manage.files.crumbSearch', { v: debounced.value }) : ''].filter(Boolean).join(' + '), loc: loc.value, search: true })
   }
   return out
 })
-const here = computed(() => crumbs.value.at(-1)?.label ?? 'Documents')
+const here = computed(() => crumbs.value.at(-1)?.label ?? tr('manage.files.documents'))
 
 // --- Tri ---
 const view = ref<'icons' | 'list'>('icons')
 const sort = reactive<{ key: 'name' | 'date' | 'size' | 'kind'; dir: 1 | -1 }>({ key: 'name', dir: 1 })
-const cols = [{ k: 'name' as const, label: 'Nom', cls: '' }, { k: 'date' as const, label: 'Modifié', cls: '' }, { k: 'size' as const, label: 'Taille', cls: 'text-right' }, { k: 'kind' as const, label: 'Type', cls: '' }]
+const cols = computed(() => [{ k: 'name' as const, label: tr('manage.files.colName'), cls: '' }, { k: 'date' as const, label: tr('manage.files.colModified'), cls: '' }, { k: 'size' as const, label: tr('manage.files.colSize'), cls: 'text-right' }, { k: 'kind' as const, label: tr('manage.files.type'), cls: '' }])
 function sortBy(k: typeof sort.key) { if (sort.key === k) sort.dir = sort.dir === 1 ? -1 : 1; else { sort.key = k; sort.dir = 1 } }
 const items = computed<Item[]>(() => {
   const list = [...(data.value?.items ?? [])]
   const cmp = (a: Item, b: Item) => {
     if (sort.key === 'date') return a.updatedAt.localeCompare(b.updatedAt)
     if (sort.key === 'size') return a.size - b.size
-    if (sort.key === 'kind') return kindOf(a).localeCompare(kindOf(b), 'fr')
-    return a.name.localeCompare(b.name, 'fr', { numeric: true, sensitivity: 'base' })
+    if (sort.key === 'kind') return kindOf(a).localeCompare(kindOf(b), fmtLocale.value)
+    return a.name.localeCompare(b.name, fmtLocale.value, { numeric: true, sensitivity: 'base' })
   }
   // Dossiers d'abord (comme le Finder), puis le tri choisi
   return list.sort((a, b) => (a.kind === 'file' ? 1 : 0) - (b.kind === 'file' ? 1 : 0) || cmp(a, b) * sort.dir)
@@ -341,10 +343,10 @@ const EXT_ICON: Record<string, [string, string]> = {
 }
 const iconOf = (it: Item) => it.kind === 'logement' ? 'i-lucide-folder-closed' : it.kind === 'folder' ? 'i-lucide-folder' : (EXT_ICON[it.ext]?.[0] ?? 'i-lucide-file')
 const colorOf = (it: Item) => isFolderish(it) ? 'text-sky-500' : (EXT_ICON[it.ext]?.[1] ?? 'text-muted')
-const KIND: Record<string, string> = { pdf: 'Document PDF', png: 'Image PNG', jpg: 'Image JPEG', jpeg: 'Image JPEG', webp: 'Image WebP', csv: 'Tableur CSV', xlsx: 'Feuille Excel', docx: 'Document Word', txt: 'Texte' }
-const kindOf = (it: Item) => it.kind === 'logement' ? 'Logement' : it.kind === 'folder' ? 'Dossier' : (KIND[it.ext] ?? 'Fichier')
-const sizeOf = (it: Item) => it.kind === 'file' ? (it.size >= 1048576 ? `${(it.size / 1048576).toFixed(1)} Mo` : `${Math.max(1, Math.round(it.size / 1024))} Ko`) : it.kind === 'logement' ? `${it.size} élément${it.size > 1 ? 's' : ''}` : '—'
-const dateFr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+const KIND = computed<Record<string, string>>(() => ({ pdf: tr('manage.files.kPdf'), png: tr('manage.files.kPng'), jpg: tr('manage.files.kJpeg'), jpeg: tr('manage.files.kJpeg'), webp: tr('manage.files.kWebp'), csv: tr('manage.files.kCsv'), xlsx: tr('manage.files.kXlsx'), docx: tr('manage.files.kDocx'), txt: tr('manage.files.kTxt') }))
+const kindOf = (it: Item) => it.kind === 'logement' ? tr('manage.files.kProperty') : it.kind === 'folder' ? tr('manage.files.kFolder') : (KIND.value[it.ext] ?? tr('manage.files.kFile'))
+const sizeOf = (it: Item) => it.kind === 'file' ? (it.size >= 1048576 ? tr('manage.files.mb', { n: (it.size / 1048576).toFixed(1) }) : tr('manage.files.kb', { n: Math.max(1, Math.round(it.size / 1024)) })) : it.kind === 'logement' ? tr('manage.files.items', { n: it.size }, it.size) : '—'
+const dateFr = (d: string) => new Date(d).toLocaleDateString(fmtLocale.value, { day: 'numeric', month: 'short', year: 'numeric' })
 const isImage = (it: Item) => ['png', 'jpg', 'jpeg', 'webp'].includes(it.ext)
 const fileUrl = (it: Item, download = false) => `/api/explorer/${it.id}/file${download ? '?download=1' : ''}`
 
@@ -355,7 +357,7 @@ const selItems = computed(() => items.value.filter(isSel))
 const status = computed(() => {
   const n = items.value.length
   const s = selected.value.length
-  return `${n} élément${n > 1 ? 's' : ''}${s ? ` · ${s} sélectionné${s > 1 ? 's' : ''}` : ''}`
+  return `${tr('manage.files.items', { n }, n)}${s ? ` · ${tr('manage.files.selectedN', { n: s }, s)}` : ''}`
 })
 let anchor = ''
 function select(it: Item, e: MouseEvent) {
@@ -404,7 +406,7 @@ async function commitRename(it: Item) {
 }
 function newFolder() {
   if (!canWrite.value) return
-  creating.value = { name: 'Nouveau dossier' }
+  creating.value = { name: tr('manage.files.newFolder') }
   focusIn(() => newInput.value)
 }
 async function commitNew() {
@@ -420,7 +422,7 @@ async function removeSel() {
   const list = selItems.value.filter(i => i.kind !== 'logement')
   if (!list.length) return
   const hasFolder = list.some(i => i.kind === 'folder')
-  if (!confirm(`Supprimer définitivement ${list.length > 1 ? `ces ${list.length} éléments` : `« ${list[0]!.name} »`}${hasFolder ? ' (dossiers : tout leur contenu sera effacé)' : ''} ? Cette action est irréversible.`)) return
+  if (!confirm(tr('manage.files.confirmDelete', { what: list.length > 1 ? tr('manage.files.theseN', { n: list.length }) : tr('manage.files.quoted', { name: list[0]!.name }), folders: hasFolder ? tr('manage.files.folderWarn') : '' }))) return
   await call(async () => { for (const i of list) await $fetch(`/api/explorer/${i.id}`, { method: 'DELETE' }); selected.value = [] })
 }
 async function call(fn: () => Promise<unknown>) {
@@ -496,7 +498,7 @@ async function moveTo(target: { logement?: number; folder: number | null }, e: D
   let moved: { id: number; logement: number }[] = []
   try { moved = JSON.parse(e.dataTransfer?.getData(MIME) || '[]') } catch { /* rien à déplacer */ }
   if (!moved.length) return
-  if (moved.some(m => m.logement !== target.logement)) { error.value = 'Un élément reste dans son logement : le déplacement entre logements n\'est pas possible.'; return }
+  if (moved.some(m => m.logement !== target.logement)) { error.value = tr('manage.files.moveError'); return }
   await call(async () => { for (const m of moved) if (m.id !== target.folder) await $fetch(`/api/explorer/${m.id}`, { method: 'PATCH', body: { parent: target.folder } }) })
 }
 
@@ -524,7 +526,7 @@ const onRename = (t: Tag, e: Event) => {
   ;(e.target as HTMLInputElement).value = t.name
 }
 async function removeTag(t: Tag & { count?: number }) {
-  if (!confirm(`Supprimer l'étiquette « ${t.name} » ? Elle sera retirée de ${t.count ?? 0} élément(s) ; aucun fichier n'est supprimé.`)) return
+  if (!confirm(tr('manage.files.confirmTag', { name: t.name, n: t.count ?? 0 }))) return
   if (tagFilter.value === t.id) tagFilter.value = null
   await tagCall(() => $fetch(`/api/explorer/tags/${t.id}`, { method: 'DELETE' }))
 }
@@ -552,32 +554,32 @@ const menuItems = computed(() => {
   const one = selItems.value.length === 1 ? selItems.value[0]! : null
   if (!selItems.value.length) {
     return [[
-      { label: 'Nouveau dossier', icon: 'i-lucide-folder-plus', disabled: !canWrite.value, onSelect: newFolder },
-      { label: 'Ajouter des fichiers…', icon: 'i-lucide-upload', disabled: !canWrite.value, onSelect: () => fileInput.value?.click() },
+      { label: tr('manage.files.newFolder'), icon: 'i-lucide-folder-plus', disabled: !canWrite.value, onSelect: newFolder },
+      { label: tr('manage.files.addFiles'), icon: 'i-lucide-upload', disabled: !canWrite.value, onSelect: () => fileInput.value?.click() },
     ]]
   }
   const real = selItems.value.some(i => i.kind !== 'logement') && !props.readonly
   return [
     [
-      { label: 'Ouvrir', icon: 'i-lucide-folder-open', disabled: !one, onSelect: () => one && open(one) },
-      { label: 'Aperçu', icon: 'i-lucide-eye', disabled: !one || one.kind !== 'file' || !one.inline, onSelect: () => one && showPreview(one) },
-      { label: 'Télécharger', icon: 'i-lucide-download', disabled: !one || one.kind !== 'file', onSelect: () => one && window.location.assign(fileUrl(one, true)) },
+      { label: tr('manage.files.open'), icon: 'i-lucide-folder-open', disabled: !one, onSelect: () => one && open(one) },
+      { label: tr('manage.files.preview'), icon: 'i-lucide-eye', disabled: !one || one.kind !== 'file' || !one.inline, onSelect: () => one && showPreview(one) },
+      { label: tr('manage.files.download'), icon: 'i-lucide-download', disabled: !one || one.kind !== 'file', onSelect: () => one && window.location.assign(fileUrl(one, true)) },
     ],
     [
-      { label: 'Renommer', icon: 'i-lucide-pencil', disabled: !one || one.kind === 'logement', onSelect: () => one && startRename(one) },
-      { label: 'Type et montant…', icon: 'i-lucide-receipt', disabled: !one || one.kind !== 'file' || props.readonly, onSelect: () => { if (one) setTimeout(() => editMeta(one), 50) } }, // apres fermeture du menu (sinon il reste affiche sous la fenetre)
-      { label: 'Supprimer', icon: 'i-lucide-trash-2', color: 'error' as const, disabled: !real, onSelect: removeSel },
+      { label: tr('manage.files.rename'), icon: 'i-lucide-pencil', disabled: !one || one.kind === 'logement', onSelect: () => one && startRename(one) },
+      { label: tr('manage.files.typeAmount'), icon: 'i-lucide-receipt', disabled: !one || one.kind !== 'file' || props.readonly, onSelect: () => { if (one) setTimeout(() => editMeta(one), 50) } }, // apres fermeture du menu (sinon il reste affiche sous la fenetre)
+      { label: tr('manage.files.delete'), icon: 'i-lucide-trash-2', color: 'error' as const, disabled: !real, onSelect: removeSel },
     ],
     [
       {
-        label: 'Étiquettes', icon: 'i-lucide-tag', disabled: !real,
+        label: tr('manage.files.tagsTitle'), icon: 'i-lucide-tag', disabled: !real,
         children: [
           ...tags.value.map(t => {
             const all = selItems.value.length > 0 && selItems.value.every(i => i.tags?.some(x => x.id === t.id))
             return { label: t.name, type: 'checkbox' as const, checked: all, onUpdateChecked: (v: boolean) => setTag(t.id, v) }
           }),
           ...(tags.value.length ? [{ type: 'separator' as const }] : []),
-          { label: 'Gérer les étiquettes…', icon: 'i-lucide-settings-2', onSelect: () => { manageOpen.value = true } },
+          { label: tr('manage.files.manageTags'), icon: 'i-lucide-settings-2', onSelect: () => { manageOpen.value = true } },
         ],
       },
     ],

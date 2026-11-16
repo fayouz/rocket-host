@@ -3,12 +3,12 @@
     <!-- En-tete : salutation + statut + actions rapides -->
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold">Bonjour{{ user?.displayName ? `, ${user.displayName.split(' ')[0]}` : '' }} 👋</h1>
-        <p class="text-muted">Voici l'état de tes logements aujourd'hui.</p>
+        <h1 class="text-2xl font-bold">{{ t('daily.dashboard.hello') }}{{ user?.displayName ? `, ${user.displayName.split(' ')[0]}` : '' }} 👋</h1>
+        <p class="text-muted">{{ t('daily.dashboard.subtitle') }}</p>
         <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-success" /> Système opérationnel</span>
+          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-success" /> {{ t('daily.dashboard.systemOk') }}</span>
           <span class="hidden sm:inline">·</span>
-          <span>Dernière synchro {{ timeAgo(data.syncedAt) }}</span>
+          <span>{{ t('daily.dashboard.lastSync', { ago: ago(data.syncedAt) }) }}</span>
           <span class="hidden sm:inline">·</span>
           <span class="capitalize">{{ nowLabel }}</span>
         </div>
@@ -23,7 +23,7 @@
           </template>
         </USelectMenu>
         <UDropdownMenu :items="quickActions" :content="{ align: 'end' }">
-          <UButton color="neutral" variant="outline" icon="i-lucide-zap" label="Actions rapides" trailing-icon="i-lucide-chevron-down" />
+          <UButton color="neutral" variant="outline" icon="i-lucide-zap" :label="t('daily.dashboard.quickActions')" trailing-icon="i-lucide-chevron-down" />
         </UDropdownMenu>
       </div>
     </div>
@@ -55,15 +55,15 @@
     <div v-if="revenueByMonth.length" class="grid gap-6 lg:grid-cols-2">
       <UCard>
         <template #header>
-          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-euro" class="size-3.5" /> Revenus des 6 derniers mois</p>
+          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-euro" class="size-3.5" /> {{ t('daily.dashboard.revenue6') }}</p>
           <p class="mt-1 text-2xl font-bold">{{ eur(revenueThisMonth) }}</p>
         </template>
-        <AreaChart :series="[{ label: 'Revenus', color: 'var(--ui-primary)', data: revenueByMonth.map(m => m.value), fill: true }]" :labels="revenueByMonth.map(m => m.label)" :height="180" />
+        <AreaChart :series="[{ label: t('daily.dashboard.revenue'), color: 'var(--ui-primary)', data: revenueByMonth.map(m => m.value), fill: true }]" :labels="revenueByMonth.map(m => m.label)" :height="180" />
       </UCard>
       <UCard>
         <template #header>
-          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-scale" class="size-3.5" /> Revenus vs charges</p>
-          <p class="mt-1 text-2xl font-bold">{{ eur(revenueThisMonth - chargesThisMonth) }} <span class="text-sm font-normal text-muted">de marge ce mois</span></p>
+          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-scale" class="size-3.5" /> {{ t('daily.dashboard.revVsCharges') }}</p>
+          <p class="mt-1 text-2xl font-bold">{{ eur(revenueThisMonth - chargesThisMonth) }} <span class="text-sm font-normal text-muted">{{ t('daily.dashboard.marginMonth') }}</span></p>
         </template>
         <AreaChart :series="revenueVsCharges" :labels="revenueByMonth.map(m => m.label)" :height="180" />
       </UCard>
@@ -72,20 +72,20 @@
     <div class="grid gap-6 lg:grid-cols-3">
     <!-- Colonne gauche (2/3) : vue d'ensemble (turnover, stock, serrures) + la journee (arrivees, departs, prochaines) -->
     <div class="min-w-0 space-y-2 lg:col-span-2">
-      <h2 class="section-title !mt-0">Vue d'ensemble</h2>
+      <h2 class="section-title !mt-0">{{ t('daily.dashboard.overview') }}</h2>
       <div class="grid gap-4 sm:grid-cols-3">
         <TurnoverWidget :properties="selectedPropertyIds" />
         <StockWidget :properties="selectedPropertyIds" />
         <LocksWidget :properties="selectedPropertyIds" />
       </div>
 
-      <h2 class="section-title">La journée</h2>
+      <h2 class="section-title">{{ t('daily.dashboard.today') }}</h2>
       <div class="grid gap-4 sm:grid-cols-3">
         <UCard v-for="s in sections" :key="s.title" :ui="{ root: 'flex aspect-square flex-col', body: 'min-h-0 flex-1 overflow-y-auto' }">
           <template #header>
             <h3 class="flex items-center gap-1.5 font-semibold"><UIcon :name="s.icon" class="size-4 text-muted" /> {{ s.title }}</h3>
           </template>
-          <p v-if="!s.items.length" class="text-sm text-muted">Aucune</p>
+          <p v-if="!s.items.length" class="text-sm text-muted">{{ t('daily.dashboard.none') }}</p>
           <ul v-else class="space-y-3">
             <li v-for="b in s.items" :key="b.id" class="text-sm">
               <div class="flex flex-wrap items-center justify-between gap-2">
@@ -105,8 +105,8 @@
       <UCard v-if="tl">
         <template #header>
           <div>
-            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-history" class="size-4 text-muted" /> Timeline · tous les logements</h3>
-            <p class="text-sm text-muted">Hier et les 7 prochains jours : séjours, codes, ménages, messages et réassort.</p>
+            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-history" class="size-4 text-muted" /> {{ t('daily.dashboard.timelineTitle') }}</h3>
+            <p class="text-sm text-muted">{{ t('daily.dashboard.timelineSub') }}</p>
           </div>
         </template>
         <div ref="tlBox" class="relative lg:max-h-[34rem] lg:overflow-y-auto lg:pr-2">
@@ -118,11 +118,11 @@
 
     <UCard v-if="occupancyByMonth.length">
       <template #header>
-        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-percent" class="size-3.5" /> Taux d'occupation des 6 derniers mois</p>
-        <p class="mt-1 text-2xl font-bold">{{ occupancyThisMonth }} % <span class="text-sm font-normal text-muted">ce mois-ci</span></p>
+        <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-percent" class="size-3.5" /> {{ t('daily.dashboard.occ6') }}</p>
+        <p class="mt-1 text-2xl font-bold">{{ occupancyThisMonth }} % <span class="text-sm font-normal text-muted">{{ t('daily.dashboard.thisMonth') }}</span></p>
       </template>
       <AreaChart
-        :series="[{ label: 'Occupation', color: 'var(--ui-secondary)', data: occupancyByMonth.map(m => m.value), fill: true }]"
+        :series="[{ label: t('daily.dashboard.occupation'), color: 'var(--ui-secondary)', data: occupancyByMonth.map(m => m.value), fill: true }]"
         :labels="occupancyByMonth.map(m => m.label)" :height="160"
       />
     </UCard>
@@ -132,14 +132,16 @@
 <script setup lang="ts">
 import DashboardSmartCards from '~/components/dashboard/SmartCards.vue'
 const { user, can } = useAuth()
+const { t } = useI18n()
+const { fmtLocale, money, ago } = useLocaleFormat()
 // Meme cle que le menu (layouts/default.vue) : un seul appel a /api/pms/status.
 const { data: pms } = await useFetch('/api/pms/status', { key: 'pms-status' })
 const pmsOn = computed(() => !!pms.value?.configured)
-const nowLabel = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+const nowLabel = computed(() => new Date().toLocaleDateString(fmtLocale.value, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))
 const quickActions = computed(() => [[
-  can('A') && { label: 'Nouvel utilisateur', icon: 'i-lucide-user-plus', to: '/settings/utilisateurs' },
-  can('AGC') && { label: 'Nouveau document', icon: 'i-lucide-file-plus', to: '/documents' },
-  can('A') && { label: 'Nouveau contact', icon: 'i-lucide-contact', to: '/contacts' },
+  can('A') && { label: t('daily.dashboard.newUser'), icon: 'i-lucide-user-plus', to: '/settings/utilisateurs' },
+  can('AGC') && { label: t('daily.dashboard.newDoc'), icon: 'i-lucide-file-plus', to: '/documents' },
+  can('A') && { label: t('daily.dashboard.newContact'), icon: 'i-lucide-contact', to: '/contacts' },
 ].filter(Boolean)])
 
 // Filtre "logements" a cote d'Actions rapides : recalcule le tableau de bord sur le perimetre choisi (vide = tous).
@@ -148,7 +150,7 @@ const quickActions = computed(() => [[
 const { data: lg } = await useFetch('/api/logements', { key: 'logements' })
 const selectedLogements = ref<number[]>([])
 const logementItems = computed(() => (lg.value?.logements ?? []).map(l => ({ label: l.name, value: l.id })))
-const filterLabel = computed(() => !selectedLogements.value.length ? 'Tous les logements' : selectedLogements.value.length === 1 ? logementItems.value.find(i => i.value === selectedLogements.value[0])?.label ?? '1 logement' : `${selectedLogements.value.length} logements`)
+const filterLabel = computed(() => !selectedLogements.value.length ? t('daily.dashboard.allLogements') : selectedLogements.value.length === 1 ? logementItems.value.find(i => i.value === selectedLogements.value[0])?.label ?? t('daily.dashboard.oneLogement') : t('daily.dashboard.nLogements', { n: selectedLogements.value.length }))
 const selectedPropertyIds = computed(() => (lg.value?.logements ?? []).filter(l => selectedLogements.value.includes(l.id) && l.lodgifyPropertyId !== null).map(l => l.lodgifyPropertyId as number))
 const propertiesQuery = computed(() => selectedPropertyIds.value.length ? selectedPropertyIds.value.join(',') : undefined)
 
@@ -167,11 +169,11 @@ onMounted(() => setTimeout(() => {
 }, 150))
 const demo = useState('demo')
 watchEffect(() => { demo.value = !!data.value?.demo })
-const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+const fr = (d: string) => new Date(d).toLocaleDateString(fmtLocale.value, { weekday: 'short', day: 'numeric', month: 'short' })
 const sections = computed(() => data.value ? [
-  { title: 'Arrivées', icon: 'i-lucide-log-in', items: data.value.arrivals },
-  { title: 'Départs', icon: 'i-lucide-log-out', items: data.value.departures },
-  { title: 'Prochaines arrivées', icon: 'i-lucide-calendar-clock', items: data.value.upcoming },
+  { title: t('daily.dashboard.arrivals'), icon: 'i-lucide-log-in', items: data.value.arrivals },
+  { title: t('daily.dashboard.departures'), icon: 'i-lucide-log-out', items: data.value.departures },
+  { title: t('daily.dashboard.upcoming'), icon: 'i-lucide-calendar-clock', items: data.value.upcoming },
 ] : [])
 
 // KPI et graphe (revenus/occupation) : reservés au role admin cote serveur (/api/profit, /api/stock) — la requete
@@ -179,7 +181,7 @@ const sections = computed(() => data.value ? [
 // masquees (v-if="profit"/"stock" dans le template) plutot que d'afficher une erreur genante sur le tableau de bord.
 const { data: profit } = await useFetch('/api/profit', { query: { properties: propertiesQuery } })
 const { data: stock } = await useFetch('/api/stock', { query: { properties: propertiesQuery } })
-const eur = (n: number) => Math.round(n).toLocaleString('fr-FR') + ' €'
+const eur = (n: number) => money(n, 0)
 const months = computed(() => profit.value?.months ?? [])
 function monthTotal(m: { byProperty: { revenue: number; nights: number; occupancy: number }[] } | undefined) {
   if (!m) return { revenue: 0, occupancy: 0 }
@@ -195,13 +197,13 @@ const revenueTrend = computed(() => {
   if (!prev) return null
   return Math.round(100 * (revenueThisMonth.value - prev) / prev)
 })
-const monthLabel = (m: string) => new Date(`${m}-01`).toLocaleDateString('fr-FR', { month: 'short' })
+const monthLabel = (m: string) => new Date(`${m}-01`).toLocaleDateString(fmtLocale.value, { month: 'short' })
 const revenueByMonth = computed(() => months.value.slice(-6).map(m => ({ label: monthLabel(m.month), value: monthTotal(m).revenue })))
 const revenueVsCharges = computed(() => {
   const last6 = months.value.slice(-6)
   return [
-    { label: 'Revenus', color: 'var(--ui-primary)', data: last6.map(m => monthTotal(m).revenue), fill: true },
-    { label: 'Charges', color: 'var(--ui-error)', data: last6.map(m => m.charges) },
+    { label: t('daily.dashboard.revenue'), color: 'var(--ui-primary)', data: last6.map(m => monthTotal(m).revenue), fill: true },
+    { label: t('daily.dashboard.charges'), color: 'var(--ui-error)', data: last6.map(m => m.charges) },
   ]
 })
 const occupancyByMonth = computed(() => months.value.slice(-6).map(m => ({ label: monthLabel(m.month), value: monthTotal(m).occupancy })))
@@ -209,10 +211,10 @@ const occupancyByMonth = computed(() => months.value.slice(-6).map(m => ({ label
 // Cartes KPI : les 2 premieres toujours visibles (role AG), les suivantes seulement si les donnees admin ont pu
 // etre chargees (profit/stock nuls pour un role sans acces, voir le commentaire au-dessus des deux useFetch).
 const kpis = computed(() => [
-  { label: 'Ménages aujourd\'hui', value: String(data.value?.turnovers.length ?? 0), icon: 'i-lucide-sparkles', color: 'var(--ui-warning)' },
-  { label: 'Arrivées (7 j)', value: String(data.value?.arrivalsNext7 ?? 0), icon: 'i-lucide-calendar-check', color: 'var(--ui-info)' },
-  profit.value && { label: 'Revenus ce mois', value: eur(revenueThisMonth.value), icon: 'i-lucide-euro', color: 'var(--ui-primary)', trend: revenueTrend.value },
-  profit.value && { label: 'Occupation ce mois', value: `${occupancyThisMonth.value} %`, icon: 'i-lucide-percent', color: 'var(--ui-secondary)' },
-  stock.value && { label: 'À racheter', value: String(stock.value.shopping.length), icon: 'i-lucide-shopping-cart', color: 'var(--ui-error)' },
+  { label: t('daily.dashboard.kpiCleanings'), value: String(data.value?.turnovers.length ?? 0), icon: 'i-lucide-sparkles', color: 'var(--ui-warning)' },
+  { label: t('daily.dashboard.kpiArrivals7'), value: String(data.value?.arrivalsNext7 ?? 0), icon: 'i-lucide-calendar-check', color: 'var(--ui-info)' },
+  profit.value && { label: t('daily.dashboard.kpiRevenue'), value: eur(revenueThisMonth.value), icon: 'i-lucide-euro', color: 'var(--ui-primary)', trend: revenueTrend.value },
+  profit.value && { label: t('daily.dashboard.kpiOccupancy'), value: `${occupancyThisMonth.value} %`, icon: 'i-lucide-percent', color: 'var(--ui-secondary)' },
+  stock.value && { label: t('daily.dashboard.kpiRestock'), value: String(stock.value.shopping.length), icon: 'i-lucide-shopping-cart', color: 'var(--ui-error)' },
 ].filter((k): k is { label: string; value: string; icon: string; color: string; trend?: number | null } => !!k))
 </script>

@@ -3,8 +3,8 @@
     <!-- Colonne gauche : connecteurs du logement -->
     <div class="min-w-0 space-y-1 overflow-y-auto lg:w-80 lg:shrink-0 lg:border-r lg:border-default lg:pr-3">
       <div class="flex items-center justify-between gap-2">
-        <h2 class="section-title !mt-0">Connecteurs</h2>
-        <UButton size="xs" icon="i-lucide-plus" label="Ajouter" @click="pickerOpen = true" />
+        <h2 class="section-title !mt-0">{{ t('admin.connectors.title') }}</h2>
+        <UButton size="xs" icon="i-lucide-plus" :label="t('admin.common.add')" @click="pickerOpen = true" />
       </div>
       <button
         v-for="c in data.connectors" :key="c.id" type="button" class="block w-full rounded-md p-2.5 text-left transition-colors"
@@ -17,7 +17,7 @@
         </div>
         <p class="truncate text-xs text-muted">{{ pluginOf(c.pluginId)?.name }}<template v-if="c.lastResult"> · {{ c.lastResult }}</template></p>
       </button>
-      <p v-if="!data.connectors.length" class="text-sm text-muted">Aucun connecteur. « Ajouter » pour brancher un service (Homey, service web…).</p>
+      <p v-if="!data.connectors.length" class="text-sm text-muted">{{ t('admin.connectors.none') }}</p>
     </div>
 
     <!-- Colonne droite : connecteur choisi -->
@@ -28,30 +28,30 @@
             <UIcon :name="plugin.icon" class="size-5 text-primary" />
             <h3 class="text-lg font-semibold">{{ current.name }}</h3>
             <UBadge size="sm" color="neutral" variant="subtle" :label="plugin.name" />
-            <USwitch v-model="form.enabled" class="ml-auto" label="Actif" />
+            <USwitch v-model="form.enabled" class="ml-auto" :label="t('admin.connectors.active')" />
           </div>
-          <p v-if="current.lastRunAt" class="mt-1 text-xs text-muted">Dernier appel {{ when(current.lastRunAt) }} : {{ current.lastResult }}</p>
+          <p v-if="current.lastRunAt" class="mt-1 text-xs text-muted">{{ t('admin.connectors.lastCall', { when: when(current.lastRunAt), result: current.lastResult }) }}</p>
         </template>
         <ConnectorForm v-model:name="form.name" v-model:config="form.config" :plugin="plugin" :secrets="current.secrets" />
         <div class="mt-4 flex flex-wrap items-center gap-2">
-          <UButton icon="i-lucide-save" label="Enregistrer" :loading="busy === 'save'" @click="save" />
-          <UButton color="neutral" variant="outline" icon="i-lucide-plug-zap" label="Tester" :loading="busy === 'test'" @click="test" />
-          <UButton color="error" variant="ghost" icon="i-lucide-trash-2" label="Supprimer" class="ml-auto" @click="remove" />
+          <UButton icon="i-lucide-save" :label="t('admin.common.save')" :loading="busy === 'save'" @click="save" />
+          <UButton color="neutral" variant="outline" icon="i-lucide-plug-zap" :label="t('admin.connectors.test')" :loading="busy === 'test'" @click="test" />
+          <UButton color="error" variant="ghost" icon="i-lucide-trash-2" :label="t('admin.common.delete')" class="ml-auto" @click="remove" />
         </div>
         <p v-if="message" class="mt-3 text-sm" :class="messageError ? 'text-error' : 'text-success'">{{ message }}</p>
       </UCard>
 
       <div class="space-y-4 lg:col-span-1">
         <UCard v-if="plugin.capabilities.includes('actions') && current.actions.length">
-          <template #header><p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-zap" class="size-3.5" /> Actions</p></template>
+          <template #header><p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-zap" class="size-3.5" /> {{ t('admin.connectors.actions') }}</p></template>
           <div class="space-y-2">
             <UButton v-for="a in current.actions" :key="a.id" block color="neutral" variant="outline" :label="a.label" :loading="busy === `a${a.id}`" @click="run(a)" />
           </div>
         </UCard>
         <UCard v-if="plugin.capabilities.includes('documents')">
-          <template #header><p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-folder-down" class="size-3.5" /> Documents</p></template>
-          <p class="text-sm text-muted">Récupère les documents du service dans l'onglet Documents (dossier « Connecteurs / {{ current.name }} »), sans doublon.</p>
-          <UButton class="mt-3" block icon="i-lucide-download" label="Récupérer les documents" :loading="busy === 'import'" @click="importDocs" />
+          <template #header><p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-folder-down" class="size-3.5" /> {{ t('nav.documents') }}</p></template>
+          <p class="text-sm text-muted">{{ t('admin.connectors.docsText', { name: current.name }) }}</p>
+          <UButton class="mt-3" block icon="i-lucide-download" :label="t('admin.connectors.fetchDocs')" :loading="busy === 'import'" @click="importDocs" />
           <ul v-if="importErrors.length" class="mt-2 space-y-0.5 text-xs text-warning"><li v-for="e in importErrors" :key="e">{{ e }}</li></ul>
         </UCard>
       </div>
@@ -59,26 +59,26 @@
       <!-- Informations lues sur le service (lecture seule) -->
       <div v-if="plugin.capabilities.includes('info')" class="space-y-2 lg:col-span-3">
         <div class="flex items-center justify-between gap-2">
-          <h3 class="section-title !m-0">Informations</h3>
-          <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Lire" :loading="busy === 'info'" @click="loadInfo" />
+          <h3 class="section-title !m-0">{{ t('admin.connectors.info') }}</h3>
+          <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" :label="t('admin.connectors.read')" :loading="busy === 'info'" @click="loadInfo" />
         </div>
-        <p v-if="!cards" class="text-sm text-muted">Clique sur « Lire » pour interroger le service (lecture seule).</p>
-        <p v-else-if="!cards.length" class="text-sm text-muted">Rien à afficher.</p>
+        <p v-if="!cards" class="text-sm text-muted">{{ t('admin.connectors.readHint') }}</p>
+        <p v-else-if="!cards.length" class="text-sm text-muted">{{ t('admin.connectors.nothing') }}</p>
         <div v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <UCard v-for="(card, i) in cards" :key="i">
             <p class="mb-2 flex items-center gap-1.5 font-medium"><UIcon v-if="card.icon" :name="card.icon" class="size-4 text-muted" /> {{ card.title }}</p>
             <dl class="space-y-1 text-sm">
               <div v-for="(it, j) in card.items" :key="j" class="flex justify-between gap-2"><dt class="truncate text-muted">{{ it.label }}</dt><dd class="text-right">{{ it.value }}</dd></div>
             </dl>
-            <p v-if="!card.items.length" class="text-sm text-muted">Aucune valeur.</p>
+            <p v-if="!card.items.length" class="text-sm text-muted">{{ t('admin.connectors.noValue') }}</p>
           </UCard>
         </div>
       </div>
     </div>
-    <UCard v-else class="min-w-0 flex-1"><p class="text-sm text-muted">Choisis un connecteur, ou ajoute-en un depuis la bibliothèque de plugins.</p></UCard>
+    <UCard v-else class="min-w-0 flex-1"><p class="text-sm text-muted">{{ t('admin.connectors.pick') }}</p></UCard>
 
     <!-- Ajout : choix du plugin puis configuration -->
-    <UModal v-model:open="pickerOpen" :title="newPlugin ? `Nouveau connecteur ${newPlugin.name}` : 'Ajouter un connecteur'" :ui="{ content: 'sm:max-w-2xl' }">
+    <UModal v-model:open="pickerOpen" :title="newPlugin ? t('admin.connectors.newTitle', { name: newPlugin.name }) : t('admin.connectors.addTitle')" :ui="{ content: 'sm:max-w-2xl' }">
       <template #body>
         <div v-if="!newPlugin" class="grid gap-2 sm:grid-cols-2">
           <button v-for="p in data.plugins" :key="p.id" type="button" class="flex items-start gap-3 rounded-lg border border-default p-3 text-left hover:bg-elevated" @click="startNew(p.id)">
@@ -90,14 +90,16 @@
         <p v-if="newError" class="mt-3 text-sm text-error">{{ newError }}</p>
       </template>
       <template v-if="newPlugin" #footer>
-        <UButton color="neutral" variant="ghost" label="Retour" @click="newPluginId = ''" />
-        <UButton label="Créer le connecteur" :loading="busy === 'create'" @click="create" />
+        <UButton color="neutral" variant="ghost" :label="t('admin.connectors.back')" @click="newPluginId = ''" />
+        <UButton :label="t('admin.connectors.create')" :loading="busy === 'create'" @click="create" />
       </template>
     </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
+const { fmtLocale } = useLocaleFormat()
 // Connecteurs du logement : plugins de la bibliotheque configures ici (plusieurs possibles, y compris du meme plugin)
 const route = useRoute()
 const { data, refresh } = await useFetch(() => `/api/logements/${route.params.id}/connectors`)
@@ -130,27 +132,27 @@ async function act<T>(key: string, fn: () => Promise<T>, ok?: (r: T) => string) 
     const r = await fn()
     if (ok) { message.value = ok(r); messageError.value = false }
     return r
-  } catch (e: any) { message.value = e?.data?.statusMessage || 'Échec'; messageError.value = true }
+  } catch (e: any) { message.value = e?.data?.statusMessage || t('admin.common.failed'); messageError.value = true }
   finally { busy.value = '' }
 }
 const base = () => `/api/connectors/${selected.value}`
-const save = () => act('save', async () => { await $fetch(base(), { method: 'PUT', body: { ...form } }); await refresh() }, () => 'Enregistré.')
+const save = () => act('save', async () => { await $fetch(base(), { method: 'PUT', body: { ...form } }); await refresh() }, () => t('admin.connectors.saved'))
 const test = () => act('test', async () => { const r = await $fetch<{ message: string }>(`${base()}/test`, { method: 'POST' }); await refresh(); return r }, r => r.message)
 async function loadInfo() {
   const r = await act('info', () => $fetch<{ cards: NonNullable<typeof cards.value> }>(`${base()}/info`))
   if (r) cards.value = r.cards
 }
 async function run(a: Connector['actions'][number]) {
-  if (!confirm(`Lancer « ${a.label} » sur ${current.value?.name} ?\n(${a.confirm})`)) return
+  if (!confirm(t('admin.connectors.runConfirm', { label: a.label, name: current.value?.name ?? '', confirm: a.confirm }))) return
   await act(`a${a.id}`, async () => { const r = await $fetch<{ message: string }>(`${base()}/actions/${a.id}`, { method: 'POST' }); await refresh(); return r }, r => r.message)
 }
 async function importDocs() {
   importErrors.value = []
-  const r = await act('import', async () => { const x = await $fetch<{ message: string; errors: string[] }>(`${base()}/import`, { method: 'POST' }); await refresh(); return x }, x => `Documents : ${x.message}.`)
+  const r = await act('import', async () => { const x = await $fetch<{ message: string; errors: string[] }>(`${base()}/import`, { method: 'POST' }); await refresh(); return x }, x => t('admin.connectors.docsResult', { message: x.message }))
   if (r) importErrors.value = r.errors
 }
 async function remove() {
-  if (!current.value || !confirm(`Supprimer le connecteur « ${current.value.name} » ? Les documents déjà récupérés restent dans l'onglet Documents.`)) return
+  if (!current.value || !confirm(t('admin.connectors.removeConfirm', { name: current.value.name }))) return
   await act('delete', async () => { await $fetch(base(), { method: 'DELETE' }); selected.value = null; await refresh() })
 }
 
@@ -177,8 +179,8 @@ async function create() {
     pickerOpen.value = false
     await refresh()
     selected.value = c.id
-  } catch (e: any) { newError.value = e?.data?.statusMessage || 'Échec' }
+  } catch (e: any) { newError.value = e?.data?.statusMessage || t('admin.common.failed') }
   finally { busy.value = '' }
 }
-const when = (d: string) => new Date(d).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const when = (d: string) => new Date(d).toLocaleString(fmtLocale.value, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 </script>

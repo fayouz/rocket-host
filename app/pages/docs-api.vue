@@ -1,15 +1,16 @@
 <template>
   <div class="space-y-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h1 class="text-xl font-semibold">API — documentation Swagger</h1>
+      <h1 class="text-xl font-semibold">{{ t('admin.docsApi.title') }}</h1>
       <UButton color="neutral" variant="outline" size="sm" icon="i-lucide-download" label="openapi.json" to="/api/docs/openapi.json" external target="_blank" />
     </div>
-    <p class="text-sm text-muted">Générée depuis la table des permissions : elle indique, pour chaque route, les rôles autorisés et le périmètre. « Try it out » utilise ta session (les écritures agissent réellement).</p>
+    <p class="text-sm text-muted">{{ t('admin.docsApi.intro') }}</p>
     <div id="swagger" class="swagger-host rounded-lg border border-default bg-white p-2 text-black" />
   </div>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 useHead({ link: [{ rel: 'stylesheet', href: '/_docs-ui/swagger-ui.css' }] })
 onMounted(async () => {
   await new Promise<void>((ok, ko) => {

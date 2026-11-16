@@ -5,7 +5,7 @@
       <UCard v-if="d.arrivals.length" :class="d.alerts.length ? 'lg:col-span-2' : 'lg:col-span-3'" :ui="{ body: 'p-0 sm:p-0' }">
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-log-in" class="size-4 text-muted" /> Arrivées à préparer</h3>
+            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-log-in" class="size-4 text-muted" /> {{ t('daily.smart.arrivalsToPrep') }}</h3>
             <SourceTags :keys="['pms', ...(d.columns.cleaning || d.columns.linen ? ['clean'] : []), ...(d.bricks.place.configured ? ['place'] : []), ...(d.columns.screen ? ['cast'] : [])]" :bricks="d.bricks" />
           </div>
         </template>
@@ -13,12 +13,12 @@
           <table class="w-full text-sm">
             <thead class="text-left text-xs uppercase tracking-wide text-muted">
               <tr class="border-b border-default">
-                <th class="px-4 py-2">Logement</th><th class="px-2 py-2">Voyageur</th><th class="px-2 py-2">Heure</th>
-                <th v-if="d.columns.cleaning" class="px-2 py-2">Ménage</th>
-                <th v-if="d.columns.linen" class="px-2 py-2">Linge</th>
-                <th v-if="d.columns.access" class="px-2 py-2">Accès</th>
-                <th v-if="d.columns.screen" class="px-2 py-2">Écran</th>
-                <th v-if="d.columns.payment" class="px-2 py-2">Paiement</th>
+                <th class="px-4 py-2">{{ t('daily.smart.property') }}</th><th class="px-2 py-2">{{ t('daily.smart.guest') }}</th><th class="px-2 py-2">{{ t('daily.smart.time') }}</th>
+                <th v-if="d.columns.cleaning" class="px-2 py-2">{{ t('daily.smart.cleaning') }}</th>
+                <th v-if="d.columns.linen" class="px-2 py-2">{{ t('daily.smart.linen') }}</th>
+                <th v-if="d.columns.access" class="px-2 py-2">{{ t('daily.smart.access') }}</th>
+                <th v-if="d.columns.screen" class="px-2 py-2">{{ t('daily.smart.screen') }}</th>
+                <th v-if="d.columns.payment" class="px-2 py-2">{{ t('daily.smart.payment') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-default">
@@ -29,13 +29,13 @@
                   </NuxtLink>
                 </td>
                 <td class="px-2 py-2">{{ a.guest || '—' }} <span class="text-xs text-muted">· {{ a.source }}</span></td>
-                <td class="whitespace-nowrap px-2 py-2"><UBadge size="sm" :color="a.day === 'today' ? 'primary' : 'neutral'" variant="subtle" :label="a.day === 'today' ? 'auj.' : 'demain'" /> {{ a.time }}</td>
+                <td class="whitespace-nowrap px-2 py-2"><UBadge size="sm" :color="a.day === 'today' ? 'primary' : 'neutral'" variant="subtle" :label="a.day === 'today' ? t('daily.smart.todayShort') : t('daily.smart.tomorrow')" /> {{ a.time }}</td>
                 <td v-if="d.columns.cleaning" class="px-2 py-2"><Pill v-bind="CLEAN[a.cleaning?.status ?? 'none']" :title="a.cleaning?.label" /></td>
                 <td v-if="d.columns.linen" class="px-2 py-2"><Pill v-bind="LINEN[a.linen ?? 'unknown']" /></td>
                 <td v-if="d.columns.access" class="px-2 py-2"><Pill v-if="a.access" v-bind="ACCESS[a.access.status]" :title="a.access.detail" /></td>
                 <td v-if="d.columns.screen" class="px-2 py-2"><Pill v-if="a.screen" v-bind="SCREEN[a.screen.status]" :title="a.screen.name" /></td>
                 <td v-if="d.columns.payment" class="whitespace-nowrap px-2 py-2">
-                  <template v-if="a.payment"><Pill v-if="a.payment.due > 0" color="warning" icon="i-lucide-hourglass" :label="`${eur(a.payment.due)} dû`" /><Pill v-else color="success" icon="i-lucide-check" label="payé" /></template>
+                  <template v-if="a.payment"><Pill v-if="a.payment.due > 0" color="warning" icon="i-lucide-hourglass" :label="t('daily.smart.due', { amount: eur(a.payment.due) })" /><Pill v-else color="success" icon="i-lucide-check" :label="t('daily.smart.paid')" /></template>
                 </td>
               </tr>
             </tbody>
@@ -45,7 +45,7 @@
 
       <UCard v-if="d.alerts.length" :class="d.arrivals.length ? '' : 'lg:col-span-3'" :ui="{ body: 'p-0 sm:p-0' }">
         <template #header>
-          <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-siren" class="size-4 text-muted" /> Alertes
+          <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-siren" class="size-4 text-muted" /> {{ t('daily.smart.alerts') }}
             <UBadge size="sm" :color="d.alerts[0]!.level === 'critical' ? 'error' : 'warning'" variant="subtle" :label="String(d.alerts.length)" />
           </h3>
         </template>
@@ -69,20 +69,20 @@
       <UCard v-if="d.finances" class="lg:col-span-2">
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-euro" class="size-4 text-muted" /> Finances du mois <span class="font-normal capitalize text-muted">({{ monthLabel }})</span></h3>
+            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-euro" class="size-4 text-muted" /> {{ t('daily.smart.monthFinances') }} <span class="font-normal capitalize text-muted">({{ monthLabel }})</span></h3>
             <SourceTags :keys="['pms', ...(d.finances.cleaningCost !== null ? ['clean'] : []), ...(d.finances.stockConsumption !== null ? ['stock'] : [])]" :bricks="d.bricks" />
           </div>
         </template>
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Kpi label="Revenus" :value="eur(d.finances.revenue)" />
-          <Kpi label="Occupation moy." :value="`${d.finances.occupancy} %`" />
-          <Kpi v-if="d.finances.cleaningCost !== null" label="Ménages" :value="eur(d.finances.cleaningCost)" :hint="d.finances.cleaningShare !== null ? `${d.finances.cleaningShare} % des revenus` : ''" />
-          <Kpi v-if="d.finances.stockConsumption !== null" label="Conso. stock" :value="eur(d.finances.stockConsumption)" />
-          <Kpi label="30 prochains jours" :value="eur(d.finances.forecast.revenue)" :hint="`${d.finances.forecast.bookings} résa · ${d.finances.forecast.nights} nuits`" />
+          <Kpi :label="t('daily.smart.revenue')" :value="eur(d.finances.revenue)" />
+          <Kpi :label="t('daily.smart.avgOccupancy')" :value="`${d.finances.occupancy} %`" />
+          <Kpi v-if="d.finances.cleaningCost !== null" :label="t('daily.smart.cleanings')" :value="eur(d.finances.cleaningCost)" :hint="d.finances.cleaningShare !== null ? t('daily.smart.ofRevenue', { n: d.finances.cleaningShare }) : ''" />
+          <Kpi v-if="d.finances.stockConsumption !== null" :label="t('daily.smart.stockUse')" :value="eur(d.finances.stockConsumption)" />
+          <Kpi :label="t('daily.smart.next30')" :value="eur(d.finances.forecast.revenue)" :hint="t('daily.smart.forecast', { b: d.finances.forecast.bookings, n: d.finances.forecast.nights })" />
         </div>
         <ul v-if="d.finances.channels.length" class="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
           <li v-for="c in d.finances.channels" :key="c.source" class="flex items-center gap-1.5">
-            <PlatformBadge :source="c.source" /><span class="tabular-nums">{{ eur(c.revenue) }} <span class="text-xs text-muted">· {{ c.nights }} n.</span></span>
+            <PlatformBadge :source="c.source" /><span class="tabular-nums">{{ eur(c.revenue) }} <span class="text-xs text-muted">· {{ t('daily.smart.nightsShort', { n: c.nights }) }}</span></span>
           </li>
         </ul>
       </UCard>
@@ -90,17 +90,17 @@
       <UCard v-if="brickList.length" :class="d.finances ? '' : 'lg:col-start-3'">
         <template #header>
           <div class="flex items-center justify-between gap-2">
-            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-blocks" class="size-4 text-muted" /> Briques</h3>
-            <UButton icon="i-lucide-refresh-cw" size="xs" color="neutral" variant="ghost" :loading="pending" aria-label="Rafraîchir" @click="refresh()" />
+            <h3 class="flex items-center gap-1.5 font-semibold"><UIcon name="i-lucide-blocks" class="size-4 text-muted" /> {{ t('daily.smart.bricks') }}</h3>
+            <UButton icon="i-lucide-refresh-cw" size="xs" color="neutral" variant="ghost" :loading="pending" :aria-label="t('daily.smart.refresh')" @click="refresh()" />
           </div>
         </template>
         <ul class="space-y-1.5 text-sm">
           <li v-for="b in brickList" :key="b.key" class="flex items-center justify-between gap-2" :title="b.error || ''">
             <span class="flex items-center gap-1.5"><span class="size-2 rounded-full" :class="b.ok ? 'bg-success' : 'bg-error'" /> {{ b.name }}</span>
-            <span class="text-xs text-muted">{{ b.ok ? (b.ms !== null ? `${b.ms} ms` : 'ok') : 'injoignable' }}</span>
+            <span class="text-xs text-muted">{{ b.ok ? (b.ms !== null ? `${b.ms} ms` : 'ok') : t('daily.smart.unreachable') }}</span>
           </li>
         </ul>
-        <p class="mt-3 text-xs text-dimmed">Mis à jour {{ updatedLabel }} · toutes les 5 min</p>
+        <p class="mt-3 text-xs text-dimmed">{{ t('daily.smart.updated', { when: updatedLabel }) }}</p>
       </UCard>
     </div>
   </div>
@@ -110,6 +110,8 @@
 // Cartes du tableau de bord intelligent, integrees a l'accueil (pages/index.vue) quand Loussa Réservations est branche : une seule route GET /api/dashboard/smart croise
 // PMS, Place, Clean, Stock et Cast. Chaque widget indique ses briques sources ; une brique en panne vide seulement sa
 // colonne et ajoute une alerte. Rafraichissement manuel + automatique toutes les 5 minutes.
+const { t } = useI18n()
+const { fmtLocale } = useLocaleFormat()
 const { data: d, pending, error, refresh } = await useFetch('/api/dashboard/smart', { key: 'smart-dashboard' })
 
 let timer: ReturnType<typeof setInterval> | undefined
@@ -123,33 +125,33 @@ onBeforeUnmount(() => clearInterval(tick))
 const updatedLabel = computed(() => {
   if (!d.value) return '—'
   const s = Math.max(0, Math.round((nowTick.value - Date.parse(d.value.generatedAt)) / 1000))
-  return s < 60 ? "à l'instant" : `il y a ${Math.round(s / 60)} min`
+  return s < 60 ? t('time.now') : t('time.min', { n: Math.round(s / 60) })
 })
 
 const brickList = computed(() => (d.value ? Object.entries(d.value.bricks).filter(([, b]) => b.configured).map(([key, b]) => ({ key, ...b })) : []))
-const eur = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: d.value?.finances?.currency || 'EUR', maximumFractionDigits: 0 }).format(n || 0)
-const fmtDay = (s: string) => new Date(`${s}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-const monthLabel = computed(() => (d.value ? new Date(`${d.value.month}-15T12:00:00`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : ''))
+const eur = (n: number) => new Intl.NumberFormat(fmtLocale.value, { style: 'currency', currency: d.value?.finances?.currency || 'EUR', maximumFractionDigits: 0 }).format(n || 0)
+const fmtDay = (s: string) => new Date(`${s}T12:00:00`).toLocaleDateString(fmtLocale.value, { day: 'numeric', month: 'short' })
+const monthLabel = computed(() => (d.value ? new Date(`${d.value.month}-15T12:00:00`).toLocaleDateString(fmtLocale.value, { month: 'long', year: 'numeric' }) : ''))
 
 type C = 'success' | 'warning' | 'error' | 'neutral' | 'info' | 'primary'
 const LEVEL = { critical: { icon: 'i-lucide-octagon-alert', text: 'text-error' }, warning: { icon: 'i-lucide-triangle-alert', text: 'text-warning' }, info: { icon: 'i-lucide-info', text: 'text-info' } } as const
-const CLEAN: Record<string, { color: C; icon: string; label: string }> = {
-  done: { color: 'success', icon: 'i-lucide-check', label: 'fait' }, in_progress: { color: 'info', icon: 'i-lucide-loader', label: 'en cours' },
-  late: { color: 'error', icon: 'i-lucide-alarm-clock', label: 'en retard' }, todo: { color: 'warning', icon: 'i-lucide-clock', label: 'à faire' },
-  none: { color: 'error', icon: 'i-lucide-x', label: 'aucun' },
-}
-const LINEN: Record<string, { color: C; icon: string; label: string }> = {
-  ready: { color: 'success', icon: 'i-lucide-check', label: 'prêt' }, tight: { color: 'warning', icon: 'i-lucide-gauge', label: 'juste' },
-  missing: { color: 'error', icon: 'i-lucide-x', label: 'manquant' }, unknown: { color: 'neutral', icon: 'i-lucide-help-circle', label: '?' },
-}
-const ACCESS: Record<string, { color: C; icon: string; label: string }> = {
-  sent: { color: 'success', icon: 'i-lucide-key-round', label: 'envoyé' }, to_send: { color: 'warning', icon: 'i-lucide-send', label: 'à envoyer' },
-  error: { color: 'error', icon: 'i-lucide-circle-alert', label: 'erreur' }, none: { color: 'neutral', icon: 'i-lucide-minus', label: 'aucun' },
-}
-const SCREEN: Record<string, { color: C; icon: string; label: string }> = {
-  online: { color: 'success', icon: 'i-lucide-tv', label: 'en ligne' }, offline: { color: 'error', icon: 'i-lucide-tv-minimal', label: 'hors ligne' },
-  none: { color: 'neutral', icon: 'i-lucide-minus', label: 'aucun' },
-}
+const CLEAN = computed<Record<string, { color: C; icon: string; label: string }>>(() => ({
+  done: { color: 'success', icon: 'i-lucide-check', label: t('daily.smart.cDone') }, in_progress: { color: 'info', icon: 'i-lucide-loader', label: t('daily.smart.cInProgress') },
+  late: { color: 'error', icon: 'i-lucide-alarm-clock', label: t('daily.smart.cLate') }, todo: { color: 'warning', icon: 'i-lucide-clock', label: t('daily.smart.cTodo') },
+  none: { color: 'error', icon: 'i-lucide-x', label: t('daily.smart.none') },
+}))
+const LINEN = computed<Record<string, { color: C; icon: string; label: string }>>(() => ({
+  ready: { color: 'success', icon: 'i-lucide-check', label: t('daily.smart.lReady') }, tight: { color: 'warning', icon: 'i-lucide-gauge', label: t('daily.smart.lTight') },
+  missing: { color: 'error', icon: 'i-lucide-x', label: t('daily.smart.lMissing') }, unknown: { color: 'neutral', icon: 'i-lucide-help-circle', label: '?' },
+}))
+const ACCESS = computed<Record<string, { color: C; icon: string; label: string }>>(() => ({
+  sent: { color: 'success', icon: 'i-lucide-key-round', label: t('daily.smart.aSent') }, to_send: { color: 'warning', icon: 'i-lucide-send', label: t('daily.smart.aToSend') },
+  error: { color: 'error', icon: 'i-lucide-circle-alert', label: t('daily.smart.aError') }, none: { color: 'neutral', icon: 'i-lucide-minus', label: t('daily.smart.none') },
+}))
+const SCREEN = computed<Record<string, { color: C; icon: string; label: string }>>(() => ({
+  online: { color: 'success', icon: 'i-lucide-tv', label: t('daily.smart.sOnline') }, offline: { color: 'error', icon: 'i-lucide-tv-minimal', label: t('daily.smart.sOffline') },
+  none: { color: 'neutral', icon: 'i-lucide-minus', label: t('daily.smart.none') },
+}))
 
 // Petits composants locaux (pastille d'etat, KPI, briques sources)
 const Pill = defineComponent({
@@ -162,6 +164,6 @@ const Kpi = defineComponent({
 })
 const SourceTags = defineComponent({
   props: { keys: { type: Array as PropType<string[]>, default: () => [] }, bricks: { type: Object as PropType<Record<string, { name: string; ok: boolean }>>, required: true } },
-  setup: p => () => h('div', { class: 'flex flex-wrap items-center gap-1 text-xs text-dimmed' }, [h('span', 'Source :'), ...p.keys.map(k => h(resolveComponent('UBadge') as any, { key: k, size: 'sm', variant: 'outline', color: p.bricks[k]?.ok ? 'neutral' : 'error', label: p.bricks[k]?.name || k }))]),
+  setup: (p) => { const { t } = useI18n(); return () => h('div', { class: 'flex flex-wrap items-center gap-1 text-xs text-dimmed' }, [h('span', t('daily.smart.source')), ...p.keys.map(k => h(resolveComponent('UBadge') as any, { key: k, size: 'sm', variant: 'outline', color: p.bricks[k]?.ok ? 'neutral' : 'error', label: p.bricks[k]?.name || k }))]) },
 })
 </script>

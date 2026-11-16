@@ -2,14 +2,14 @@
   <div v-if="data" class="flex flex-col gap-4 lg:h-[calc(100vh-17rem)] lg:flex-row">
     <!-- Colonne gauche : liste compacte, comme la boite de reception d'un client mail -->
     <div class="min-w-0 space-y-1 overflow-y-auto lg:w-80 lg:shrink-0 lg:border-r lg:border-default lg:pr-3">
-      <h2 class="section-title !mt-0">Réservations</h2>
+      <h2 class="section-title !mt-0">{{ t('daily.res.title') }}</h2>
       <div class="mb-2 space-y-2">
-        <UInput v-model="search" icon="i-lucide-search" placeholder="Rechercher un voyageur…" size="sm" class="w-full" />
+        <UInput v-model="search" icon="i-lucide-search" :placeholder="t('daily.common.searchGuest')" size="sm" class="w-full" />
         <div class="flex items-center gap-1.5">
           <USelect v-model="filter" :items="filterItems" size="sm" class="flex-1" />
           <UButton
             size="sm" color="neutral" variant="outline" square :icon="sortAsc ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-narrow-wide'"
-            :title="sortAsc ? 'Plus anciennes en premier' : 'Plus récentes en premier'" @click="sortAsc = !sortAsc"
+            :title="sortAsc ? t('daily.common.oldestFirst') : t('daily.common.newestFirst')" @click="sortAsc = !sortAsc"
           />
         </div>
       </div>
@@ -20,12 +20,12 @@
       >
         <div class="flex items-center justify-between gap-2">
           <b class="truncate text-sm">{{ b.guest }}</b>
-          <UBadge v-if="phase(b) === 'now'" size="sm" color="success" label="En cours" />
-          <UBadge v-else-if="phase(b) === 'next'" size="sm" color="info" variant="subtle" label="À venir" />
+          <UBadge v-if="phase(b) === 'now'" size="sm" color="success" :label="t('daily.common.now')" />
+          <UBadge v-else-if="phase(b) === 'next'" size="sm" color="info" variant="subtle" :label="t('daily.common.next')" />
         </div>
-        <p class="truncate text-xs text-muted">{{ fr(b.arrival) }} → {{ fr(b.departure) }} · {{ b.nights }} nuit{{ b.nights > 1 ? 's' : '' }}</p>
+        <p class="truncate text-xs text-muted">{{ fr(b.arrival) }} → {{ fr(b.departure) }} · {{ t('daily.common.nights', { n: b.nights }, b.nights) }}</p>
       </button>
-      <p v-if="!filteredItems.length" class="text-sm text-muted">Aucune réservation{{ data.items.length ? ' pour ce filtre' : ' sur cette période' }}.</p>
+      <p v-if="!filteredItems.length" class="text-sm text-muted">{{ data.items.length ? t('daily.common.noneFilter') : t('daily.common.nonePeriod') }}</p>
     </div>
 
     <!-- Colonne droite : detail de la reservation selectionnee (2/3), comme le contenu d'un e-mail, + apercu du livret (1/3) -->
@@ -36,28 +36,29 @@
           <div>
             <h3 class="text-lg font-semibold">{{ current.guest }}</h3>
             <p class="text-sm text-muted">
-              {{ fr(current.arrival) }}{{ current.checkIn ? ` à ${current.checkIn}` : '' }} → {{ fr(current.departure) }}{{ current.checkOut ? ` à ${current.checkOut}` : '' }}
-              · {{ current.nights }} nuit{{ current.nights > 1 ? 's' : '' }}<template v-if="current.total"> · {{ eur(current.total) }}</template>
+              {{ fr(current.arrival) }}{{ current.checkIn ? ` ${t('daily.common.at', { time: current.checkIn })}` : '' }} → {{ fr(current.departure) }}{{ current.checkOut ? ` ${t('daily.common.at', { time: current.checkOut })}` : '' }}
+              · {{ t('daily.common.nights', { n: current.nights }, current.nights) }}<template v-if="current.total"> · {{ eur(current.total) }}</template>
             </p>
           </div>
           <div class="flex flex-wrap justify-end gap-1">
-            <UBadge v-if="phase(current) === 'now'" color="success" label="En cours" />
-            <UBadge v-else-if="phase(current) === 'next'" color="info" variant="subtle" label="À venir" />
+            <UBadge v-if="phase(current) === 'now'" color="success" :label="t('daily.common.now')" />
+            <UBadge v-else-if="phase(current) === 'next'" color="info" variant="subtle" :label="t('daily.common.next')" />
             <UBadge :color="statusColor(current.status)" variant="subtle" :label="statusLabel(current.status)" />
             <PlatformBadge :source="current.source" />
           </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-2">
           <UBadge v-if="current.code" :color="current.code === 'created' ? 'success' : current.code === 'error' ? 'error' : 'neutral'" variant="subtle"
-                  :label="current.code === 'created' ? 'Code créé sur Nuki' : current.code === 'error' ? 'Erreur de création du code' : 'Code prévu'" />
-          <UButton v-if="current.mails" size="xs" color="neutral" variant="soft" icon="i-lucide-mail" :label="`${current.mails} e-mail${current.mails > 1 ? 's' : ''}`" :to="`/mail?booking=${current.id}`" title="E-mails rattachés à cette réservation" />
+                  :label="current.code === 'created' ? t('daily.res.codeCreated') : current.code === 'error' ? t('daily.res.codeError') : t('daily.res.codePlanned')" />
+          <UButton v-if="current.mails" size="xs" color="neutral" variant="soft" icon="i-lucide-mail" :label="t('daily.res.mails', { n: current.mails }, current.mails)" :to="`/mail?booking=${current.id}`" :title="t('daily.res.mailsTitle')" />
         </div>
 
-        <h4 class="mt-6 mb-3 flex items-center gap-1.5 text-sm font-semibold"><UIcon name="i-lucide-messages-square" class="size-4 text-muted" /> Conversation</h4>
-        <p v-if="convStatus === 'pending' || convStatus === 'idle'" class="text-sm text-muted">Chargement…</p>
-        <p v-else-if="convError" class="text-sm text-muted">Conversation indisponible pour le moment.</p>
-        <p v-else-if="!conv?.messages.length" class="text-sm text-muted">Aucun message.</p>
+        <h4 class="mt-6 mb-3 flex items-center gap-1.5 text-sm font-semibold"><UIcon name="i-lucide-messages-square" class="size-4 text-muted" /> {{ t('daily.res.conversation') }}</h4>
+        <p v-if="convStatus === 'pending' || convStatus === 'idle'" class="text-sm text-muted">{{ t('daily.common.loading') }}</p>
+        <p v-else-if="convError" class="text-sm text-muted">{{ t('daily.res.convUnavailable') }}</p>
+        <p v-else-if="!conv?.messages.length" class="text-sm text-muted">{{ t('daily.res.noMessage') }}</p>
         <div v-else ref="convBox" class="max-h-[60vh] min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 lg:max-h-none">
+          <p v-if="trError" class="text-xs text-warning">{{ t('translation.failed', { reason: trError }) }}</p>
           <div v-for="m in conv.messages" :key="m.key" class="flex" :class="m.from === 'host' ? 'justify-end' : 'justify-start'">
             <div
               class="max-w-[85%] rounded-lg px-3 py-2 text-sm"
@@ -65,11 +66,12 @@
             >
               <p class="mb-1 flex items-center gap-1 text-xs text-muted">
                 <UIcon v-if="m.kind === 'mail'" name="i-lucide-mail" class="size-3.5" />
-                {{ m.kind === 'mail' ? (m.from === 'host' ? 'Toi (e-mail)' : m.sender) : (m.from === 'host' ? 'Toi' : current.guest) }} · {{ when(m.at) }}<template v-if="m.from === 'host' && m.status"> · {{ m.status === 'Delivered' ? 'Délivré' : m.status }}</template>
+                {{ m.kind === 'mail' ? (m.from === 'host' ? t('daily.res.youMail') : m.sender) : (m.from === 'host' ? t('daily.res.you') : current.guest) }} · {{ when(m.at) }}<template v-if="m.from === 'host' && m.status"> · {{ m.status === 'Delivered' ? t('daily.res.delivered') : m.status }}</template>
               </p>
               <p v-if="(m.from === 'host' || m.kind === 'mail') && m.subject" class="mb-1 font-medium">{{ m.subject }}</p>
-              <p class="whitespace-pre-line">{{ m.text }}<template v-if="m.kind === 'mail'">…</template></p>
-              <UButton v-if="m.kind === 'mail'" class="mt-1 -ml-2" size="xs" color="neutral" variant="link" icon="i-lucide-external-link" label="Ouvrir l'e-mail" :to="`/mail?booking=${current.id}&open=${m.mailId}`" />
+              <p class="whitespace-pre-line">{{ textOf(m) }}<template v-if="m.kind === 'mail'">…</template></p>
+              <p v-if="isTranslated(m)" class="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted"><UIcon name="i-lucide-languages" class="size-3.5" />{{ t('translation.translatedFrom', { lang: sourceOf(m) }) }} · <button type="button" class="underline" @click="toggle(m)">{{ showOriginal(m) ? t('translation.showTranslation') : t('translation.showOriginal') }}</button></p>
+              <UButton v-if="m.kind === 'mail'" class="mt-1 -ml-2" size="xs" color="neutral" variant="link" icon="i-lucide-external-link" :label="t('daily.res.openMail')" :to="`/mail?booking=${current.id}&open=${m.mailId}`" />
             </div>
           </div>
         </div>
@@ -77,19 +79,19 @@
         <div v-if="!convError" class="mt-4 space-y-2 border-t border-default pt-4">
           <!-- Composition hybride : message Lodgify (canal de la reservation) ou e-mail (SMTP, administrateur) -->
           <div v-if="can('A')" class="flex gap-1">
-            <UButton size="xs" :variant="mode === 'message' ? 'soft' : 'ghost'" color="neutral" icon="i-lucide-message-circle" label="Message" @click="mode = 'message'" />
-            <UButton size="xs" :variant="mode === 'mail' ? 'soft' : 'ghost'" color="neutral" icon="i-lucide-mail" label="E-mail" @click="mode = 'mail'" />
+            <UButton size="xs" :variant="mode === 'message' ? 'soft' : 'ghost'" color="neutral" icon="i-lucide-message-circle" :label="t('daily.res.message')" @click="mode = 'message'" />
+            <UButton size="xs" :variant="mode === 'mail' ? 'soft' : 'ghost'" color="neutral" icon="i-lucide-mail" :label="t('daily.res.email')" @click="mode = 'mail'" />
           </div>
           <div v-if="mode === 'mail'" class="grid gap-2 sm:grid-cols-2">
-            <UInput v-model="mailTo" size="sm" placeholder="Destinataire" :disabled="sending" :ui="{ base: 'ps-8' }"><template #leading><span class="text-xs text-muted">À</span></template></UInput>
-            <UInput v-model="mailSubject" size="sm" placeholder="Objet" :disabled="sending" :ui="{ base: 'ps-14' }"><template #leading><span class="text-xs text-muted">Objet</span></template></UInput>
+            <UInput v-model="mailTo" size="sm" :placeholder="t('daily.res.recipient')" :disabled="sending" :ui="{ base: 'ps-8' }"><template #leading><span class="text-xs text-muted">{{ t('daily.res.to') }}</span></template></UInput>
+            <UInput v-model="mailSubject" size="sm" :placeholder="t('daily.res.subject')" :disabled="sending" :ui="{ base: 'ps-14' }"><template #leading><span class="text-xs text-muted">{{ t('daily.res.subject') }}</span></template></UInput>
           </div>
-          <UTextarea v-model="draft" :rows="3" autoresize :placeholder="mode === 'mail' ? 'Écrire un e-mail…' : 'Écrire au voyageur…'" class="w-full" :disabled="sending" />
+          <UTextarea v-model="draft" :rows="3" autoresize :placeholder="mode === 'mail' ? t('daily.res.writeMail') : t('daily.res.writeGuest')" class="w-full" :disabled="sending" />
           <div class="flex flex-wrap items-center justify-between gap-2">
             <p class="text-xs text-muted">
-              {{ sendError || sentInfo || (mode === 'mail' ? `Envoyé par e-mail depuis ta boîte${lastMail ? ', en réponse au dernier e-mail échangé' : ''}.` : `Envoyé à ${current.guest} via ${/airbnb/i.test(current.source || '') ? 'Airbnb' : /booking/i.test(current.source || '') ? 'Booking.com' : 'Lodgify'}.`) }}
+              {{ sendError || sentInfo || (mode === 'mail' ? (lastMail ? t('daily.res.sentMailReply') : t('daily.res.sentMail')) : t('daily.res.sentVia', { guest: current.guest, channel: /airbnb/i.test(current.source || '') ? 'Airbnb' : /booking/i.test(current.source || '') ? 'Booking.com' : 'Lodgify' })) }}
             </p>
-            <UButton icon="i-lucide-send" label="Envoyer" :loading="sending" :disabled="!draft.trim() || (mode === 'mail' && (!mailTo.trim() || !mailSubject.trim()))" @click="send" />
+            <UButton icon="i-lucide-send" :label="t('daily.res.send')" :loading="sending" :disabled="!draft.trim() || (mode === 'mail' && (!mailTo.trim() || !mailSubject.trim()))" @click="send" />
           </div>
         </div>
       </UCard>
@@ -98,26 +100,26 @@
       <!-- Valeur de la reservation et detail du calcul (devis Lodgify) -->
       <UCard>
         <template #header>
-          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-receipt-euro" class="size-3.5" /> Valeur de la réservation</p>
+          <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-receipt-euro" class="size-3.5" /> {{ t('daily.res.value') }}</p>
           <p class="mt-1 text-2xl font-bold">{{ pricing ? money(pricing.total) : (current.total ? eur(current.total) : '—') }}</p>
-          <p v-if="pricing?.nights" class="text-xs text-muted">{{ money(pricing.lines.find(l => l.kind === 'RoomRate')?.amount ?? 0, pricing.nights) }} / nuit en moyenne · {{ pricing.nights }} nuit{{ pricing.nights > 1 ? 's' : '' }}</p>
+          <p v-if="pricing?.nights" class="text-xs text-muted">{{ t('daily.res.avgPerNight', { amount: money(pricing.lines.find(l => l.kind === 'RoomRate')?.amount ?? 0, pricing.nights) }) }} · {{ t('daily.common.nights', { n: pricing.nights }, pricing.nights) }}</p>
         </template>
-        <p v-if="pricingStatus === 'pending' || pricingStatus === 'idle'" class="text-sm text-muted">Chargement du détail…</p>
-        <p v-else-if="!pricing" class="text-sm text-muted">Détail indisponible pour le moment.</p>
+        <p v-if="pricingStatus === 'pending' || pricingStatus === 'idle'" class="text-sm text-muted">{{ t('daily.res.loadingDetail') }}</p>
+        <p v-else-if="!pricing" class="text-sm text-muted">{{ t('daily.res.detailUnavailable') }}</p>
         <template v-else>
           <dl class="space-y-1.5 text-sm">
             <div v-for="(l, i) in pricing.lines" :key="i" class="flex justify-between gap-2">
               <dt class="text-muted">{{ l.label }}</dt><dd class="tabular-nums">{{ money(l.amount) }}</dd>
             </div>
             <div class="flex justify-between gap-2 border-t border-default pt-1.5 font-semibold">
-              <dt>Total</dt><dd class="tabular-nums">{{ money(pricing.total) }}</dd>
+              <dt>{{ t('daily.res.total') }}</dt><dd class="tabular-nums">{{ money(pricing.total) }}</dd>
             </div>
           </dl>
           <div v-if="pricing.paid || pricing.due" class="mt-3 flex flex-wrap gap-1">
-            <UBadge v-if="pricing.paid" color="success" variant="subtle" :label="`Payé ${money(pricing.paid)}`" />
-            <UBadge v-if="pricing.due" color="warning" variant="subtle" :label="`Reste dû ${money(pricing.due)}`" />
+            <UBadge v-if="pricing.paid" color="success" variant="subtle" :label="t('daily.res.paid', { amount: money(pricing.paid) })" />
+            <UBadge v-if="pricing.due" color="warning" variant="subtle" :label="t('daily.res.remaining', { amount: money(pricing.due) })" />
           </div>
-          <p class="mt-3 text-xs text-muted">Montants du devis Lodgify, hors commission de la plateforme.</p>
+          <p class="mt-3 text-xs text-muted">{{ t('daily.res.quoteNote') }}</p>
         </template>
       </UCard>
 
@@ -125,18 +127,18 @@
       <UCard>
         <template #header>
           <div class="flex items-center justify-between gap-2">
-            <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-lock" class="size-3.5" /> Serrure connectée</p>
-            <UButton size="xs" color="neutral" variant="link" :to="`/logements/${route.params.id}/serrures`" label="Détails" trailing-icon="i-lucide-arrow-right" />
+            <p class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted"><UIcon name="i-lucide-lock" class="size-3.5" /> {{ t('daily.res.smartLock') }}</p>
+            <UButton size="xs" color="neutral" variant="link" :to="`/logements/${route.params.id}/serrures`" :label="t('daily.res.details')" trailing-icon="i-lucide-arrow-right" />
           </div>
           <!-- Etat et batterie de la (des) serrure(s), toujours visibles en en-tete -->
           <div v-for="l in locks?.locks ?? []" :key="l.id" class="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
             <b class="text-sm">{{ l.name }}</b>
             <UBadge size="sm" :color="l.locked ? 'success' : 'warning'" variant="subtle" :label="l.state" />
             <UBadge size="sm" :color="l.batteryCritical ? 'error' : 'neutral'" variant="subtle" :icon="batteryIcon(l.battery)" :label="l.battery === null ? '?' : `${l.battery} %`" />
-            <UBadge v-if="l.keypadBatteryCritical" size="sm" color="error" variant="subtle" label="Pile clavier faible" />
+            <UBadge v-if="l.keypadBatteryCritical" size="sm" color="error" variant="subtle" :label="t('daily.res.keypadLow')" />
           </div>
-          <p v-if="!locks" class="mt-2 text-xs text-muted">Nuki ne répond pas pour le moment.</p>
-          <p v-else-if="!locks.locks.length" class="mt-2 text-xs text-muted">Aucune serrure associée à ce logement.</p>
+          <p v-if="!locks" class="mt-2 text-xs text-muted">{{ t('daily.res.nukiDown') }}</p>
+          <p v-else-if="!locks.locks.length" class="mt-2 text-xs text-muted">{{ t('daily.res.noLock') }}</p>
         </template>
 
         <!-- Code clavier prevu pour cette reservation -->
@@ -144,22 +146,22 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="font-mono text-2xl font-semibold tracking-widest">{{ current.access.code }}</span>
             <UBadge :color="current.access.status === 'created' ? 'success' : current.access.status === 'error' ? 'error' : 'neutral'" variant="subtle"
-                    :label="current.access.status === 'created' ? 'Créé sur Nuki' : current.access.status === 'error' ? 'Erreur' : 'Prévu'" />
+                    :label="current.access.status === 'created' ? t('daily.res.createdOnNuki') : current.access.status === 'error' ? t('daily.res.error') : t('daily.res.planned')" />
           </div>
-          <p class="text-xs text-muted">Valable du {{ when(current.access.validFrom) }} au {{ when(current.access.validUntil) }}</p>
+          <p class="text-xs text-muted">{{ t('daily.res.validity', { from: when(current.access.validFrom), to: when(current.access.validUntil) }) }}</p>
           <p v-if="current.access.status === 'error' && current.access.error" class="text-xs text-error">⚠ {{ current.access.error }}</p>
           <template v-if="current.access.status !== 'created'">
-            <UButton v-if="phase(current) === 'next'" block icon="i-lucide-key-round" label="Générer sur la serrure" :loading="generating" :disabled="data.demo" @click="generateCode" />
-            <p v-else class="text-xs text-muted">Séjour commencé ou passé : le code n'est plus envoyé automatiquement à la serrure.</p>
+            <UButton v-if="phase(current) === 'next'" block icon="i-lucide-key-round" :label="t('daily.res.generate')" :loading="generating" :disabled="data.demo" @click="generateCode" />
+            <p v-else class="text-xs text-muted">{{ t('daily.res.stayStarted') }}</p>
           </template>
           <p v-if="genError" class="text-xs text-error">{{ genError }}</p>
         </div>
-        <p v-else class="text-sm text-muted">Pas de code clavier prévu pour cette réservation.</p>
+        <p v-else class="text-sm text-muted">{{ t('daily.res.noCode') }}</p>
 
         <template v-for="l in locks?.locks ?? []" :key="l.id">
           <div v-if="stayLogs(l.logs).length" class="mt-3 border-t border-default pt-3">
-            <p class="text-xs font-medium text-muted">Passages pendant ce séjour</p>
-            <p v-for="(g, i) in stayLogs(l.logs)" :key="i" class="text-xs text-muted">{{ when(g.date) }} · {{ lockActions[g.action] || `Action ${g.action}` }}<template v-if="g.who"> · {{ g.who }}</template></p>
+            <p class="text-xs font-medium text-muted">{{ t('daily.res.passages') }}</p>
+            <p v-for="(g, i) in stayLogs(l.logs)" :key="i" class="text-xs text-muted">{{ when(g.date) }} · {{ lockActions[g.action] || t('daily.res.action', { n: g.action }) }}<template v-if="g.who"> · {{ g.who }}</template></p>
           </div>
         </template>
       </UCard>
@@ -168,24 +170,26 @@
       <PmsBookingPanel v-if="pms" :logement-id="String(route.params.id)" :booking-id="current.id" :guest="current.guest" />
 
       <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
-        <template #header><b>Aperçu du livret</b></template>
+        <template #header><b>{{ t('daily.res.guidebookPreview') }}</b></template>
         <div v-if="livretLink" class="livret-preview-frame overflow-hidden bg-black">
-          <iframe :src="livretPreviewLink" class="livret-preview-iframe" title="Aperçu du livret" />
+          <iframe :src="livretPreviewLink" class="livret-preview-iframe" :title="t('daily.res.guidebookPreview')" />
         </div>
-        <p v-else class="p-4 text-sm text-muted">Livret pas encore configuré pour ce logement.</p>
+        <p v-else class="p-4 text-sm text-muted">{{ t('daily.res.noGuidebook') }}</p>
         <div v-if="livretLink" class="flex flex-wrap gap-2 p-3">
-          <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" label="Rafraîchir" @click="livretPreviewKey++" />
-          <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-eye" label="Ouvrir" :to="livretLink" external target="_blank" />
+          <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-refresh-cw" :label="t('daily.res.refresh')" @click="livretPreviewKey++" />
+          <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-eye" :label="t('daily.res.open')" :to="livretLink" external target="_blank" />
         </div>
       </UCard>
       </div>
     </div>
-    <UCard v-else class="min-w-0 flex-1"><p class="text-sm text-muted">Sélectionne une réservation dans la liste.</p></UCard>
+    <UCard v-else class="min-w-0 flex-1"><p class="text-sm text-muted">{{ t('daily.res.selectOne') }}</p></UCard>
   </div>
 </template>
 
 <script setup lang="ts">
 const route = useRoute()
+const { t } = useI18n()
+const { fmtLocale, num } = useLocaleFormat()
 const pms = useState<boolean>('pms', () => false)
 const [{ data }, { data: livretData }] = await Promise.all([
   useFetch(() => `/api/logements/${route.params.id}/reservations`),
@@ -200,13 +204,13 @@ const phase = (b: { active: boolean; arrival: string; departure: string }) =>
 // Classement et filtre de la liste (colonne de gauche) : recherche par voyageur, filtre par etat, ordre par date d'arrivee
 const search = ref('')
 const filter = ref<'all' | 'now' | 'next' | 'past' | 'cancelled'>('all')
-const filterItems = [
-  { label: 'Toutes', value: 'all' },
-  { label: 'En cours', value: 'now' },
-  { label: 'À venir', value: 'next' },
-  { label: 'Passées', value: 'past' },
-  { label: 'Annulées', value: 'cancelled' },
-]
+const filterItems = computed(() => [
+  { label: t('daily.common.fAll'), value: 'all' },
+  { label: t('daily.common.now'), value: 'now' },
+  { label: t('daily.common.next'), value: 'next' },
+  { label: t('daily.common.fPast'), value: 'past' },
+  { label: t('daily.common.fCancelled'), value: 'cancelled' },
+])
 const sortAsc = ref(false) // par defaut : les plus recentes en premier (meme ordre que l'API)
 const filteredItems = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -265,14 +269,14 @@ async function send() {
       if (lastMail.value?.mailId) fd.append('replyTo', String(lastMail.value.mailId))
       await $fetch('/api/mail/send', { method: 'POST', body: fd })
       draft.value = ''
-      sentInfo.value = 'E-mail envoyé. Il apparaîtra dans le fil après la prochaine synchronisation de la messagerie.'
+      sentInfo.value = t('daily.res.mailSent')
     } else {
       await $fetch(`/api/logements/${route.params.id}/reservations/${selected.value}/conversation`, { method: 'POST', body: { text: draft.value, messageId: draftId.value } })
       draft.value = ''
       draftId.value = crypto.randomUUID()
       await refreshConv()
     }
-  } catch (e: any) { sendError.value = e?.data?.statusMessage || 'Échec de l’envoi' }
+  } catch (e: any) { sendError.value = e?.data?.statusMessage || t('daily.res.sendFailed') }
   finally { sending.value = false }
 }
 const { data: conv, status: convStatus, error: convError, refresh: refreshConv } = useFetch(
@@ -284,7 +288,7 @@ const { data: pricing, status: pricingStatus } = useFetch(
   () => `/api/logements/${route.params.id}/reservations/${selected.value}/pricing`,
   { server: false, immediate: !!selected.value, watch: [selected] },
 )
-const money = (n: number, div = 1) => (n / (div || 1)).toLocaleString('fr-FR', { style: 'currency', currency: pricing.value?.currency || 'EUR', maximumFractionDigits: 2 })
+const money = (n: number, div = 1) => (n / (div || 1)).toLocaleString(fmtLocale.value, { style: 'currency', currency: pricing.value?.currency || 'EUR', maximumFractionDigits: 2 })
 // Serrure(s) du logement et code clavier de la reservation selectionnee (charges une fois pour le logement)
 const { data: locks } = useFetch(() => `/api/logements/${route.params.id}/locks`, { server: false })
 const batteryIcon = (b: number | null) => b === null ? 'i-lucide-battery' : b <= 20 ? 'i-lucide-battery-low' : b <= 60 ? 'i-lucide-battery-medium' : 'i-lucide-battery-full'
@@ -295,16 +299,16 @@ watch(selected, () => { genError.value = '' })
 async function generateCode() {
   const b = current.value
   if (!b?.access) return
-  if (!confirm(`Créer le code ${b.access.code} sur la serrure Nuki pour ${b.guest} (${fr(b.arrival)} → ${fr(b.departure)}) ?`)) return
+  if (!confirm(t('daily.res.confirmCode', { code: b.access.code, guest: b.guest, from: fr(b.arrival), to: fr(b.departure) }))) return
   generating.value = true
   genError.value = ''
   try {
     await $fetch(`/api/codes/${b.id}`, { method: 'POST' })
     await refreshNuxtData()
-  } catch (e: any) { genError.value = e?.data?.statusMessage || 'Échec de la création du code' }
+  } catch (e: any) { genError.value = e?.data?.statusMessage || t('daily.res.codeFailed') }
   finally { generating.value = false }
 }
-const lockActions: Record<number, string> = { 1: 'Déverrouillage', 2: 'Verrouillage', 3: 'Ouverture (pêne)', 4: 'Lock’n’Go', 5: 'Lock’n’Go + ouverture' }
+const lockActions = computed<Record<number, string>>(() => ({ 1: t('daily.res.aUnlock'), 2: t('daily.res.aLock'), 3: t('daily.res.aOpen'), 4: 'Lock’n’Go', 5: t('daily.res.aLockGoOpen') }))
 const stayLogs = (logs: { date: string; action: number; who: string }[]) => {
   const b = current.value
   if (!b) return []
@@ -312,12 +316,13 @@ const stayLogs = (logs: { date: string; action: number; who: string }[]) => {
 }
 // Affiche le dernier message (bas du fil) a chaque chargement de conversation
 const convBox = ref<HTMLElement | null>(null)
+const { textOf, isTranslated, showOriginal, toggle, sourceOf, error: trError } = useGuestTranslation(() => (conv.value as any)?.messages)
 watch(conv, () => { resetMail(); nextTick(() => { if (convBox.value) convBox.value.scrollTop = convBox.value.scrollHeight }) })
-const when = (d: string) => new Date(d).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-const statusLabel = (s: string) => ({ Booked: 'Confirmée', Open: 'En attente', Tentative: 'Option', Declined: 'Refusée', Cancelled: 'Annulée', Canceled: 'Annulée' } as Record<string, string>)[s] || s
+const when = (d: string) => new Date(d).toLocaleString(fmtLocale.value, { timeZone: 'Europe/Paris', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const statusLabel = (s: string) => ({ Booked: t('daily.res.sBooked'), Open: t('daily.res.sOpen'), Tentative: t('daily.res.sTentative'), Declined: t('daily.res.sDeclined'), Cancelled: t('daily.res.sCancelled'), Canceled: t('daily.res.sCancelled') } as Record<string, string>)[s] || s
 const statusColor = (s: string) => /book/i.test(s) ? 'success' : /declin|cancel/i.test(s) ? 'error' : 'info'
-const fr = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
-const eur = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €'
+const fr = (d: string) => new Date(d).toLocaleDateString(fmtLocale.value, { weekday: 'short', day: 'numeric', month: 'short' })
+const eur = (n: number) => num(n, { maximumFractionDigits: 0 }) + ' €'
 const origin = useRequestURL().origin
 const livretLink = computed(() => livretData.value?.token ? `${origin}/g/${livretData.value.token}` : '')
 const livretPreviewKey = ref(0)

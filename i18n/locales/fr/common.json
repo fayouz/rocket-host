@@ -99,5 +99,11 @@
     "min": "il y a {n} min",
     "hours": "il y a {n} h",
     "days": "il y a {n} j"
+  },
+  "translation": {
+    "translatedFrom": "Traduit depuis {lang}",
+    "showOriginal": "Voir l'original",
+    "showTranslation": "Voir la traduction",
+    "failed": "Traduction indisponible : {reason}"
   }
 }

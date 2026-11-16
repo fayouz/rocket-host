@@ -99,5 +99,11 @@
     "min": "{n} min ago",
     "hours": "{n} h ago",
     "days": "{n} d ago"
+  },
+  "translation": {
+    "translatedFrom": "Translated from {lang}",
+    "showOriginal": "Show original",
+    "showTranslation": "Show translation",
+    "failed": "Translation unavailable: {reason}"
   }
 }
