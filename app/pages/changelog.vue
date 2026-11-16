@@ -3,7 +3,7 @@
     <div class="space-y-2 text-center">
       <UBadge color="primary" variant="subtle" label="Nouveautés" />
       <h1 class="text-3xl font-bold">Ce qui a changé</h1>
-      <p class="text-muted">L'historique des évolutions de Rocket Host, dans l'ordre.</p>
+      <p class="text-muted">L'historique des évolutions de l'Espace Loussa, dans l'ordre.</p>
     </div>
 
     <UTimeline
@@ -26,6 +26,16 @@
 // granulaires pour etre lus tels quels). A completer a chaque nouvelle fonctionnalite marquante.
 interface Entry { date: string; title: string; icon: string; points: string[] }
 const entries: Entry[] = [
+  {
+    date: '16 nov. 2026',
+    title: 'Français et anglais, traduction des messages voyageurs',
+    icon: 'i-lucide-languages',
+    points: [
+      'Interface en français ou en anglais : langue du navigateur par défaut, choix dans Mon compte (et sur la page de connexion)',
+      'Dates et montants au format de la langue choisie',
+      'Messages des voyageurs traduits automatiquement dans ta langue (DeepL), avec « Voir l’original » ; clé dans Réglages › Connexions › Traduction',
+    ],
+  },
   {
     date: '14 nov. 2026',
     title: 'Finitions de l’interface',

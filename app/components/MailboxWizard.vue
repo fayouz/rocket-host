@@ -1,7 +1,7 @@
 <template>
   <!-- Assistant « Ajouter une boîte e-mail » : ① Source ② Connexion ③ Test ④ Règles ⑤ Récapitulatif.
        Relevé désactivé à la création ; rien n'est envoyé automatiquement. Les mots de passe ne sont jamais réaffichés. -->
-  <UModal v-model:open="open" title="Ajouter une boîte e-mail" :ui="{ content: 'sm:max-w-2xl' }">
+  <UModal v-model:open="open" :title="t('manage.wizard.title')" :ui="{ content: 'sm:max-w-2xl' }">
     <template #body>
       <ol class="mb-4 flex flex-wrap gap-1 text-xs">
         <li v-for="(s, i) in STEPS" :key="s" class="rounded-full px-2 py-0.5" :class="i === step ? 'bg-primary text-inverted' : i < step ? 'bg-elevated text-default' : 'text-muted'">{{ i + 1 }}. {{ s }}</li>
@@ -9,7 +9,7 @@
 
       <!-- ① Source -->
       <div v-if="step === 0" class="space-y-3">
-        <p class="text-sm text-muted">D'où vient la boîte ?</p>
+        <p class="text-sm text-muted">{{ t('manage.wizard.sourceQ') }}</p>
         <div class="grid gap-2 sm:grid-cols-2">
           <button v-for="s in sources" :key="s.key" type="button" class="rounded-lg border p-3 text-left transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-60"
             :class="source === s.key ? 'border-primary bg-primary/5' : 'border-default'" :data-source="s.key" @click="pick(s.key)">
@@ -21,66 +21,68 @@
           </button>
         </div>
         <div v-if="source === 'mailer'" class="rounded-md border border-default p-3">
-          <p class="mb-2 text-sm font-medium">Quel type de boîte Loussa Mail ?</p>
-          <URadioGroup v-model="mailerKind" :items="[{ label: 'Boîte partagée (dont tu es membre)', value: 'shared' }, { label: 'Boîte perso (créée pour toi dans Mailer)', value: 'personal' }]" />
+          <p class="mb-2 text-sm font-medium">{{ t('manage.wizard.mailerKindQ') }}</p>
+          <URadioGroup v-model="mailerKind" :items="mailerKindItems" />
         </div>
       </div>
 
       <!-- ② Connexion -->
       <div v-else-if="step === 1" class="space-y-3">
         <template v-if="source === 'local'">
-          <UFormField label="Adresse e-mail (identifiant)">
+          <UFormField :label="t('manage.wizard.emailLabel')">
             <div class="flex gap-2">
-              <UInput v-model="srv.user" name="wizard-email" placeholder="toi@exemple.fr" autocomplete="off" class="flex-1" @change="detect" />
-              <UButton color="neutral" variant="outline" icon="i-lucide-search" label="Détecter" :loading="busy === 'detect'" :disabled="!srv.user.includes('@')" @click="detect" />
+              <UInput v-model="srv.user" name="wizard-email" :placeholder="t('manage.wizard.emailPlaceholder')" autocomplete="off" class="flex-1" @change="detect" />
+              <UButton color="neutral" variant="outline" icon="i-lucide-search" :label="t('manage.wizard.detect')" :loading="busy === 'detect'" :disabled="!srv.user.includes('@')" @click="detect" />
             </div>
           </UFormField>
           <p v-if="detected" class="text-sm" :class="detected.ok && detected.provider ? 'text-success' : 'text-warning'">
             <template v-if="!detected.ok">{{ detected.message }}</template>
-            <template v-else-if="detected.provider">✓ Service détecté : <b>{{ detected.label }}</b> — serveurs préremplis.</template>
-            <template v-else>Service non reconnu : choisis-le ou « Autre serveur ».</template>
+            <template v-else-if="detected.provider"><i18n-t keypath="manage.wizard.detected" tag="span"><template #label><b>{{ detected.label }}</b></template></i18n-t></template>
+            <template v-else>{{ t('manage.wizard.unknownService') }}</template>
           </p>
-          <UFormField label="Service de messagerie"><USelect v-model="srv.provider" :items="providerItems" class="w-full" @update:model-value="onProvider" /></UFormField>
+          <UFormField :label="t('manage.wizard.provider')"><USelect v-model="srv.provider" :items="providerItems" class="w-full" @update:model-value="onProvider" /></UFormField>
           <p v-if="provider?.note" class="text-xs text-muted">{{ provider.note }}</p>
           <div class="grid gap-2 sm:grid-cols-3">
-            <UFormField label="Serveur IMAP" class="sm:col-span-2"><UInput v-model="srv.host" :disabled="hostLocked" class="w-full" /></UFormField>
-            <UFormField label="Port"><UInput v-model.number="srv.port" type="number" :disabled="locked" class="w-full" /></UFormField>
-            <UFormField label="Serveur SMTP" class="sm:col-span-2"><UInput v-model="srv.smtpHost" :disabled="locked" class="w-full" /></UFormField>
-            <UFormField label="Port"><UInput v-model.number="srv.smtpPort" type="number" :disabled="locked" class="w-full" /></UFormField>
+            <UFormField :label="t('manage.wizard.imapServer')" class="sm:col-span-2"><UInput v-model="srv.host" :disabled="hostLocked" class="w-full" /></UFormField>
+            <UFormField :label="t('manage.wizard.port')"><UInput v-model.number="srv.port" type="number" :disabled="locked" class="w-full" /></UFormField>
+            <UFormField :label="t('manage.wizard.smtpServer')" class="sm:col-span-2"><UInput v-model="srv.smtpHost" :disabled="locked" class="w-full" /></UFormField>
+            <UFormField :label="t('manage.wizard.port')"><UInput v-model.number="srv.smtpPort" type="number" :disabled="locked" class="w-full" /></UFormField>
           </div>
-          <UFormField label="Mot de passe de la boîte" help="Sert au test puis est enregistré chiffré en base à la fin ; jamais réaffiché.">
+          <UFormField :label="t('manage.wizard.mbPassword')" :help="t('manage.wizard.mbPasswordHelp')">
             <UInput v-model="password" name="wizard-password" type="password" autocomplete="new-password" class="w-full" />
           </UFormField>
         </template>
 
         <template v-else-if="source === 'google' || source === 'microsoft'">
-          <p class="text-sm text-muted">Espace Loussa lit et envoie avec ce compte en IMAP / SMTP sécurisés (XOAUTH2), sans mot de passe : seul un jeton de renouvellement est gardé, chiffré.</p>
-          <UFormField label="Adresse (facultatif, pour présélectionner le compte)"><UInput v-model="srv.user" placeholder="toi@gmail.com" class="w-full" /></UFormField>
-          <UButton :icon="source === 'google' ? 'i-simple-icons-google' : 'i-simple-icons-microsoft'" :label="`Se connecter avec ${oauthLabel}`" :disabled="!oauthOk" data-oauth-button @click="startOAuth" />
-          <UAlert v-if="!oauthOk" color="warning" variant="subtle" icon="i-lucide-settings" :title="`Connexion ${oauthLabel} à configurer`">
+          <p class="text-sm text-muted">{{ t('manage.wizard.oauthIntro') }}</p>
+          <UFormField :label="t('manage.wizard.addrOptional')"><UInput v-model="srv.user" :placeholder="t('manage.wizard.gmailPlaceholder')" class="w-full" /></UFormField>
+          <UButton :icon="source === 'google' ? 'i-simple-icons-google' : 'i-simple-icons-microsoft'" :label="t('manage.wizard.signInWith', { name: oauthLabel })" :disabled="!oauthOk" data-oauth-button @click="startOAuth" />
+          <UAlert v-if="!oauthOk" color="warning" variant="subtle" icon="i-lucide-settings" :title="t('manage.wizard.oauthTitle', { name: oauthLabel })">
             <template #description>
-              Renseigne l'application OAuth ({{ source === 'google' ? 'GOOGLE_MAIL_CLIENT_ID / _SECRET' : 'MICROSOFT_MAIL_CLIENT_ID / _SECRET' }}) dans
-              <NuxtLink to="/settings/connexions?onglet=directes" class="underline">Connexions › Connexions directes</NuxtLink>,
-              adresse de retour <code>{{ origin }}/api/mail/oauth/{{ source }}/callback</code>.
-              <template v-if="mailerOn"> Ou choisis la source Loussa Mail, qui gère aussi la connexion {{ oauthLabel }}.</template>
+              <i18n-t keypath="manage.wizard.oauthDesc" tag="span">
+                <template #vars>{{ source === 'google' ? 'GOOGLE_MAIL_CLIENT_ID / _SECRET' : 'MICROSOFT_MAIL_CLIENT_ID / _SECRET' }}</template>
+                <template #link><NuxtLink to="/settings/connexions?onglet=directes" class="underline">{{ t('manage.wizard.oauthLink') }}</NuxtLink></template>
+                <template #code><code>{{ origin }}/api/mail/oauth/{{ source }}/callback</code></template>
+              </i18n-t>
+              <template v-if="mailerOn"> {{ t('manage.wizard.oauthAlt', { name: oauthLabel }) }}</template>
             </template>
           </UAlert>
         </template>
 
         <template v-else-if="source === 'mailer'">
-          <p v-if="mailerLoading" class="text-sm text-muted">Interrogation de Loussa Mail…</p>
-          <UAlert v-else-if="!mailer?.ok" color="warning" variant="subtle" icon="i-lucide-mail-warning" title="Loussa Mail indisponible" :description="mailer?.message || 'Réessaie plus tard.'" />
+          <p v-if="mailerLoading" class="text-sm text-muted">{{ t('manage.wizard.mailerLoading') }}</p>
+          <UAlert v-else-if="!mailer?.ok" color="warning" variant="subtle" icon="i-lucide-mail-warning" :title="t('manage.wizard.mailerDown')" :description="mailer?.message || t('manage.wizard.retryLater')" />
           <template v-else-if="mailerKind === 'shared'">
-            <p class="text-sm text-muted">Boîtes partagées de Loussa Mail dont <b>{{ mailer.userEmail }}</b> est membre :</p>
+            <p class="text-sm text-muted"><i18n-t keypath="manage.wizard.sharedList" tag="span"><template #email><b>{{ mailer.userEmail }}</b></template></i18n-t></p>
             <URadioGroup v-if="mailer.shared.length" v-model="mailerId" :items="mailer.shared.map((m: any) => ({ label: `${m.name} — ${m.email}`, value: m.id }))" />
-            <p v-else class="text-sm text-muted">Aucune boîte partagée : demande à un administrateur de Loussa Mail de t'y ajouter.</p>
+            <p v-else class="text-sm text-muted">{{ t('manage.wizard.noShared') }}</p>
           </template>
           <template v-else>
-            <UAlert v-if="!mailer.personal" color="info" variant="subtle" icon="i-lucide-clock" title="Bientôt"
-              description="Ce Loussa Mail ne gère pas encore les boîtes perso. Tu peux en attendant ajouter la boîte en Locale, Google ou Microsoft." />
+            <UAlert v-if="!mailer.personal" color="info" variant="subtle" icon="i-lucide-clock" :title="t('manage.wizard.soon')"
+              :description="t('manage.wizard.noPersonal')" />
             <template v-else>
-              <UFormField label="Adresse de ta boîte perso"><UInput v-model="srv.user" :placeholder="mailer.userEmail" class="w-full" /></UFormField>
-              <UFormField label="Mot de passe (transmis à Loussa Mail, qui le chiffre ; non gardé par Host)"><UInput v-model="password" type="password" autocomplete="new-password" class="w-full" /></UFormField>
+              <UFormField :label="t('manage.wizard.personalAddr')"><UInput v-model="srv.user" :placeholder="mailer.userEmail" class="w-full" /></UFormField>
+              <UFormField :label="t('manage.wizard.personalPwd')"><UInput v-model="password" type="password" autocomplete="new-password" class="w-full" /></UFormField>
             </template>
           </template>
         </template>
@@ -88,31 +90,31 @@
 
       <!-- ③ Test -->
       <div v-else-if="step === 2" class="space-y-3">
-        <p class="text-sm text-muted">Connexion au serveur de réception et identification au serveur d'envoi. Aucun message n'est lu ni envoyé.</p>
-        <UButton icon="i-lucide-plug-zap" label="Lancer le test" :loading="busy === 'test'" data-wizard-test @click="runTest" />
+        <p class="text-sm text-muted">{{ t('manage.wizard.testIntro') }}</p>
+        <UButton icon="i-lucide-plug-zap" :label="t('manage.wizard.runTest')" :loading="busy === 'test'" data-wizard-test @click="runTest" />
         <div v-if="test" class="space-y-1 rounded-md border border-default p-3 text-sm" data-wizard-result>
           <template v-if="test.imap || test.smtp">
-            <p :class="test.imap?.ok ? 'text-success' : 'text-error'">{{ test.imap?.ok ? `✓ Réception (IMAP) : connexion réussie, ${test.imap.folders} dossier(s)` : `✗ ${test.imap?.error}` }}</p>
-            <p :class="test.smtp?.ok ? 'text-success' : 'text-error'">{{ test.smtp?.ok ? '✓ Envoi (SMTP) : identification réussie' : `✗ ${test.smtp?.error}` }}</p>
+            <p :class="test.imap?.ok ? 'text-success' : 'text-error'">{{ test.imap?.ok ? t('manage.wizard.imapOk', { n: test.imap.folders }) : `✗ ${test.imap?.error}` }}</p>
+            <p :class="test.smtp?.ok ? 'text-success' : 'text-error'">{{ test.smtp?.ok ? t('manage.wizard.smtpOk') : `✗ ${test.smtp?.error}` }}</p>
           </template>
           <p v-else :class="test.ok ? 'text-success' : 'text-error'">{{ test.ok ? '✓' : '✗' }} {{ test.message }}</p>
         </div>
-        <p v-if="test && !test.ok" class="text-xs text-muted">Corrige la connexion (étape précédente) puis relance le test. Tu peux aussi continuer et corriger plus tard.</p>
+        <p v-if="test && !test.ok" class="text-xs text-muted">{{ t('manage.wizard.testFail') }}</p>
       </div>
 
       <!-- ④ Règles -->
       <div v-else-if="step === 3" class="space-y-3">
         <template v-if="source === 'mailer'">
-          <p class="text-sm text-muted">Les boîtes Loussa Mail sont relevées et triées dans Loussa Mail : pas de règle à régler ici.</p>
+          <p class="text-sm text-muted">{{ t('manage.wizard.mailerRules') }}</p>
         </template>
         <template v-else>
-          <p class="text-sm text-muted">Quels e-mails ouvrir, et où ranger leurs pièces jointes (règles « expéditeur → catégorie / logement »). Les règles détaillées se modifient plus bas sur la page.</p>
+          <p class="text-sm text-muted">{{ t('manage.wizard.rulesIntro') }}</p>
           <ul class="space-y-1 text-sm">
-            <li v-for="r in rules" :key="r.id" class="flex items-center gap-2"><UIcon name="i-lucide-filter" class="size-4 text-muted" />{{ r.name }} <span class="text-muted">(expéditeur contient « {{ r.sender }} »)</span></li>
-            <li v-if="!rules.length" class="text-muted">Aucune règle pour l'instant.</li>
+            <li v-for="r in rules" :key="r.id" class="flex items-center gap-2"><UIcon name="i-lucide-filter" class="size-4 text-muted" />{{ r.name }} <span class="text-muted">{{ t('manage.wizard.senderContains', { sender: r.sender }) }}</span></li>
+            <li v-if="!rules.length" class="text-muted">{{ t('manage.wizard.noRules') }}</li>
           </ul>
           <div class="flex flex-wrap items-center gap-1 text-sm">
-            Ajouter un modèle :
+            {{ t('manage.wizard.addPreset') }}
             <UButton v-for="p in presets" :key="p.name" size="xs" color="neutral" variant="soft" :label="p.name" :disabled="rules.some((r: any) => r.sender === p.sender)" @click="addPreset(p)" />
           </div>
         </template>
@@ -121,17 +123,17 @@
       <!-- ⑤ Récapitulatif -->
       <div v-else class="space-y-3 text-sm">
         <dl class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1">
-          <dt class="text-muted">Source</dt><dd>{{ sourceLabel }}</dd>
-          <dt class="text-muted">Adresse</dt><dd>{{ summaryEmail || '—' }}</dd>
-          <template v-if="source === 'local'"><dt class="text-muted">Serveurs</dt><dd>{{ srv.host }}:{{ srv.port }} · {{ srv.smtpHost }}:{{ srv.smtpPort }}</dd></template>
-          <dt class="text-muted">Test</dt><dd>{{ test ? (test.ok ? 'réussi' : 'en échec') : 'non lancé' }}</dd>
-          <dt class="text-muted">Relevé</dt><dd>{{ enabled ? 'activé' : 'désactivé (par défaut)' }}</dd>
+          <dt class="text-muted">{{ t('manage.wizard.recapSource') }}</dt><dd>{{ sourceLabel }}</dd>
+          <dt class="text-muted">{{ t('manage.wizard.recapAddr') }}</dt><dd>{{ summaryEmail || '—' }}</dd>
+          <template v-if="source === 'local'"><dt class="text-muted">{{ t('manage.wizard.recapServers') }}</dt><dd>{{ srv.host }}:{{ srv.port }} · {{ srv.smtpHost }}:{{ srv.smtpPort }}</dd></template>
+          <dt class="text-muted">{{ t('manage.wizard.recapTest') }}</dt><dd>{{ test ? (test.ok ? t('manage.wizard.testOk') : t('manage.wizard.testKo')) : t('manage.wizard.testNone') }}</dd>
+          <dt class="text-muted">{{ t('manage.wizard.recapFetch') }}</dt><dd>{{ enabled ? t('manage.wizard.on') : t('manage.wizard.offDefault') }}</dd>
         </dl>
-        <p class="text-muted">Rien n'est lu tant que le relevé n'est pas activé, et rien n'est jamais envoyé automatiquement : chaque envoi part d'un clic sur « Envoyer ».</p>
-        <UButton v-if="!savedId" icon="i-lucide-check" label="Enregistrer la boîte" :loading="busy === 'save'" @click="save" />
+        <p class="text-muted">{{ t('manage.wizard.recapNote') }}</p>
+        <UButton v-if="!savedId" icon="i-lucide-check" :label="t('manage.wizard.saveBox')" :loading="busy === 'save'" @click="save" />
         <template v-else>
-          <p class="text-success">✓ Boîte enregistrée.</p>
-          <USwitch v-if="source !== 'mailer'" :model-value="enabled" :label="enabled ? 'Relevé activé' : 'Activer le relevé'" @update:model-value="toggleEnabled" />
+          <p class="text-success">{{ t('manage.wizard.saved') }}</p>
+          <USwitch v-if="source !== 'mailer'" :model-value="enabled" :label="enabled ? t('manage.wizard.fetchOn') : t('manage.wizard.fetchEnable')" @update:model-value="toggleEnabled" />
         </template>
       </div>
 
@@ -140,20 +142,21 @@
 
     <template #footer>
       <div class="flex w-full justify-between gap-2">
-        <UButton color="neutral" variant="ghost" :label="step ? 'Retour' : 'Annuler'" :disabled="!!savedId && step === 4" @click="step ? back() : (open = false)" />
-        <UButton v-if="step < 4" label="Suivant" trailing-icon="i-lucide-arrow-right" :disabled="!canNext" :loading="busy === 'next'" data-wizard-next @click="next" />
-        <UButton v-else color="neutral" label="Fermer" @click="open = false" />
+        <UButton color="neutral" variant="ghost" :label="step ? t('manage.wizard.back') : t('manage.wizard.cancel')" :disabled="!!savedId && step === 4" @click="step ? back() : (open = false)" />
+        <UButton v-if="step < 4" :label="t('manage.wizard.next')" trailing-icon="i-lucide-arrow-right" :disabled="!canNext" :loading="busy === 'next'" data-wizard-next @click="next" />
+        <UButton v-else color="neutral" :label="t('manage.wizard.close')" @click="open = false" />
       </div>
     </template>
   </UModal>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 const open = defineModel<boolean>('open', { default: false })
 const props = defineProps<{ resume?: { provider: string; id?: number; error?: string } | null }>()
 const emit = defineEmits<{ saved: [] }>()
 
-const STEPS = ['Source', 'Connexion', 'Test', 'Règles', 'Récapitulatif']
+const STEPS = computed(() => [t('manage.wizard.recapSource'), t('manage.wizard.stepConn'), t('manage.wizard.recapTest'), t('manage.wizard.stepRules'), t('manage.wizard.stepRecap')])
 const step = ref(0)
 const source = ref<'' | 'mailer' | 'google' | 'microsoft' | 'local'>('')
 const mailerKind = ref<'shared' | 'personal'>('shared')
@@ -178,12 +181,13 @@ const oauthLabel = computed(() => (source.value === 'google' ? 'Google' : 'Micro
 const rules = computed(() => (imap.value?.rules ?? []) as any[])
 
 const sources = computed(() => [
-  { key: 'mailer', icon: 'i-lucide-send', label: 'Loussa Mail', help: 'Boîte partagée de l\'équipe, ou ta boîte perso gérée par Mailer.', badge: mailerOn.value ? '' : 'à configurer', badgeColor: 'warning' as const },
-  { key: 'google', icon: 'i-simple-icons-google', label: 'Google', help: 'Gmail / Google Workspace, connexion sans mot de passe (OAuth).', badge: boxes.value?.oauth.google.configured ? '' : 'à configurer', badgeColor: 'warning' as const },
-  { key: 'microsoft', icon: 'i-simple-icons-microsoft', label: 'Microsoft', help: 'Outlook / Microsoft 365, connexion sans mot de passe (OAuth).', badge: boxes.value?.oauth.microsoft.configured ? '' : 'à configurer', badgeColor: 'warning' as const },
-  { key: 'local', icon: 'i-lucide-server', label: 'Locale (IMAP/SMTP)', help: 'N\'importe quel service : serveur détecté depuis l\'adresse, mot de passe chiffré.', badge: '', badgeColor: 'neutral' as const },
+  { key: 'mailer', icon: 'i-lucide-send', label: 'Loussa Mail', help: t('manage.wizard.srcMailer'), badge: mailerOn.value ? '' : t('manage.wizard.toConfigure'), badgeColor: 'warning' as const },
+  { key: 'google', icon: 'i-simple-icons-google', label: 'Google', help: t('manage.wizard.srcGoogle'), badge: boxes.value?.oauth.google.configured ? '' : t('manage.wizard.toConfigure'), badgeColor: 'warning' as const },
+  { key: 'microsoft', icon: 'i-simple-icons-microsoft', label: 'Microsoft', help: t('manage.wizard.srcMs'), badge: boxes.value?.oauth.microsoft.configured ? '' : t('manage.wizard.toConfigure'), badgeColor: 'warning' as const },
+  { key: 'local', icon: 'i-lucide-server', label: t('manage.wizard.srcLocal'), help: t('manage.wizard.srcLocalHelp'), badge: '', badgeColor: 'neutral' as const },
 ] as const)
-const sourceLabel = computed(() => source.value === 'mailer' ? `Loussa Mail — boîte ${mailerKind.value === 'shared' ? 'partagée' : 'perso'}` : sources.value.find(s => s.key === source.value)?.label ?? '')
+const mailerKindItems = computed(() => [{ label: t('manage.wizard.kindShared'), value: 'shared' }, { label: t('manage.wizard.kindPersonal'), value: 'personal' }])
+const sourceLabel = computed(() => source.value === 'mailer' ? (mailerKind.value === 'shared' ? t('manage.wizard.labelShared') : t('manage.wizard.labelPersonal')) : sources.value.find(s => s.key === source.value)?.label ?? '')
 const summaryEmail = computed(() => source.value === 'mailer' && mailerKind.value === 'shared' ? mailer.value?.shared?.find((m: any) => m.id === mailerId.value)?.email : srv.user)
 
 const providerItems = computed(() => (imap.value?.providers ?? []).map((p: any) => ({ label: p.label, value: p.key })))
@@ -216,7 +220,7 @@ const canNext = computed(() => {
   }
   return true
 })
-const fail = (e: any) => { error.value = e?.data?.statusMessage || e?.statusMessage || 'Échec, réessaie.' }
+const fail = (e: any) => { error.value = e?.data?.statusMessage || e?.statusMessage || t('manage.wizard.failed') }
 
 async function next() {
   error.value = ''

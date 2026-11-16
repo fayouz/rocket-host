@@ -1,21 +1,18 @@
 <template>
   <div v-if="data" class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h3 class="font-semibold">Bibliothèque de plugins / connecteurs</h3>
+      <h3 class="font-semibold">{{ t('admin.plugins.title') }}</h3>
       <UTabs v-model="category" :items="categories" :content="false" size="sm" />
     </div>
-    <p class="text-sm text-muted">
-      Les plugins sont les services que l'appli sait brancher. Dans chaque logement (onglet <b>Connecteurs</b>), tu crées un ou plusieurs connecteurs
-      à partir de ces plugins — par exemple deux Homey, ou plusieurs services web pour récupérer des documents.
-    </p>
+    <i18n-t keypath="admin.plugins.intro" tag="p" class="text-sm text-muted"><template #tab><b>{{ t('admin.plugins.tabConnectors') }}</b></template></i18n-t>
     <UAlert
       v-if="pms"
       :color="!pms.configured ? 'neutral' : pms.ok ? 'success' : 'error'" variant="subtle"
       :icon="!pms.configured ? 'i-lucide-server-off' : pms.ok ? 'i-lucide-server' : 'i-lucide-server-crash'"
-      title="Loussa Réservations"
+      :title="t('admin.brick.pms')"
       :description="!pms.configured
-        ? 'Non branché : les logements, réservations et serrures continuent de venir de Lodgify et Nuki en direct.'
-        : pms.ok ? 'Connecté : logements et réservations viennent de Loussa Réservations.' : `Branché mais injoignable : ${pms.error || 'erreur inconnue'}`"
+        ? t('admin.plugins.pmsOff')
+        : pms.ok ? t('admin.plugins.pmsOk') : t('admin.plugins.pmsDown', { error: pms.error || t('admin.plugins.unknownError') })"
     />
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <UCard v-for="p in shown" :key="p.id" :ui="{ body: 'flex h-full flex-col gap-3' }">
@@ -30,25 +27,23 @@
         <div class="flex flex-wrap gap-1">
           <UBadge v-for="c in p.capabilities" :key="c" size="sm" variant="outline" :icon="CAP[c].icon" :label="CAP[c].label" />
         </div>
-        <p class="text-xs text-muted">{{ p.connectors ? `Utilisé par ${p.connectors} connecteur${p.connectors > 1 ? 's' : ''}` : 'Pas encore utilisé' }}</p>
+        <p class="text-xs text-muted">{{ t('admin.plugins.usedBy', { n: p.connectors }, p.connectors) }}</p>
       </UCard>
     </div>
-    <p class="text-xs text-muted">
-      Pour brancher un service qui n'a pas de plugin dédié, utilise « Service web » (n'importe quelle API web). Les secrets (jetons, clés) se
-      saisissent dans la carte « Secrets des connecteurs » ci-dessus sous un nom commençant par <code>CONNECTOR_</code> (chiffrés, jamais réaffichés).
-    </p>
+    <i18n-t keypath="admin.plugins.footer" tag="p" class="text-xs text-muted"><template #prefix><code>CONNECTOR_</code></template></i18n-t>
   </div>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 // Catalogue des plugins (anciennement page Reglages › Plugins), affiche dans Connexions & integrations › Connexions directes
 const { data } = await useFetch('/api/plugins')
 const { data: pms } = await useFetch('/api/pms/status')
-const CATEGORY_LABEL: Record<string, string> = { domotique: 'Domotique', documents: 'Documents', general: 'Général' }
-const CAP: Record<string, { label: string; icon: string }> = {
-  info: { label: 'Infos', icon: 'i-lucide-info' }, actions: { label: 'Actions', icon: 'i-lucide-zap' }, documents: { label: 'Documents', icon: 'i-lucide-folder-down' },
-}
-const categories = [{ label: 'Tous', value: 'all' }, { label: 'Domotique', value: 'domotique' }, { label: 'Documents', value: 'documents' }, { label: 'Général', value: 'general' }]
+const CATEGORY_LABEL = computed<Record<string, string>>(() => ({ domotique: t('nav.domotique'), documents: t('nav.documents'), general: t('admin.plugins.general') }))
+const CAP = computed<Record<string, { label: string; icon: string }>>(() => ({
+  info: { label: t('admin.plugins.capInfo'), icon: 'i-lucide-info' }, actions: { label: t('admin.connectors.actions'), icon: 'i-lucide-zap' }, documents: { label: t('nav.documents'), icon: 'i-lucide-folder-down' },
+}))
+const categories = computed(() => [{ label: t('admin.plugins.all'), value: 'all' }, { label: t('nav.domotique'), value: 'domotique' }, { label: t('nav.documents'), value: 'documents' }, { label: t('admin.plugins.general'), value: 'general' }])
 const category = ref('all')
 // « Documents » montre aussi les plugins generaux capables de recuperer des documents (ex. Service web)
 const shown = computed(() => (data.value?.plugins ?? []).filter(p => category.value === 'all' || p.category === category.value || (category.value === 'documents' && p.capabilities.includes('documents'))))

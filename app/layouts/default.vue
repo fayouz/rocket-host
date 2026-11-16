@@ -4,14 +4,14 @@
       <template #header="{ collapsed }">
         <NuxtLink to="/" class="flex items-center gap-2 px-0.5" :class="{ 'justify-center': collapsed }">
           <UIcon name="i-lucide-house" class="size-6 shrink-0 text-primary" />
-          <span v-if="!collapsed" class="truncate font-bold">Espace Loussa</span>
+          <span v-if="!collapsed" class="truncate font-bold">{{ t('app.name') }}</span>
         </NuxtLink>
       </template>
 
       <template #default="{ collapsed }">
         <div v-for="group in groups" :key="group.label" class="mb-1">
           <div v-if="!collapsed && group.switcher" class="px-2.5 pb-1 pt-3">
-            <USelectMenu v-model="choice" :items="switcherItems" value-key="value" :search-input="false" size="sm" class="w-full" aria-label="Logement affiché" @update:model-value="onSwitch">
+            <USelectMenu v-model="choice" :items="switcherItems" value-key="value" :search-input="false" size="sm" class="w-full" :aria-label="t('app.selectedLogement')" @update:model-value="onSwitch">
               <template #leading><span v-if="choiceHex" class="inline-block size-2 rounded-full" :style="{ backgroundColor: choiceHex }" /><UIcon v-else name="i-lucide-building-2" class="size-4 text-muted" /></template>
               <template #item-leading="{ item }"><span v-if="item.hex" class="inline-block size-2 rounded-full" :style="{ backgroundColor: item.hex }" /><UIcon v-else-if="item.value === 'all'" name="i-lucide-building-2" class="size-4 text-muted" /><span v-else class="inline-block size-2 rounded-full bg-muted" /></template>
             </USelectMenu>
@@ -41,8 +41,8 @@
             </div>
           </NuxtLink>
           <div class="flex min-w-0 items-center justify-between gap-2 px-1 text-xs">
-            <span class="flex min-w-0 items-center gap-1.5 truncate text-success"><span class="size-1.5 shrink-0 rounded-full bg-success" /> Connecté</span>
-            <UTooltip text="Déconnexion"><UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-log-out" aria-label="Déconnexion" class="shrink-0" @click="logout" /></UTooltip>
+            <span class="flex min-w-0 items-center gap-1.5 truncate text-success"><span class="size-1.5 shrink-0 rounded-full bg-success" /> {{ t('auth.connected') }}</span>
+            <UTooltip :text="t('auth.logout')"><UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-log-out" :aria-label="t('auth.logout')" class="shrink-0" @click="logout" /></UTooltip>
           </div>
         </div>
       </template>
@@ -59,9 +59,9 @@
           </template>
           <template #right>
             <SuiteAppSwitcher />
-            <UBadge v-if="demo" color="warning" variant="subtle" label="Mode démo" />
+            <UBadge v-if="demo" color="warning" variant="subtle" :label="t('app.demo')" />
             <!-- Cloche preparee pour un futur systeme de notifications (rien a afficher pour l'instant : desactivee) -->
-            <UTooltip text="Notifications (bientôt disponible)">
+            <UTooltip :text="t('app.notificationsSoon')">
               <UButton color="neutral" variant="ghost" square icon="i-lucide-bell" disabled />
             </UTooltip>
             <ThemeColorPicker v-if="can('A')" />
@@ -79,6 +79,7 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 const demo = useState('demo', () => false)
 const { data: lg } = await useFetch('/api/logements', { key: 'logements' })
 const { user, refresh, logout, can } = useAuth()
@@ -88,8 +89,8 @@ useTheme()
 const mobileOpen = ref(false)
 const userInitials = computed(() => (user.value?.displayName || user.value?.username || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?')
 const userMenu = computed(() => [[{ label: user.value?.username ?? '', type: 'label' as const }], [
-  { label: 'Mon compte', icon: 'i-lucide-user-cog', to: '/mon-compte' },
-  { label: 'Se déconnecter', icon: 'i-lucide-log-out', onSelect: logout },
+  { label: t('account.title'), icon: 'i-lucide-user-cog', to: '/mon-compte' },
+  { label: t('auth.signOut'), icon: 'i-lucide-log-out', onSelect: logout },
 ]])
 
 interface NavItem { label: string; icon?: string; to?: string; target?: string; badge?: string; type?: 'trigger'; defaultOpen?: boolean; children?: NavItem[] }
@@ -100,9 +101,9 @@ interface NavGroup { label: string; switcher?: boolean; brick?: { name: string; 
 const { data: pms } = await useFetch('/api/pms/status', { key: 'pms-status' })
 const front = useRuntimeConfig().public
 const pmsOn = computed(() => !!pms.value?.configured)
-const pmsStatus = computed((): { label: string; color: BadgeColor } => demo.value && !pmsOn.value ? { label: 'démo', color: 'warning' }
-  : !pmsOn.value ? { label: 'off', color: 'neutral' } : pms.value?.ok ? { label: 'connecté', color: 'success' } : { label: 'erreur', color: 'error' })
-const viaPms = computed((): { label: string; color: BadgeColor } => pmsOn.value ? { ...pmsStatus.value, label: pms.value?.ok ? 'via PMS' : 'erreur' } : pmsStatus.value)
+const pmsStatus = computed((): { label: string; color: BadgeColor } => demo.value && !pmsOn.value ? { label: t('status.demo'), color: 'warning' }
+  : !pmsOn.value ? { label: t('status.off'), color: 'neutral' } : pms.value?.ok ? { label: t('status.connected'), color: 'success' } : { label: t('status.error'), color: 'error' })
+const viaPms = computed((): { label: string; color: BadgeColor } => pmsOn.value ? { ...pmsStatus.value, label: pms.value?.ok ? t('status.viaPms') : t('status.error') } : pmsStatus.value)
 // Pages propres a un logement : on ouvre le premier logement (sinon la liste)
 const firstLg = computed(() => lg.value?.logements?.[0]?.id)
 const lgPage = (tab: string) => (firstLg.value ? `/logements/${firstLg.value}/${tab}` : '/logements')
@@ -110,30 +111,30 @@ const ext = (url: string, label: string): NavItem[] => (url ? [{ label, icon: 'i
 const managed = (label: string) => (pmsOn.value ? label : undefined)
 // Pastilles compactes d'etat des briques (bas de la sidebar, admins seulement), vers Reglages > Connexions.
 const brickPills = computed((): { label: string; color: BadgeColor }[] => [
-  { label: 'Réservations', color: pmsStatus.value.color },
-  { label: 'Lieux', color: viaPms.value.color },
-  { label: 'Mail', color: (pmsOn.value ? viaPms.value : { label: 'local', color: 'info' as BadgeColor }).color },
-  { label: 'Cloud', color: (pmsOn.value ? viaPms.value : { label: 'local', color: 'info' as BadgeColor }).color },
+  { label: t('nav.pillReservations'), color: pmsStatus.value.color },
+  { label: t('nav.pillPlaces'), color: viaPms.value.color },
+  { label: t('nav.pillMail'), color: (pmsOn.value ? viaPms.value : { label: t('status.local'), color: 'info' as BadgeColor }).color },
+  { label: t('nav.pillCloud'), color: (pmsOn.value ? viaPms.value : { label: t('status.local'), color: 'info' as BadgeColor }).color },
 ])
 // Reglages avances : replies dans un seul sous-menu replie par defaut (Administration), admins seulement. Pages inchangees.
 const adminChildren = computed((): NavItem[] => [
-  { label: 'Connexions & intégrations', to: '/settings/connexions' }, // briques LoussaSuite + connexions directes (plugins inclus)
-  { label: 'Domotique', to: lgPage('domotique') },
-  { label: 'Boîtes e-mail', to: '/settings/imap' },
-  { label: 'Logements & lieux', to: '/settings', badge: managed('Lieux') },
-  ...ext(front.pmsFrontUrl, 'Ouvrir Loussa Réservations (Lodgify)'),
-  { label: 'Utilisateurs & rôles', to: '/settings/utilisateurs' },
-  { label: 'Journal d\'audit', to: '/settings/utilisateurs?tab=journal' },
-  { label: 'Imports', to: '/settings/imports' },
-  { label: 'API (Swagger)', to: '/docs-api' },
-  { label: 'Nouveautés', to: '/changelog' },
-  { label: 'Manuel', to: '/docs' },
+  { label: t('nav.connections'), to: '/settings/connexions' }, // briques LoussaSuite + connexions directes (plugins inclus)
+  { label: t('nav.domotique'), to: lgPage('domotique') },
+  { label: t('nav.mailboxes'), to: '/settings/imap' },
+  { label: t('nav.places'), to: '/settings', badge: managed(t('nav.places_badge')) },
+  ...ext(front.pmsFrontUrl, t('nav.openPms')),
+  { label: t('nav.users'), to: '/settings/utilisateurs' },
+  { label: t('nav.audit'), to: '/settings/utilisateurs?tab=journal' },
+  { label: t('nav.imports'), to: '/settings/imports' },
+  { label: t('nav.api'), to: '/docs-api' },
+  { label: t('nav.changelog'), to: '/changelog' },
+  { label: t('nav.manual'), to: '/docs' },
 ])
 // Selecteur de logement (« Au quotidien ») : choix global memorise, reflete dans l'URL des ecrans quotidiens
 const route = useRoute()
 const { choice, logements, linkFor, screenOf } = useLogementChoice()
 const switcherItems = computed(() => [
-  { label: 'Tous les logements', value: 'all', hex: null as string | null },
+  { label: t('nav.allLogements'), value: 'all', hex: null as string | null },
   ...logements.value.map(l => ({ label: l.name, value: String(l.id), hex: logementColorHex(l.color) })),
 ])
 const choiceHex = computed(() => switcherItems.value.find(i => i.value === choice.value)?.hex ?? null)
@@ -154,51 +155,51 @@ watch(() => [route.path, route.query.logement], () => {
 }, { immediate: true })
 // Groupes de la sidebar : un intitule en majuscules par groupe (vide pour le premier, comme Aujourd'hui seul en tete)
 const groups = computed(() => ([
-  { label: '', items: [can('AG') && { label: 'Aujourd\'hui', icon: 'i-lucide-layout-dashboard', to: '/' }].filter(Boolean) },
+  { label: '', items: [can('AG') && { label: t('nav.today'), icon: 'i-lucide-layout-dashboard', to: '/' }].filter(Boolean) },
   {
     // Intitule remplace par le selecteur de logement : les entrees ouvrent l'ecran du logement choisi (ou la vue globale)
-    label: 'Au quotidien', switcher: true,
+    label: t('nav.daily'), switcher: true,
     items: [
-      can('AG') && { label: 'Réservations', icon: 'i-lucide-calendar-days', to: linkFor('reservations') },
-      can('AGM') && { label: 'Ménage & linge', icon: 'i-lucide-sparkles', to: linkFor('menage') },
-      can('AG') && { label: 'Accès & domotique', icon: 'i-lucide-house-wifi', to: linkFor('serrures') },
-      can('AGM') && { label: 'Stock & courses', icon: 'i-lucide-package', to: linkFor('stock'), badge: managed('Lieux') },
-      can('AG') && { label: 'Écrans & livret', icon: 'i-lucide-tv', to: linkFor('ecrans'), badge: managed('Réservations') },
+      can('AG') && { label: t('nav.reservations'), icon: 'i-lucide-calendar-days', to: linkFor('reservations') },
+      can('AGM') && { label: t('nav.cleaning'), icon: 'i-lucide-sparkles', to: linkFor('menage') },
+      can('AG') && { label: t('nav.access'), icon: 'i-lucide-house-wifi', to: linkFor('serrures') },
+      can('AGM') && { label: t('nav.stock'), icon: 'i-lucide-package', to: linkFor('stock'), badge: managed(t('nav.places_badge')) },
+      can('AG') && { label: t('nav.screens'), icon: 'i-lucide-tv', to: linkFor('ecrans'), badge: managed(t('nav.pillReservations')) },
     ].filter(Boolean),
   },
   {
-    label: 'Logements',
+    label: t('nav.logements'),
     items: [
-      { label: 'Tous les logements', icon: 'i-lucide-building-2', to: '/logements' },
+      { label: t('nav.allLogements'), icon: 'i-lucide-building-2', to: '/logements' },
       ...(lg.value?.logements ?? []).map(l => ({ label: l.name, icon: 'i-lucide-home', to: `/logements/${l.id}` })),
     ],
   },
   {
-    label: 'Gestion',
+    label: t('nav.management'),
     items: [
       can('A') && {
-        label: 'Finances', icon: 'i-lucide-line-chart', type: 'trigger', defaultOpen: false,
+        label: t('nav.finances'), icon: 'i-lucide-line-chart', type: 'trigger', defaultOpen: false,
         children: [
-          { label: 'Rentabilité', to: '/profit' },
-          { label: 'Bilan', to: lgPage('bilan') },
+          { label: t('nav.profit'), to: '/profit' },
+          { label: t('nav.bilan'), to: lgPage('bilan') },
         ],
       },
-      can('AGC') && { label: 'Documents', icon: 'i-lucide-folder', to: '/documents' },
-      can('A') && { label: 'E-mails', icon: 'i-lucide-mail', to: '/mail' },
-      can('A') && { label: 'Contacts', icon: 'i-lucide-contact', to: '/contacts' },
+      can('AGC') && { label: t('nav.documents'), icon: 'i-lucide-folder', to: '/documents' },
+      can('A') && { label: t('nav.mail'), icon: 'i-lucide-mail', to: '/mail' },
+      can('A') && { label: t('nav.contacts'), icon: 'i-lucide-contact', to: '/contacts' },
     ].filter(Boolean),
   },
   // Administration : un seul sous-menu replie par defaut, admins seulement. Pages inchangees (juste regroupees).
   ...(can('A') ? [{
-    label: 'Administration',
-    items: [{ label: 'Réglages avancés', icon: 'i-lucide-settings', type: 'trigger' as const, defaultOpen: false, children: adminChildren.value }],
+    label: t('nav.administration'),
+    items: [{ label: t('nav.advanced'), icon: 'i-lucide-settings', type: 'trigger' as const, defaultOpen: false, children: adminChildren.value }],
   }] : []),
 ] as NavGroup[]).filter(g => g.items.length))
 
 // Recherche (⌘K) : jusqu'aux logements et aux sous-pages Réglages, pas de contenu (juste sauter d'une page à l'autre)
 const searchGroups = computed(() => [{
   id: 'links',
-  label: 'Aller à',
+  label: t('nav.goTo'),
   items: groups.value.flatMap(g => g.items).flatMap(l => (l.children?.length ? l.children : [l])).filter(l => l.to).map(l => ({ label: l.label, icon: l.icon, to: l.to })),
 }])
 </script>

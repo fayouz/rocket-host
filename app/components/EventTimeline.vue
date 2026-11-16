@@ -8,7 +8,7 @@
       </span>
     </template>
   </UTimeline>
-  <UCard v-else><p class="text-sm text-muted">Rien sur cette période.</p></UCard>
+  <UCard v-else><p class="text-sm text-muted">{{ t('daily.timeline.nothing') }}</p></UCard>
 </template>
 
 <script setup lang="ts">
@@ -17,7 +17,9 @@
 // n'afficher que le logo de la plateforme (comme PlatformBadge), le texte reste pour les sources non reconnues.
 interface Ev { at: string; title: string; description: string; icon: string; property?: string; propertyId?: number }
 const props = defineProps<{ events: Ev[]; now: string }>()
-const when = (d: string) => new Date(d).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const { t } = useI18n()
+const { fmtLocale } = useLocaleFormat()
+const when = (d: string) => new Date(d).toLocaleString(fmtLocale.value, { timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 function platformIcon(source: string) {
   const s = source.toLowerCase()
   if (s.includes('airbnb')) return { name: 'i-simple-icons-airbnb', color: '#FF5A5F' }

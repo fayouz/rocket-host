@@ -8,9 +8,10 @@
 
 <script setup lang="ts">
 const route = useRoute()
+const { t } = useI18n()
 const base = computed(() => `/logements/${route.params.id}`)
 const links = computed(() => [
-  { label: 'Serrures', icon: 'i-lucide-lock', to: `${base.value}/serrures` },
-  { label: 'Appareils', icon: 'i-lucide-thermometer', to: `${base.value}/domotique` },
+  { label: t('daily.locksW.title'), icon: 'i-lucide-lock', to: `${base.value}/serrures` },
+  { label: t('daily.domo.devices'), icon: 'i-lucide-thermometer', to: `${base.value}/domotique` },
 ])
 </script>

@@ -3,13 +3,14 @@
   <UAlert
     v-if="pms?.configured"
     color="info" variant="subtle" icon="i-lucide-rocket" class="mb-4 print:hidden"
-    :title="`Géré dans ${brick === 'place' ? 'Loussa Lieux' : 'Loussa Réservations'}`"
-    :description="description || 'Loussa Réservations est branché : cette page locale reste disponible mais la référence est dans la brique.'"
-    :actions="url ? [{ label: 'Ouvrir', icon: 'i-lucide-external-link', to: url, target: '_blank', color: 'info', variant: 'outline' }] : []"
+    :title="t('admin.brick.managedIn', { name: brick === 'place' ? t('admin.brick.place') : t('admin.brick.pms') })"
+    :description="description || t('admin.brick.default')"
+    :actions="url ? [{ label: t('admin.brick.open'), icon: 'i-lucide-external-link', to: url, target: '_blank', color: 'info', variant: 'outline' }] : []"
   />
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 const props = defineProps<{ brick: 'pms' | 'place'; description?: string }>()
 const { data: pms } = await useFetch('/api/pms/status', { key: 'pms-status' })
 const cfg = useRuntimeConfig().public

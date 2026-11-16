@@ -1,17 +1,17 @@
 <template>
   <div v-if="data" class="space-y-2">
-    <BrickHint brick="place" description="Lieux et serrures : la référence est dans Loussa Lieux (via Loussa Réservations)." />
-    <h2 class="section-title !mt-0">Logements</h2>
+    <BrickHint brick="place" :description="t('admin.settings.placeHint')" />
+    <h2 class="section-title !mt-0">{{ t('admin.settings.logements') }}</h2>
     <UCard v-for="l in data.logements" :key="l.id">
-      <UFormField :label="l.lodgifyName ? `Associé à Lodgify : ${l.lodgifyName}` : 'Non associé à Lodgify'" class="w-full">
-        <UInput v-model="l.name" placeholder="Nom du logement" class="w-full" @change="rename(l)" />
+      <UFormField :label="l.lodgifyName ? t('admin.settings.linkedLodgify', { name: l.lodgifyName }) : t('admin.settings.notLinked')" class="w-full">
+        <UInput v-model="l.name" :placeholder="t('admin.settings.namePlaceholder')" class="w-full" @change="rename(l)" />
       </UFormField>
       <p v-if="l.lodgifyShortName && l.lodgifyShortName !== l.name" class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
-        Nom court dans Lodgify : <b>{{ l.lodgifyShortName }}</b>
-        <UButton size="xs" color="neutral" variant="outline" label="Utiliser ce nom" @click="syncName(l)" />
+        {{ t('admin.settings.shortName') }} <b>{{ l.lodgifyShortName }}</b>
+        <UButton size="xs" color="neutral" variant="outline" :label="t('admin.settings.useName')" @click="syncName(l)" />
       </p>
       <div class="mt-3 flex items-center gap-2">
-        <span class="text-sm text-muted">Couleur repère :</span>
+        <span class="text-sm text-muted">{{ t('admin.settings.colorMark') }}</span>
         <button
           v-for="c in LOGEMENT_COLOR_CHOICES" :key="c.value" type="button"
           class="flex size-6 items-center justify-center rounded-full border border-default ring-2 ring-offset-2 ring-offset-default"
@@ -23,34 +23,35 @@
         </button>
       </div>
     </UCard>
-    <h2 class="section-title">Serrures Nuki</h2>
+    <h2 class="section-title">{{ t('admin.settings.nukiLocks') }}</h2>
     <UCard v-for="l in data.locks" :key="l.id">
-      <UFormField :label="`Serrure « ${l.name} »`" class="w-full">
+      <UFormField :label="t('admin.settings.lock', { name: l.name })" class="w-full">
         <USelect v-model="links[l.id]" :items="options" class="w-full" @update:model-value="saveLock(l.id)" />
       </UFormField>
     </UCard>
-    <p class="text-sm text-muted">{{ error || (saved ? 'Enregistré ✓' : 'Les changements sont enregistrés automatiquement.') }}</p>
+    <p class="text-sm text-muted">{{ error || (saved ? t('admin.settings.saved') : t('admin.settings.autosave')) }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 const { data } = await useFetch('/api/settings')
 const saved = ref(false)
 const error = ref('')
 // 0 = aucun logement (USelect n'accepte pas null comme valeur d'option) ; la valeur est l'id Lodgify du logement
 const links = reactive<Record<number, number>>(Object.fromEntries((data.value?.locks ?? []).map(l => [l.id, l.propertyId ?? 0])))
-const options = computed(() => [{ label: '— aucun logement —', value: 0 }, ...(data.value?.logements ?? []).filter(l => l.lodgifyPropertyId).map(l => ({ label: l.name, value: l.lodgifyPropertyId as number }))])
+const options = computed(() => [{ label: t('admin.settings.noLogement'), value: 0 }, ...(data.value?.logements ?? []).filter(l => l.lodgifyPropertyId).map(l => ({ label: l.name, value: l.lodgifyPropertyId as number }))])
 async function send(url: string, body: object) {
   error.value = ''
   try { await $fetch(url, { method: 'PUT', body }); saved.value = true; await refreshNuxtData('logements') }
-  catch (e: any) { error.value = e?.data?.statusMessage || 'Échec de l’enregistrement' }
+  catch (e: any) { error.value = e?.data?.statusMessage || t('admin.settings.saveFailed') }
 }
 const rename = (l: { id: number; name: string }) => send(`/api/logements/${l.id}`, { name: l.name })
 const setColor = (l: { id: number; color: string }, color: string) => { l.color = color; send(`/api/logements/${l.id}`, { color }) }
 const syncName = async (l: { id: number; name: string }) => {
   error.value = ''
   try { const r = await $fetch<{ name: string }>(`/api/logements/${l.id}/sync-name`, { method: 'POST' }); l.name = r.name; saved.value = true; await refreshNuxtData('logements') }
-  catch (e: any) { error.value = e?.data?.statusMessage || 'Échec de la synchronisation' }
+  catch (e: any) { error.value = e?.data?.statusMessage || t('admin.settings.syncFailed') }
 }
 const saveLock = (lockId: number) => send('/api/settings', { lockId, propertyId: links[lockId] || null })
 </script>

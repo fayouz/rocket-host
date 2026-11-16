@@ -1,6 +1,13 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-09-01',
-  modules: ['@nuxt/ui'],
+  modules: ['@nuxt/ui', '@nuxtjs/i18n'],
+  // Multilingue FR/EN : langue du navigateur par defaut (cookie si l'utilisateur choisit), francais sinon. Pas de prefixe d'URL.
+  i18n: {
+    locales: [{ code: 'fr', language: 'fr-FR', files: ['fr/common.json', 'fr/daily.json', 'fr/manage.json', 'fr/admin.json'], name: 'Français' }, { code: 'en', language: 'en-GB', files: ['en/common.json', 'en/daily.json', 'en/manage.json', 'en/admin.json'], name: 'English' }],
+    defaultLocale: 'fr',
+    strategy: 'no_prefix',
+    detectBrowserLanguage: { useCookie: true, cookieKey: 'loussa_lang', fallbackLocale: 'fr', alwaysRedirect: false },
+  },
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
   // Secrets et reglages d'integration (Lodgify, Nuki, IMAP, Homey, Loussa Réservations/Place/Clean/Stock/Cast, webhook, CONNECTOR_*) :

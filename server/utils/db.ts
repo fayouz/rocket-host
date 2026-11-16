@@ -234,6 +234,8 @@ export async function initDb() {
   await addColumn('ALTER TABLE imap_config ADD COLUMN auto_file INTEGER NOT NULL DEFAULT 0')
   await addColumn("ALTER TABLE imap_config ADD COLUMN treated_folder TEXT NOT NULL DEFAULT 'Traité'")
   // Un logement n'est initialise (tous les articles du catalogue proposes) qu'une seule fois : ensuite il choisit ses articles
+  // Cache des traductions DeepL (messages voyageurs) : une traduction n'est demandee qu'une fois par texte et par langue
+  await db.exec('CREATE TABLE IF NOT EXISTS translation_cache (hash TEXT NOT NULL, target TEXT NOT NULL, source_lang TEXT NOT NULL, text TEXT NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY (hash, target))')
   await db.exec('CREATE TABLE IF NOT EXISTS stock_init (property_id INTEGER PRIMARY KEY)')
   await db.exec('CREATE TABLE IF NOT EXISTS property_token (property_id INTEGER PRIMARY KEY, token TEXT NOT NULL UNIQUE)')
   const items = await db.sql`SELECT COUNT(*) AS n FROM stock_item`

@@ -60,6 +60,7 @@ export const CONFIG_GROUPS: { key: string; title: string; description: string }[
   { key: 'mail', title: 'E-mail (IMAP/SMTP)', description: 'Mot de passe de la boîte ; serveur, identifiant et règles dans Boîte e-mail (IMAP/SMTP).' },
   { key: 'homey', title: 'Domotique (Homey)', description: 'Clé d\'API Homey Pro (accès local) et application OAuth (mode cloud).' },
   { key: 'direct', title: 'Lodgify / Nuki en direct', description: 'Utilisés seulement quand Loussa Réservations n\'est pas branché.' },
+  { key: 'translate', title: 'Traduction (DeepL)', description: 'Traduction automatique des messages des voyageurs. Clé DeepL API Free (gratuite, 500 000 caractères par mois) : deepl.com › Compte › Clés API.' },
   { key: 'webhook', title: 'Webhook (n8n)', description: 'Jeton attendu dans « Authorization: Bearer … » des imports n8n.' },
 ]
 export const CONFIG_ENTRIES: ConfigEntry[] = [
@@ -84,6 +85,7 @@ export const CONFIG_ENTRIES: ConfigEntry[] = [
   { name: 'HOMEY_REDIRECT_URI', kind: 'setting', group: 'homey', label: 'Adresse de retour OAuth (facultatif)', placeholder: 'https://…/api/homey/callback' },
   { name: 'LODGIFY_API_KEY', kind: 'secret', group: 'direct', label: 'Clé d\'API Lodgify' },
   { name: 'NUKI_API_TOKEN', kind: 'secret', group: 'direct', label: 'Jeton Nuki Web' },
+  { name: 'DEEPL_API_KEY', kind: 'secret', group: 'translate', label: 'Clé d\'API DeepL', help: 'Une clé gratuite se termine par « :fx ».' },
   { name: 'WEBHOOK_TOKEN', kind: 'secret', group: 'webhook', label: 'Jeton du webhook', help: 'openssl rand -hex 24' },
 ]
 // Secrets des connecteurs (plugins « Service web »…) : nom libre commencant par CONNECTOR_

@@ -1,8 +1,8 @@
 <template>
   <!-- Selecteur d'applications de LoussaSuite (liste publiee par Connexion Loussa). Invisible sans Connexion Loussa. -->
   <UPopover v-if="data?.enabled && (data.apps.length || data.account)">
-    <UTooltip text="Applications LoussaSuite">
-      <UButton color="neutral" variant="ghost" square icon="i-lucide-grid-3x3" aria-label="Applications LoussaSuite" />
+    <UTooltip :text="t('admin.suite.apps')">
+      <UButton color="neutral" variant="ghost" square icon="i-lucide-grid-3x3" :aria-label="t('admin.suite.apps')" />
     </UTooltip>
     <template #content>
       <div class="w-72 p-2">
@@ -14,13 +14,14 @@
             <span class="line-clamp-2">{{ app.name }}</span>
           </a>
         </div>
-        <UButton v-if="data.account" :to="data.account" external target="_blank" block size="sm" color="neutral" variant="ghost" icon="i-lucide-user-cog" label="Mon compte Rocket" class="mt-2" />
+        <UButton v-if="data.account" :to="data.account" external target="_blank" block size="sm" color="neutral" variant="ghost" icon="i-lucide-user-cog" :label="t('admin.suite.account')" class="mt-2" />
       </div>
     </template>
   </UPopover>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 interface SuiteApp { id: string; name: string; url: string; icon?: string; description?: string }
 const { data } = await useFetch<{ enabled: boolean; apps: SuiteApp[]; account?: string | null }>('/api/auth/rocket/apps', { key: 'suite-apps', default: () => ({ enabled: false, apps: [] }) })
 </script>
