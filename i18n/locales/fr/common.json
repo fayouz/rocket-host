@@ -1,0 +1,103 @@
+{
+  "app": {
+    "name": "Espace Loussa",
+    "demo": "Mode démo",
+    "notificationsSoon": "Notifications (bientôt disponible)",
+    "selectedLogement": "Logement affiché"
+  },
+  "lang": {
+    "label": "Langue",
+    "auto": "Langue du système",
+    "fr": "Français",
+    "en": "English",
+    "help": "Par défaut, la langue de ton navigateur est utilisée."
+  },
+  "auth": {
+    "connected": "Connecté",
+    "logout": "Déconnexion",
+    "signOut": "Se déconnecter",
+    "login": "Connexion",
+    "signIn": "Se connecter",
+    "loggedOut": "Tu es déconnecté.",
+    "ssoButton": "Se connecter avec Connexion Loussa",
+    "orLocal": "ou avec un compte local",
+    "username": "Identifiant",
+    "password": "Mot de passe",
+    "forgot": "Mot de passe oublié ?",
+    "failed": "Échec de la connexion.",
+    "signup": "Créer un compte · choisir une offre",
+    "offers": "Voir les offres"
+  },
+  "account": {
+    "title": "Mon compte",
+    "forcedTitle": "Choisis un nouveau mot de passe",
+    "forcedText": "Ce compte utilise un mot de passe provisoire : tu dois le remplacer avant de continuer.",
+    "summary": "identifiant {username} · rôle {role}",
+    "changePassword": "Changer le mot de passe",
+    "current": "Mot de passe actuel",
+    "new": "Nouveau mot de passe",
+    "newHint": "12 caractères au moins",
+    "confirm": "Confirmer le nouveau mot de passe",
+    "mismatch": "La confirmation ne correspond pas au nouveau mot de passe.",
+    "changed": "Mot de passe changé. Les autres sessions ouvertes ont été fermées.",
+    "retry": "Échec, réessaie."
+  },
+  "role": {
+    "admin": "administrateur",
+    "gestionnaire": "gestionnaire",
+    "comptable": "comptable (lecture)",
+    "menage": "ménage"
+  },
+  "status": {
+    "demo": "démo",
+    "off": "off",
+    "connected": "connecté",
+    "error": "erreur",
+    "viaPms": "via PMS",
+    "local": "local"
+  },
+  "nav": {
+    "today": "Aujourd'hui",
+    "daily": "Au quotidien",
+    "allLogements": "Tous les logements",
+    "reservations": "Réservations",
+    "cleaning": "Ménage & linge",
+    "access": "Accès & domotique",
+    "stock": "Stock & courses",
+    "screens": "Écrans & livret",
+    "logements": "Logements",
+    "management": "Gestion",
+    "finances": "Finances",
+    "profit": "Rentabilité",
+    "bilan": "Bilan",
+    "documents": "Documents",
+    "mail": "E-mails",
+    "contacts": "Contacts",
+    "administration": "Administration",
+    "advanced": "Réglages avancés",
+    "connections": "Connexions & intégrations",
+    "domotique": "Domotique",
+    "mailboxes": "Boîtes e-mail",
+    "places": "Logements & lieux",
+    "openPms": "Ouvrir Loussa Réservations (Lodgify)",
+    "users": "Utilisateurs & rôles",
+    "audit": "Journal d'audit",
+    "imports": "Imports",
+    "api": "API (Swagger)",
+    "changelog": "Nouveautés",
+    "manual": "Manuel",
+    "goTo": "Aller à",
+    "pillReservations": "Réservations",
+    "pillPlaces": "Lieux",
+    "pillMail": "Mail",
+    "pillCloud": "Cloud",
+    "places_badge": "Lieux"
+  },
+  "time": {
+    "unknown": "inconnue",
+    "now": "à l'instant",
+    "min": "il y a {n} min",
+    "hours": "il y a {n} h",
+    "days": "il y a {n} j"
+  }
+}

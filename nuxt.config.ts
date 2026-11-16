@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxtjs/i18n'],
   // Multilingue FR/EN : langue du navigateur par defaut (cookie si l'utilisateur choisit), francais sinon. Pas de prefixe d'URL.
   i18n: {
-    locales: [{ code: 'fr', language: 'fr-FR', file: 'fr.json', name: 'Français' }, { code: 'en', language: 'en-GB', file: 'en.json', name: 'English' }],
+    locales: [{ code: 'fr', language: 'fr-FR', files: ['fr/common.json', 'fr/daily.json', 'fr/manage.json', 'fr/admin.json'], name: 'Français' }, { code: 'en', language: 'en-GB', files: ['en/common.json', 'en/daily.json', 'en/manage.json', 'en/admin.json'], name: 'English' }],
     defaultLocale: 'fr',
     strategy: 'no_prefix',
     detectBrowserLanguage: { useCookie: true, cookieKey: 'loussa_lang', fallbackLocale: 'fr', alwaysRedirect: false },
